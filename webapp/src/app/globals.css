@@ -60,6 +60,7 @@ img { display: block; max-width: 100%; }
 .patient-subtitle { margin-top: 2px; color: var(--muted); font-family: var(--heading); font-size: 14px; }
 .patient-form select { width: 100%; height: 42px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); padding: 0 10px; }
 .patient-title { display: flex; align-items: baseline; flex-wrap: wrap; gap: 12px; min-width: 0; }
+.patient-title h2 { color: var(--deep); }
 .calendar-status { border: 0; background: transparent; color: var(--muted); padding: 0; font-family: var(--heading); font-size: 13px; font-weight: 400; }
 button.calendar-status { color: var(--deep); text-decoration: underline; text-underline-offset: 3px; }
 button.calendar-status:hover:not(:disabled) { color: var(--accent); }
