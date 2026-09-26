@@ -61,6 +61,13 @@ final class GlassesManager {
   @ObservationIgnored private let voiceTokens = ListenerTokenBag()
   @ObservationIgnored private var registrationTask: Task<Void, Never>?
   @ObservationIgnored private var deviceTask: Task<Void, Never>?
+  @ObservationIgnored private var watchdogTask: Task<Void, Never>?
+  /// When speech last delivered a transcript. While listening it sends one every ~0.3 s,
+  /// even in silence, so a long gap means it has stalled.
+  @ObservationIgnored private var lastTranscriptAt: Date?
+  /// When speech last produced actual words (or was restarted). On real glasses it can
+  /// keep sending empty transcripts while no longer hearing anything; a restart fixes it.
+  @ObservationIgnored private var lastHeardAt: Date?
   @ObservationIgnored private var captureTask: Task<Void, Never>?
   @ObservationIgnored private var activeDevice: DeviceIdentifier?
   @ObservationIgnored private var wakeWordDetector = WakeWordDetector()
@@ -89,6 +96,7 @@ final class GlassesManager {
   isolated deinit {
     registrationTask?.cancel()
     deviceTask?.cancel()
+    watchdogTask?.cancel()
     captureTask?.cancel()
     teardownTask?.cancel()
     inputsTask?.cancel()
@@ -114,6 +122,67 @@ final class GlassesManager {
         await self.handleActiveDevice(identifier)
       }
     }
+
+    watchdogTask = Task { [weak self] in
+      var tick = 0
+      while !Task.isCancelled {
+        // Frequent, because the wake word is lost for as long as speech is stalled.
+        try? await Task.sleep(for: .seconds(2))
+        tick += 1
+        await self?.keepListening(logHeartbeat: tick % 8 == 0)
+      }
+    }
+  }
+
+  /// Recovers the wake word when nothing else will. A stopped session (glasses taken
+  /// off or folded, another experience took over) is only replaced when the device or
+  /// registration changes, and speech that stops while the session is paused is never
+  /// restarted by its own stop handler. Paused sessions are left alone: the glasses
+  /// resume those themselves.
+  private func keepListening(logHeartbeat: Bool) async {
+    if logHeartbeat {
+      let quiet = lastTranscriptAt.map { Int(Date.now.timeIntervalSince($0)) }
+      violetTrace(
+        "heartbeat: session=\(session.map { "\($0.state)" } ?? "none") "
+          + "speech=\(speech.map { "\($0.state)" } ?? "none") quietFor=\(quiet.map { "\($0)s" } ?? "-")"
+      )
+    }
+    if session == nil {
+      guard activeDevice != nil, case .registered = wearables.registrationState else { return }
+      violetTrace("watchdog: no session while glasses are available; starting one")
+      await startSessionIfPermissionsGranted()
+    } else if session?.state == .started {
+      resumeListeningIfNeeded(reason: "watchdog")
+    }
+  }
+
+  private func resumeListeningIfNeeded(reason: String) {
+    guard let speech else {
+      attachSpeechIfNeeded()
+      return
+    }
+    let stalled = lastTranscriptAt.map { Date.now.timeIntervalSince($0) > 4 } ?? false
+    let deaf = lastHeardAt.map { Date.now.timeIntervalSince($0) > 20 } ?? false
+    if speech.state == .started, camera == nil, stalled || deaf {
+      // Reports "started" but has stopped delivering anything, or only empty results
+      // for a while; either way a fresh start makes it hear again.
+      violetTrace("\(reason): speech \(stalled ? "stalled" : "hearing nothing"); restarting it")
+      lastTranscriptAt = .now
+      lastHeardAt = .now
+      speech.stop()
+      Task { @MainActor in
+        try? await Task.sleep(for: .milliseconds(600))
+        if speech.state == .stopped { speech.start() }
+      }
+      return
+    }
+    guard speech.state == .stopped else {
+      // Still listening after a pause; show that instead of "Connecting".
+      if speech.state == .started, camera == nil, state == .connecting { state = .listening }
+      return
+    }
+    violetTrace("\(reason): speech was stopped; restarting it")
+    speech.start()
   }
 
   func enable() async {
@@ -231,7 +300,7 @@ final class GlassesManager {
     violetTrace("session state: \(sessionState)")
     switch sessionState {
     case .started:
-      attachSpeechIfNeeded()
+      resumeListeningIfNeeded(reason: "session started")
       attachCaptureButtonIfNeeded()
     case .paused:
       state = .connecting
@@ -271,6 +340,8 @@ final class GlassesManager {
   private func handleSpeechState(started: Bool, stopped: Bool) {
     violetTrace("speech started=\(started) stopped=\(stopped)")
     if started {
+      lastTranscriptAt = .now
+      lastHeardAt = .now
       if camera == nil { state = .listening }
     } else if stopped {
       guard let speech, session?.state == .started else { return }
@@ -283,6 +354,8 @@ final class GlassesManager {
 
   private func receiveTranscript(_ transcript: String) {
     lastTranscript = transcript
+    lastTranscriptAt = .now
+    if !transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { lastHeardAt = .now }
     violetTrace("transcript: \(transcript)")
     guard wakeWordDetector.consume(transcript) else { return }
     triggerViolet()

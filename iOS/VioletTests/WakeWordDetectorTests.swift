@@ -4,6 +4,8 @@ final class WakeWordDetectorTests: XCTestCase {
   func testFindsWholeWakeWordIgnoringCaseAndPunctuation() {
     XCTAssertTrue(WakeWordDetector.containsWakeWord("Hey, VIOLET!"))
     XCTAssertFalse(WakeWordDetector.containsWakeWord("violets are purple"))
+    // The glasses have transcribed "Violet" as "Vista".
+    XCTAssertTrue(WakeWordDetector.containsWakeWord("The Vista."))
   }
 
   func testCooldownSuppressesPartialAndFinalDuplicate() {

@@ -64,6 +64,7 @@ final class AppModel {
   }
 
   func setActive(_ active: Bool) {
+    violetTrace("app \(active ? "active" : "inactive or background")")
     if active {
       startSyncLoop()
     } else {

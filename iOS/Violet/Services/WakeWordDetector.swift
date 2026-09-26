@@ -15,11 +15,15 @@ struct WakeWordDetector: Sendable {
     return true
   }
 
+  /// "Violet" plus what the glasses' transcription has turned it into on real hardware.
+  static let wakeWords: Set<String> = ["violet", "vista"]
+
   static func containsWakeWord(_ transcript: String) -> Bool {
-    transcript
-      .lowercased()
-      .components(separatedBy: CharacterSet.letters.inverted)
-      .contains("violet")
+    !wakeWords.isDisjoint(
+      with: transcript
+        .lowercased()
+        .components(separatedBy: CharacterSet.letters.inverted)
+    )
   }
 }
 
