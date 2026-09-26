@@ -30,8 +30,9 @@ button:disabled { cursor: not-allowed; opacity: 0.5; }
 button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 img { display: block; max-width: 100%; }
 
-.portal-page { width: min(1540px, calc(100% - 48px)); margin: 0 auto; padding: 22px 0 40px; }
-.portal-header { display: flex; align-items: center; min-height: 54px; border-bottom: 1px solid var(--line); }
+.portal-page { display: flex; flex-direction: column; width: min(1540px, calc(100% - 48px)); margin: 0 auto; padding: 8px 0 16px; }
+.portal-header { display: flex; align-items: center; gap: 10px; min-height: 54px; border-bottom: 1px solid var(--line); }
+.portal-logo { width: 32px; height: 32px; object-fit: contain; }
 .portal-header h1 { font-size: 24px; font-weight: 700; }
 
 .primary-button, .secondary-button, .connect-button {
@@ -45,44 +46,39 @@ img { display: block; max-width: 100%; }
 .inline-error { margin-top: 14px; }
 .database-error, .inline-error { color: var(--high); font-size: 13px; }
 
-.dashboard-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; align-items: start; padding-top: 22px; }
-.left-column, .analytics-column { display: grid; gap: 20px; min-width: 0; }
-.clinical-section { min-width: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); padding: 20px; }
+.dashboard-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: auto auto; grid-auto-flow: column; gap: 20px 24px; padding-top: 16px; }
+.left-column, .analytics-column { display: contents; }
+.clinical-section { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--white); padding: 20px; }
 .section-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; min-height: 30px; }
-.section-header h2 { font-size: 17px; font-weight: 700; }
-.section-header > span, .connected-account { color: var(--muted); font-size: 12px; }
+.section-header h2 { font-size: 20px; font-weight: 700; }
+.section-header > span, .connected-account { color: var(--muted); font-family: var(--heading); font-size: 14px; font-weight: 700; }
 
-.patient-section { min-height: 320px; }
-.patient-details { display: grid; margin: 14px 0 0; }
+.patient-details { display: grid; align-content: start; min-height: 0; margin: 14px 0 0; overflow-y: auto; }
 .patient-details > div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 18px; align-items: center; min-height: 51px; border-top: 1px solid var(--line); }
-.patient-details dt { color: var(--muted); font-size: 12px; }
-.patient-details dd { margin: 0; font-family: var(--heading); font-size: 13px; }
+.patient-details dt { color: var(--muted); font-family: var(--heading); font-size: 14px; font-weight: 700; }
+.patient-details dd { margin: 0; font-family: var(--heading); font-size: 14px; }
 .patient-details .notes-detail { align-items: start; padding: 14px 0; }
 .notes-detail dd { font-family: var(--body); font-size: 13px; white-space: pre-wrap; }
-.calendar-detail .connect-button { min-height: 32px; }
-.empty-state { padding: 26px 0 8px; color: var(--muted); font-size: 13px; }
+.patient-title { display: flex; align-items: baseline; flex-wrap: wrap; gap: 12px; min-width: 0; }
+.calendar-status { border: 0; background: transparent; color: var(--muted); padding: 0; font-family: var(--heading); font-size: 13px; font-weight: 400; }
+button.calendar-status { color: var(--deep); text-decoration: underline; text-underline-offset: 3px; }
+button.calendar-status:hover:not(:disabled) { color: var(--accent); }
+.empty-state { padding: 26px 0 8px; color: var(--muted); font-size: 14px; }
 
-.people-table { margin-top: 12px; }
-.people-table-row { display: grid; grid-template-columns: 38px minmax(110px, 1fr) minmax(80px, 0.8fr) 48px; gap: 12px; align-items: center; min-height: 54px; border-top: 1px solid var(--line); }
-.person-photo { display: grid; width: 34px; height: 34px; overflow: hidden; place-items: center; border-radius: 50%; background: var(--soft); color: var(--deep); font-family: var(--heading); font-size: 11px; }
-.person-photo img { width: 100%; height: 100%; object-fit: cover; }
-.people-table-row strong { font-family: var(--heading); font-size: 13px; font-weight: 400; }
-.people-table-row > span { color: var(--muted); font-size: 12px; }
 
-.weekly-chart, .hour-chart, .memory-chart { display: block; width: 100%; height: auto; overflow: visible; }
-.chart-legend { display: flex; align-items: center; justify-content: flex-end; gap: 13px; color: var(--muted); font-size: 10px; }
-.chart-legend.compact { gap: 8px; }
+.weekly-chart, .hour-chart, .memory-chart { display: block; flex: 1 1 auto; width: 100%; min-height: 0; height: auto; overflow: visible; }
+.chart-legend { display: flex; align-items: center; justify-content: flex-end; gap: 16px; color: var(--muted); font-family: var(--heading); font-size: 12px; font-weight: 700; }
 .chart-legend span { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
-.chart-legend i { display: inline-block; width: 11px; height: 3px; }
+.chart-legend i { display: inline-block; width: 12px; height: 3px; }
 .weekly-controls { display: flex; align-items: center; justify-content: flex-end; gap: 14px; }
-.timeframe-control { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 10px; }
+.timeframe-control { display: flex; align-items: center; gap: 6px; color: var(--muted); font-family: var(--heading); font-size: 12px; font-weight: 700; }
 .timeframe-control select { height: 30px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); padding: 0 22px 0 8px; font-family: var(--heading); font-size: 11px; }
 .violet-key { background: var(--accent); }
 .visit-key { background: var(--deep); }
 .ratio-key { background: #4f7f84; }
 .chart-gridline { stroke: var(--line); stroke-width: 1; }
-.axis-label, .axis-title { fill: var(--muted); font-family: var(--body); font-size: 10px; font-variant-numeric: tabular-nums; }
-.axis-title { font-size: 9px; }
+.axis-label, .axis-title { fill: var(--muted); font-family: var(--heading); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.axis-title { font-size: 11px; }
 .ratio-axis { fill: #4f7f84; }
 .series-line { fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 .violet-series { stroke: var(--accent); }
@@ -92,31 +88,43 @@ img { display: block; max-width: 100%; }
 .violet-point { fill: var(--accent); }
 .visit-point { fill: var(--deep); }
 .ratio-point { fill: #4f7f84; }
-.empty-chart-label { fill: var(--muted); font-family: var(--body); font-size: 12px; }
+.empty-chart-label { fill: var(--muted); font-family: var(--heading); font-size: 14px; font-weight: 700; }
 
-.signal-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.signal-section { padding: 15px; }
-.signal-section .section-header h2 { font-size: 14px; }
+.signal-controls { display: flex; align-items: center; gap: 8px; }
+.signal-tabs { display: inline-flex; border-bottom: 1px solid var(--line); }
+.signal-tabs button { position: relative; display: grid; width: 30px; height: 28px; border: 0; background: transparent; color: var(--muted); padding: 0; place-items: center; }
+.signal-tabs button::after { content: ""; position: absolute; right: 3px; bottom: -1px; left: 3px; height: 2px; background: transparent; transition: background-color 160ms ease; }
+.signal-tabs button:hover { color: var(--deep); }
+.signal-tabs button:hover::after { background: var(--line); }
+.signal-tabs button.active { color: var(--deep); }
+.signal-tabs button.active::after { background: var(--accent); }
+.signal-tabs svg { display: block; }
+.signal-panel { display: flex; flex: 1 1 auto; flex-direction: column; min-height: 0; margin-top: 8px; animation: signal-fade 240ms ease-out; }
+@keyframes signal-fade { from { opacity: 0; } }
 .hour-violet { fill: var(--accent); }
 .hour-visit { fill: var(--deep); }
 
-.dial-wrap { position: relative; width: min(100%, 190px); margin: 20px auto 0; }
-.dial { display: block; width: 100%; overflow: visible; }
-.dial-track, .dial-good, .dial-watch, .dial-high { fill: none; stroke-linecap: butt; stroke-width: 14; }
-.dial-track { stroke: var(--line); }
-.dial-good { stroke: var(--good); stroke-dasharray: 30 70; }
-.dial-watch { stroke: var(--watch); stroke-dasharray: 40 60; stroke-dashoffset: -30; }
-.dial-high { stroke: var(--high); stroke-dasharray: 30 70; stroke-dashoffset: -70; }
-.dial-needle { stroke: var(--ink); stroke-linecap: round; stroke-width: 3; }
-.dial-center { fill: var(--ink); }
-.dial-value { position: absolute; inset: auto 0 2px; display: grid; place-items: center; }
-.dial-value strong { font-family: var(--heading); font-size: 24px; font-weight: 400; line-height: 1; }
-.dial-value span, .dial-count { color: var(--muted); font-size: 10px; }
-.dial-count { margin-top: 6px; text-align: center; }
+.health-panel { display: grid; flex: 1 1 auto; align-content: center; padding: 0 12px; }
+.health-readout { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+.health-readout strong { font-family: var(--heading); font-size: 32px; font-weight: 400; line-height: 1; }
+.health-readout span { color: var(--muted); font-family: var(--heading); font-size: 15px; font-weight: 700; }
+.health-bar { position: relative; display: flex; height: 14px; overflow: visible; border-radius: var(--radius); }
+.health-bar i { display: block; height: 100%; }
+.health-bar i:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+.health-bar i:nth-child(3) { border-radius: 0 var(--radius) var(--radius) 0; }
+.health-good { width: 30%; background: var(--good); }
+.health-watch { width: 40%; background: var(--watch); }
+.health-high { width: 30%; background: var(--high); }
+.health-marker { position: absolute; top: -5px; bottom: -5px; width: 3px; border-radius: 2px; background: var(--ink); transform: translateX(-50%); }
+.health-scale { position: relative; height: 16px; margin-top: 6px; }
+.health-scale span { position: absolute; color: var(--muted); font-family: var(--heading); font-size: 12px; font-weight: 700; transform: translateX(-50%); font-variant-numeric: tabular-nums; }
+.health-scale span:first-child { transform: none; }
+.health-scale span:last-child { transform: translateX(-100%); }
+.health-count { margin-top: 12px; color: var(--muted); font-family: var(--heading); font-size: 13px; font-weight: 700; }
 
 .memory-bar { fill: var(--accent); }
-.memory-name { fill: var(--ink); font-family: var(--heading); font-size: 9px; }
-.memory-years { fill: var(--muted); font-family: var(--body); font-size: 9px; }
+.memory-name { fill: var(--ink); font-family: var(--heading); font-size: 12px; font-weight: 700; }
+.memory-years { fill: var(--muted); font-family: var(--heading); font-size: 11px; font-weight: 700; }
 
 .modal-backdrop { position: fixed; z-index: 20; inset: 0; display: grid; overflow-y: auto; padding: 20px; place-items: center; background: rgba(35, 35, 36, 0.44); }
 .modal { width: min(620px, 100%); max-height: calc(100vh - 40px); overflow-y: auto; border-radius: var(--radius); background: var(--white); padding: 24px; }
@@ -126,7 +134,7 @@ img { display: block; max-width: 100%; }
 .close-button { width: 34px; height: 34px; border: 0; border-radius: var(--radius); background: var(--soft); color: var(--deep); font-family: var(--heading); font-size: 20px; }
 .patient-form, .person-form { display: grid; gap: 15px; margin-top: 20px; }
 .patient-form label, .person-form label { display: grid; gap: 5px; }
-.patient-form label > span, .person-form label > span, .person-form legend { color: var(--muted); font-family: var(--heading); font-size: 12px; }
+.patient-form label > span, .person-form label > span, .person-form legend { color: var(--muted); font-family: var(--heading); font-size: 14px; font-weight: 700; }
 .patient-form input, .patient-form textarea, .person-form input, .person-form textarea { width: 100%; border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); padding: 9px 10px; }
 .patient-form input, .person-form input { height: 42px; }
 .patient-form textarea, .person-form textarea { min-height: 82px; resize: vertical; }
@@ -137,20 +145,43 @@ img { display: block; max-width: 100%; }
 .edit-people-list { display: grid; max-height: 160px; overflow-y: auto; }
 .edit-people-list > div { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 8px 0; border-top: 1px solid var(--line); }
 .edit-people-list > div > div { display: grid; gap: 2px; }
-.edit-people-list strong { font-family: var(--heading); font-size: 12px; font-weight: 400; }
-.edit-people-list span { color: var(--muted); font-size: 11px; }
+.edit-people-list strong { font-family: var(--heading); font-size: 13px; font-weight: 400; }
+.edit-people-list span { color: var(--muted); font-family: var(--heading); font-size: 12px; font-weight: 700; }
 .calendar-editor { display: grid; gap: 10px; border-top: 1px solid var(--line); padding-top: 10px; }
-.calendar-event-list { display: grid; max-height: 190px; overflow-y: auto; }
-.calendar-event-list > div { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 8px 0; border-top: 1px solid var(--line); }
-.calendar-event-list > div > div { display: grid; gap: 2px; }
-.calendar-event-list strong { font-family: var(--heading); font-size: 12px; font-weight: 400; }
-.calendar-event-list span { color: var(--muted); font-size: 11px; }
+.calendar-days { display: grid; gap: 8px; }
+.calendar-days-nav { display: flex; align-items: center; gap: 10px; color: var(--muted); font-family: var(--heading); font-size: 13px; font-weight: 700; }
+.calendar-days-nav > span { min-width: 110px; text-align: center; }
+.calendar-days-nav .text-button { font-size: 16px; line-height: 1; padding: 0 4px; }
+.calendar-days-nav .calendar-today-button { margin-left: auto; font-size: 12px; }
+.calendar-day-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.calendar-day { display: grid; grid-template-rows: auto 1fr; min-width: 0; border-radius: var(--radius); background: var(--soft); padding: 8px; }
+.calendar-day.today { background: rgba(155, 130, 232, 0.14); }
+.calendar-day-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+.calendar-day-header > div { display: grid; }
+.calendar-day-header span { color: var(--muted); font-family: var(--heading); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.calendar-day-header strong { font-family: var(--heading); font-size: 18px; font-weight: 400; line-height: 1.1; }
+.calendar-day.today .calendar-day-header strong { color: var(--deep); font-weight: 700; }
+.calendar-day-header .text-button { font-size: 16px; line-height: 1; padding: 0 2px; }
+.calendar-day-events { display: grid; align-content: start; gap: 6px; max-height: 200px; overflow-y: auto; margin-top: 8px; }
+.calendar-day-empty { margin: 0; color: var(--muted); font-family: var(--heading); font-size: 12px; font-weight: 700; }
+.calendar-day-event { display: grid; gap: 1px; width: 100%; min-width: 0; border: 0; border-left: 2px solid var(--accent); border-radius: var(--radius); background: var(--white); padding: 6px 8px; text-align: left; }
+.calendar-day-event:hover { background: rgba(155, 130, 232, 0.12); }
+.calendar-day-event > span { color: var(--muted); font-family: var(--heading); font-size: 11px; font-weight: 700; }
+.calendar-day-event > strong { overflow: hidden; font-family: var(--heading); font-size: 12px; font-weight: 400; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+.calendar-day-event > small { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
 .calendar-event-form { display: grid; gap: 12px; padding: 12px; border-radius: var(--radius); background: var(--soft); }
 .calendar-event-form label { display: grid; gap: 5px; }
-.calendar-event-form label > span { color: var(--muted); font-family: var(--heading); font-size: 12px; }
+.calendar-event-form label > span { color: var(--muted); font-family: var(--heading); font-size: 14px; font-weight: 700; }
 .calendar-event-form input { width: 100%; height: 40px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); padding: 8px 10px; }
 .calendar-event-form .checkbox-field { display: flex; align-items: center; gap: 8px; }
 .calendar-event-form .checkbox-field input { width: 15px; height: 15px; }
+.modal, .edit-people-list, .calendar-day-events, .patient-details { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.modal:hover, .edit-people-list:hover, .calendar-day-events:hover { scrollbar-color: var(--accent) transparent; }
+.modal::-webkit-scrollbar, .edit-people-list::-webkit-scrollbar, .calendar-day-events::-webkit-scrollbar { width: 6px; }
+.modal::-webkit-scrollbar-track, .edit-people-list::-webkit-scrollbar-track, .calendar-day-events::-webkit-scrollbar-track { background: transparent; }
+.modal::-webkit-scrollbar-thumb, .edit-people-list::-webkit-scrollbar-thumb, .calendar-day-events::-webkit-scrollbar-thumb { border-radius: 3px; background: var(--line); }
+.modal:hover::-webkit-scrollbar-thumb, .edit-people-list:hover::-webkit-scrollbar-thumb, .calendar-day-events:hover::-webkit-scrollbar-thumb { background: var(--accent); }
+.calendar-day-events { padding-right: 2px; }
 .inline-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .text-button { border: 0; background: transparent; color: var(--deep); padding: 2px 0; font-family: var(--heading); font-size: 12px; }
 .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-top: 7px; }
@@ -162,26 +193,28 @@ img { display: block; max-width: 100%; }
 .form-error { color: var(--high); font-size: 13px; }
 .form-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 4px; }
 
-@media (max-width: 1180px) {
-  .signal-grid { grid-template-columns: 1fr 1fr; }
-  .memory-section { grid-column: 1 / -1; }
+@media (min-width: 861px) {
+  html, body { height: 100%; overflow: hidden; }
+  .portal-page { height: 100dvh; }
+  .dashboard-layout { flex: 1 1 auto; grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); min-height: 0; }
+  .clinical-section { overflow: hidden; }
+  .patient-section { grid-row: span 2; }
+  .weekly-chart, .hour-chart, .memory-chart { flex: 1 1 0; }
 }
 
 @media (max-width: 860px) {
-  .dashboard-layout { grid-template-columns: 1fr; }
-  .left-column { grid-template-columns: 1fr 1fr; }
+  .dashboard-layout { grid-template-columns: 1fr; grid-template-rows: none; grid-auto-flow: row; }
+  .left-column, .analytics-column { display: grid; gap: 20px; min-width: 0; }
 }
 
 @media (max-width: 620px) {
   .portal-page { width: calc(100% - 24px); }
-  .left-column, .signal-grid { grid-template-columns: 1fr; }
-  .memory-section { grid-column: auto; }
+  .signal-controls { flex-wrap: wrap; }
   .section-header { align-items: flex-start; flex-direction: column; }
   .weekly-controls { width: 100%; align-items: flex-start; justify-content: space-between; }
   .chart-legend { justify-content: flex-start; flex-wrap: wrap; }
-  .people-table-row { grid-template-columns: 38px 1fr 70px; }
-  .people-table-row > span:last-child { display: none; }
-  .field-pair, .photo-grid { grid-template-columns: 1fr; }
+  .field-pair, .photo-grid, .calendar-day-columns { grid-template-columns: 1fr; }
+  .calendar-day-events { max-height: none; }
   .photo-input { aspect-ratio: 16 / 7; }
 }
 

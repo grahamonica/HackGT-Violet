@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, type ReactNode } from "react";
 import type { DashboardAnalytics, HourPoint, TenurePoint, WeekPoint } from "@/lib/analytics";
 import { format } from "@/lib/date";
 
@@ -9,12 +10,59 @@ export function AnalyticsDashboard({ analytics, loading, weeks, onWeeksChange }:
   return (
     <section className="analytics-column" aria-label="Patient analytics">
       <WeeklyChart points={analytics.weeks} loading={loading} weeks={weeks} onWeeksChange={onWeeksChange} />
-      <div className="signal-grid">
-        <HourlyChart points={analytics.hours} loading={loading} />
-        <HealthDial metric={analytics.health} />
-        <MemoryChart points={analytics.tenure} loading={loading} />
-      </div>
+      <SignalCarousel analytics={analytics} loading={loading} />
     </section>
+  );
+}
+
+type Panel = { key: string; title: string; icon: ReactNode; legend?: ReactNode; body: ReactNode };
+
+const ICON = { width: 14, height: 14, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round" as const, strokeLinejoin: "round" as const, "aria-hidden": true };
+const ClockIcon = () => <svg {...ICON}><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></svg>;
+const PulseIcon = () => <svg {...ICON}><path d="M3 12h4l2-6 4 12 2-6h6" /></svg>;
+const PeopleIcon = () => <svg {...ICON}><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0" /><circle cx="17" cy="9" r="2.5" /><path d="M16 15.5a5 5 0 0 1 5.5 4.5" /></svg>;
+
+function SignalCarousel({ analytics, loading }: { analytics: DashboardAnalytics; loading: boolean }) {
+  const [index, setIndex] = useState(0);
+  const panels: Panel[] = [
+    {
+      key: "hours",
+      title: "Time of day",
+      icon: <ClockIcon />,
+      legend: <div className="chart-legend"><span><i className="violet-key" />Violet</span><span><i className="visit-key" />Visitors</span></div>,
+      body: <HourlyChart points={analytics.hours} loading={loading} />,
+    },
+    { key: "health", title: "Recognition health", icon: <PulseIcon />, body: <HealthBar metric={analytics.health} /> },
+    { key: "memory", title: "Memory by person", icon: <PeopleIcon />, body: <MemoryChart points={analytics.tenure} loading={loading} /> },
+  ];
+  const panel = panels[index];
+
+  return (
+    <article className="clinical-section signal-section">
+      <div className="section-header">
+        <h2>{panel.title}</h2>
+        <div className="signal-controls">
+          {panel.legend}
+          <div className="signal-tabs" role="tablist" aria-label="Analytics views">
+            {panels.map((item, position) => (
+              <button
+                key={item.key}
+                type="button"
+                role="tab"
+                aria-selected={position === index}
+                aria-label={item.title}
+                title={item.title}
+                className={position === index ? "active" : undefined}
+                onClick={() => setIndex(position)}
+              >
+                {item.icon}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="signal-panel" key={panel.key} role="tabpanel">{panel.body}</div>
+    </article>
   );
 }
 
@@ -74,90 +122,86 @@ function WeeklyChart({ points, loading, weeks, onWeeksChange }: { points: WeekPo
 }
 
 function HourlyChart({ points, loading }: { points: HourPoint[]; loading: boolean }) {
-  const width = 310;
-  const height = 215;
-  const margin = { top: 8, right: 8, bottom: 27, left: 24 };
+  const width = 720;
+  const height = 220;
+  const margin = { top: 12, right: 8, bottom: 28, left: 28 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
   const max = Math.max(1, ...points.flatMap((point) => [point.violetUses, point.visitors]));
   const group = plotWidth / points.length;
-  const barWidth = Math.max(2, group / 2 - 2);
+  const barWidth = Math.max(2, group / 2 - 3);
   const barHeight = (value: number) => (value / max) * plotHeight;
   const hasData = points.some((point) => point.violetUses || point.visitors);
   return (
-    <article className="clinical-section signal-section">
-      <div className="section-header"><h2>Time of day</h2><div className="chart-legend compact"><span><i className="violet-key" />Violet</span><span><i className="visit-key" />Visitors</span></div></div>
-      <svg className="hour-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Violet uses and visitors by waking hour">
-        <line className="chart-gridline" x1={margin.left} x2={width - margin.right} y1={margin.top + plotHeight} y2={margin.top + plotHeight} />
-        {points.map((point, index) => {
-          const center = margin.left + group * index + group / 2;
-          const violetHeight = barHeight(point.violetUses);
-          const visitHeight = barHeight(point.visitors);
-          return (
-            <g key={point.hour}>
-              <rect className="hour-violet" x={center - barWidth - 1} y={margin.top + plotHeight - violetHeight} width={barWidth} height={violetHeight}><title>{`${format.hour(point.hour)}: ${point.violetUses} Violet uses`}</title></rect>
-              <rect className="hour-visit" x={center + 1} y={margin.top + plotHeight - visitHeight} width={barWidth} height={visitHeight}><title>{`${format.hour(point.hour)}: ${point.visitors} visitors`}</title></rect>
-              {index % 4 === 0 && <text className="axis-label" x={center} y={height - 8} textAnchor="middle">{format.hour(point.hour)}</text>}
-            </g>
-          );
-        })}
-        {!loading && !hasData && <text className="empty-chart-label" x={width / 2} y={height / 2} textAnchor="middle">No data</text>}
-      </svg>
-    </article>
+    <svg className="hour-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Violet uses and visitors by waking hour">
+      <line className="chart-gridline" x1={margin.left} x2={width - margin.right} y1={margin.top + plotHeight} y2={margin.top + plotHeight} />
+      {points.map((point, index) => {
+        const center = margin.left + group * index + group / 2;
+        const violetHeight = barHeight(point.violetUses);
+        const visitHeight = barHeight(point.visitors);
+        return (
+          <g key={point.hour}>
+            <rect className="hour-violet" x={center - barWidth - 1} y={margin.top + plotHeight - violetHeight} width={barWidth} height={violetHeight}><title>{`${format.hour(point.hour)}: ${point.violetUses} Violet uses`}</title></rect>
+            <rect className="hour-visit" x={center + 1} y={margin.top + plotHeight - visitHeight} width={barWidth} height={visitHeight}><title>{`${format.hour(point.hour)}: ${point.visitors} visitors`}</title></rect>
+            {index % 2 === 0 && <text className="axis-label" x={center} y={height - 8} textAnchor="middle">{format.hour(point.hour)}</text>}
+          </g>
+        );
+      })}
+      {!loading && !hasData && <text className="empty-chart-label" x={width / 2} y={height / 2} textAnchor="middle">No data</text>}
+    </svg>
   );
 }
 
-function HealthDial({ metric }: { metric: DashboardAnalytics["health"] }) {
-  const percent = metric.rate == null ? null : Math.round(metric.rate * 100);
-  const angle = percent == null ? 0 : -90 + (Math.min(100, Math.max(0, percent)) / 100) * 180;
-  const radians = (angle * Math.PI) / 180;
+function HealthBar({ metric }: { metric: DashboardAnalytics["health"] }) {
+  const percent = metric.rate == null ? null : Math.round(Math.min(100, Math.max(0, metric.rate * 100)));
   const label = metric.status === "healthy" ? "Healthy" : metric.status === "watch" ? "Watch" : metric.status === "high" ? "High" : "No data";
   return (
-    <article className="clinical-section signal-section health-section">
-      <div className="section-header"><h2>Recognition health</h2></div>
-      <div className="dial-wrap">
-        <svg className="dial" viewBox="0 0 220 132" role="img" aria-label={percent == null ? "Recognition health unavailable" : `${percent}% mismatch rate`}>
-          <path className="dial-track" d="M20 110 A90 90 0 0 1 200 110" pathLength="100" />
-          <path className="dial-good" d="M20 110 A90 90 0 0 1 200 110" pathLength="100" />
-          <path className="dial-watch" d="M20 110 A90 90 0 0 1 200 110" pathLength="100" />
-          <path className="dial-high" d="M20 110 A90 90 0 0 1 200 110" pathLength="100" />
-          {percent != null && <line className="dial-needle" x1="110" y1="110" x2={110 + Math.cos(radians) * 67} y2={110 + Math.sin(radians) * 67} />}
-          <circle className="dial-center" cx="110" cy="110" r="7" />
-        </svg>
-        <div className="dial-value"><strong>{percent == null ? "—" : `${percent}%`}</strong><span>{label}</span></div>
+    <div className="health-panel">
+      <div className="health-readout">
+        <strong>{percent == null ? "—" : `${percent}%`}</strong>
+        <span>{label}</span>
       </div>
-      <div className="dial-count">{metric.comparableUses ? `${metric.mismatches}/${metric.comparableUses} mismatched` : "0 comparable events"}</div>
-    </article>
+      <div className="health-bar" role="img" aria-label={percent == null ? "Recognition health unavailable" : `${percent}% mismatch rate, ${label.toLowerCase()}`}>
+        <i className="health-good" />
+        <i className="health-watch" />
+        <i className="health-high" />
+        {percent != null && <b className="health-marker" style={{ left: `${percent}%` }} />}
+      </div>
+      <div className="health-scale">
+        <span style={{ left: "0%" }}>0%</span>
+        <span style={{ left: "30%" }}>30%</span>
+        <span style={{ left: "70%" }}>70%</span>
+        <span style={{ left: "100%" }}>100%</span>
+      </div>
+      <div className="health-count">{metric.comparableUses ? `${metric.mismatches}/${metric.comparableUses} mismatched` : "0 comparable events"}</div>
+    </div>
   );
 }
 
 function MemoryChart({ points, loading }: { points: TenurePoint[]; loading: boolean }) {
-  const width = 330;
-  const height = 240;
-  const margin = { top: 12, right: 8, bottom: 72, left: 26 };
+  const width = 720;
+  const height = 220;
+  const margin = { top: 12, right: 8, bottom: 62, left: 28 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
   const max = Math.max(1, ...points.map((point) => point.violetUses));
   const slot = plotWidth / Math.max(1, points.length);
-  const barWidth = Math.min(24, slot * 0.62);
+  const barWidth = Math.min(36, slot * 0.62);
   return (
-    <article className="clinical-section signal-section memory-section">
-      <div className="section-header"><h2>Memory by person</h2></div>
-      <svg className="memory-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Familiar people ranked by Violet uses with years known">
-        <line className="chart-gridline" x1={margin.left} x2={width - margin.right} y1={margin.top + plotHeight} y2={margin.top + plotHeight} />
-        {points.map((point, index) => {
-          const center = margin.left + slot * index + slot / 2;
-          const barHeight = (point.violetUses / max) * plotHeight;
-          return (
-            <g key={point.id}>
-              <rect className="memory-bar" x={center - barWidth / 2} y={margin.top + plotHeight - barHeight} width={barWidth} height={barHeight}><title>{`${point.name}: ${point.violetUses} Violet uses, known ${point.yearsKnown} years`}</title></rect>
-              <text className="memory-name" x={center} y={margin.top + plotHeight + 13} textAnchor="end" transform={`rotate(-55 ${center} ${margin.top + plotHeight + 13})`}>{point.name}</text>
-              <text className="memory-years" x={center} y={height - 5} textAnchor="middle">{point.yearsKnown}y</text>
-            </g>
-          );
-        })}
-        {!loading && points.length === 0 && <text className="empty-chart-label" x={width / 2} y={height / 2} textAnchor="middle">No people</text>}
-      </svg>
-    </article>
+    <svg className="memory-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Familiar people ranked by Violet uses with years known">
+      <line className="chart-gridline" x1={margin.left} x2={width - margin.right} y1={margin.top + plotHeight} y2={margin.top + plotHeight} />
+      {points.map((point, index) => {
+        const center = margin.left + slot * index + slot / 2;
+        const barHeight = (point.violetUses / max) * plotHeight;
+        return (
+          <g key={point.id}>
+            <rect className="memory-bar" x={center - barWidth / 2} y={margin.top + plotHeight - barHeight} width={barWidth} height={barHeight}><title>{`${point.name}: ${point.violetUses} Violet uses, known ${point.yearsKnown} years`}</title></rect>
+            <text className="memory-name" x={center} y={margin.top + plotHeight + 13} textAnchor="end" transform={`rotate(-45 ${center} ${margin.top + plotHeight + 13})`}>{point.name}</text>
+            <text className="memory-years" x={center} y={height - 5} textAnchor="middle">{point.yearsKnown}y</text>
+          </g>
+        );
+      })}
+      {!loading && points.length === 0 && <text className="empty-chart-label" x={width / 2} y={height / 2} textAnchor="middle">No people</text>}
+    </svg>
   );
 }
