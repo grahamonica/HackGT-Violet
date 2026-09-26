@@ -7,7 +7,6 @@ import { useGoogleCalendar } from "@/lib/client/useGoogleCalendar";
 import { usePatientProfile } from "@/lib/client/usePatientProfile";
 import { PortalHeader } from "./PortalHeader";
 import { PatientPanel } from "./PatientPanel";
-import { PeoplePanel } from "./PeoplePanel";
 import { AnalyticsDashboard } from "./AnalyticsDashboard";
 import { EditPatientModal } from "./EditPatientModal";
 import { AddPersonModal } from "./AddPersonModal";
@@ -39,7 +38,6 @@ export function Portal() {
       <div className="dashboard-layout">
         <div className="left-column">
           <PatientPanel profile={profile.profile} connected={calendar.connected} connecting={calendar.connecting} error={calendar.error} onConnect={calendar.connect} onEdit={() => setEditor({ kind: "patient" })} />
-          <PeoplePanel people={patient.people} />
         </div>
         <AnalyticsDashboard analytics={analytics} loading={!patient.hydrated || !calendar.hydrated} weeks={weeks} onWeeksChange={setWeeks} />
       </div>
