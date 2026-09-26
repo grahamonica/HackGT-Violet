@@ -1,4 +1,4 @@
-"""Training data from the dataset contract (SCHEMA.md): `dataset/queries.csv`
+"""Training data from the dataset contract: `dataset/queries.csv`
 + `dataset/dataset_info.json`, images loaded from `crop_path`.
 
 Each sample is the crop aligned to the ArcFace template with its landmarks,

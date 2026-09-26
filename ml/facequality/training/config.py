@@ -34,7 +34,7 @@ def setup_logging(verbose: bool = False) -> None:
 
 @dataclass
 class Paths:
-    data: Path  # dataset DATA_ROOT (see SCHEMA.md)
+    data: Path  # dataset DATA_ROOT (see ml/facequality/dataset/README.md)
     weights: Path  # pretrained backbone weights (prepare_weights.py)
     runs: Path  # training outputs
     cache: Path  # cached frozen features

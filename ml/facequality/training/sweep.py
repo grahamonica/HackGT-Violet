@@ -1,6 +1,6 @@
 """Expand a sweep config into a fixed, indexed list of runs and execute some of
 them. Indices are stable (filters never renumber), so they map directly onto
-Slurm job-array task ids. Finished runs (metrics.json present) are skipped.
+job-array task ids or per-GPU splits. Finished runs (metrics.json present) are skipped.
 
     python -m ml.facequality.training.sweep --list
     python -m ml.facequality.training.sweep --all --mode frozen

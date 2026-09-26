@@ -1,7 +1,7 @@
 # Violet face-quality models: training configuration.
 #
 # Paths are relative to ml/facequality/training/ unless absolute, and each can be
-# overridden with an env var (useful on PACE, e.g. to point at scratch space).
+# overridden with an env var (useful when data is read-only or outputs must go elsewhere).
 # Any value can be overridden per run with `--set section.key=value`.
 
 paths:

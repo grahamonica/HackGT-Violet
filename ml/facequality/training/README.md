@@ -5,8 +5,10 @@ it**. The score is in [0, 1]; higher means Rekognition is more likely to return
 the right person with high confidence. Use it to pick the best frames before
 calling Rekognition.
 
-Trained on the dataset described in [`SCHEMA.md`](../../../SCHEMA.md) (built by
-`ml/facequality/dataset`). This code reads only the contract files
+Latest results and the recommended model: [`RESULTS.md`](RESULTS.md).
+
+Trained on the dataset built by `ml/facequality/dataset` (see its
+[README](../dataset/README.md)). This code reads only the contract files
 `dataset/queries.csv` + `dataset/dataset_info.json` and the `crop_path` images.
 
 ## Models
@@ -80,6 +82,16 @@ used once by `evaluate.py`.
 Uses the shared `violet-ml` environment (`ml/environment.yml`: PyTorch, timm,
 OpenCV, onnx/onnxruntime). CUDA is used when available (`device: auto`), CPU otherwise.
 
+Without conda (e.g. notebook services or cloud images that already ship PyTorch):
+
+```bash
+pip install timm==1.0.30 opencv-python-headless pandas pyyaml   # training
+pip install onnx onnxruntime huggingface_hub                     # prepare_weights only
+```
+
+`timm` is pinned because EdgeFace's checkpoint keys depend on its EdgeNeXt code;
+a mismatch fails loudly at load time rather than training on wrong weights.
+
 Download and convert the pretrained weights once (needs internet; ~420 MB
 download, ~200 MB kept):
 
@@ -111,20 +123,36 @@ python -m ml.facequality.training.evaluate --summary ml/facequality/training/run
 python -m ml.facequality.training.evaluate --run ml/facequality/training/runs/sweep1/r50/frozen/<id>-s0
 ```
 
-Sweep indices are stable (filters never renumber them) and finished runs are
-skipped, so a sweep can be split across machines/GPUs/job-array tasks and
-simply re-launched after an interruption. Fine-tuning also resumes from
-`last.pt` within a run. For final numbers, re-run the chosen configs with a
-few seeds (`--set seed=1`, …).
+Sweep indices are stable and finished runs are skipped, so a sweep can be split
+up and simply re-launched after an interruption; fine-tuning also resumes from
+`last.pt` within a run. For final numbers, re-run the chosen configs with a few
+seeds (`--set seed=1`, …).
+
+### On a new machine
+
+1. **Code:** the `ml/` package (training only imports `ml.facequality.training`).
+   Run commands from the directory that contains `ml/`.
+2. **Dependencies:** `violet-ml`, or the pip lines above.
+3. **Data:** `dataset/queries.csv`, `dataset/dataset_info.json` and the query images
+   under `crops/`; point `VIOLET_FIQA_DATA_DIR` at the folder holding them (can be
+   read-only).
+4. **Weights:** run `prepare_weights` (needs internet once), or copy an existing
+   `weights/` folder and point `VIOLET_FIQA_WEIGHTS_DIR` at it if the machine is offline.
+5. **Outputs:** point `VIOLET_FIQA_RUNS_DIR` / `VIOLET_FIQA_CACHE_DIR` at writable
+   storage that persists (notebook services often only keep one output folder).
+6. **Run** the commands above. On multiple GPUs, start one `sweep --index ...` process
+   per GPU with `CUDA_VISIBLE_DEVICES` set, splitting the indices from `sweep --list`.
+
+In notebooks, run the commands as shell commands (`!python -m ...`) so their output
+streams into the cell. On machines where the notebook has no internet, install
+the dependencies and prepare the weights beforehand.
 
 ### Configuration
 
 `configs/default.yaml` holds every setting; `modes.frozen` / `modes.finetune`
 override it per mode, and `--set key=value` overrides anything per run.
 
-Paths are relative to this directory, or set by environment variable — useful
-on shared machines, clusters or notebooks where data is read-only or outputs
-must go to scratch:
+Paths are relative to this directory, or set by environment variable:
 
 | setting | env var | default |
 |---|---|---|
@@ -132,11 +160,6 @@ must go to scratch:
 | `paths.weights_dir` | `VIOLET_FIQA_WEIGHTS_DIR` | `weights/` |
 | `paths.runs_dir` | `VIOLET_FIQA_RUNS_DIR` | `runs/` |
 | `paths.cache_dir` | `VIOLET_FIQA_CACHE_DIR` | `cache/` |
-
-The data directory only needs `dataset/queries.csv`, `dataset/dataset_info.json`
-and the query images under `crops/`. Pretrained weights are read from local
-files only, so training works without internet once `prepare_weights` has run
-(or its output directory has been copied over).
 
 ### Outputs (`runs/<name>/`)
 
@@ -150,12 +173,10 @@ files only, so training works without internet once `prepare_weights` has run
 
 Load a trained model with `evaluate.load_run(run_dir, device)`.
 
-When calling the training functions from your own script with
-`data.num_workers > 0`, put the calls under `if __name__ == "__main__":`. On
-Windows, DataLoader workers re-import the main script; without the guard they
-crash on startup and the run waits on them until the loader timeout (5 min).
-The CLIs above already do this. Each Windows worker also costs ~3 GB of memory,
-so use `--set data.num_workers=2` on machines with limited RAM.
+**Windows:** DataLoader workers re-import the main script, so when calling the
+training functions from your own script, put the calls under
+`if __name__ == "__main__":` (the CLIs already do). Each worker also costs ~3 GB
+of memory; use `--set data.num_workers=2` on machines with limited RAM.
 
 ## Files
 

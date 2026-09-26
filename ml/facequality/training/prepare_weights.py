@@ -1,5 +1,5 @@
-"""Download and prepare pretrained backbone weights (run once, e.g. on a PACE
-login node, since compute nodes may not have internet).
+"""Download and prepare pretrained backbone weights (run once, with internet;
+training itself only reads the local files).
 
 - mbf, r50: InsightFace's released ONNX models (`buffalo_s/w600k_mbf.onnx`,
   `buffalo_l/w600k_r50.onnx`, both trained on WebFace600K), converted to

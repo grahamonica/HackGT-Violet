@@ -4,6 +4,7 @@ ml/data
 # ML generated data / artifacts
 ml/**/data/
 ml/**/models/
+ml/**/cache/
 *.onnx
 *.pt
 *.pth
