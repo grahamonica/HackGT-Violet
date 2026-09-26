@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import random
 import threading
+from collections import Counter
 import time
 from typing import Any, Callable, TypeVar
 
@@ -18,6 +19,10 @@ from botocore.exceptions import BotoCoreError, ClientError, ConnectionError as B
 from .utils import Config, log
 
 T = TypeVar("T")
+
+# Retries by error code across all calls in this process (reported per stage).
+RETRY_COUNTS: Counter[str] = Counter()
+_retry_lock = threading.Lock()
 
 RETRYABLE_CODES = {
     "ThrottlingException",
@@ -87,6 +92,8 @@ def call_with_retry(
             transient = (code in RETRYABLE_CODES and code not in no_retry) if isinstance(e, ClientError) else True
             if not transient or attempt == attempts:
                 raise
+            with _retry_lock:
+                RETRY_COUNTS[code or type(e).__name__] += 1
             delay = min(float(a.backoff_max_seconds), float(a.backoff_base_seconds) * 2 ** (attempt - 1))
             delay *= 0.5 + random.random()  # jitter
             log.debug("%s on %s (attempt %d/%d); retrying in %.1fs", code or type(e).__name__, fn.__name__, attempt, attempts, delay)

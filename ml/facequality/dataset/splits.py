@@ -5,7 +5,8 @@ Order of operations (per the spec):
   2. keep identities with >= min_images_per_identity images
   3. deterministic seeded shuffle of the eligible list
   4. optionally cap to the first max_identities and/or the shortest prefix
-     whose images total >= target_images
+     whose expected query count (images - enrollment, capped at
+     max_queries_per_identity) totals >= target_queries
   5. assign splits by position in the shuffled order
 
 Splits are assigned by position using a seeded repeating pattern whose block
@@ -41,7 +42,7 @@ def split_pattern(fractions: dict[str, float], seed: int, max_block: int = 100) 
     return pattern
 
 
-def select_identities(cfg: Config, max_identities: int | None = None, target_images: int | None = None) -> pd.DataFrame:
+def select_identities(cfg: Config, max_identities: int | None = None, target_queries: int | None = None) -> pd.DataFrame:
     src = read_csv(cfg.paths.source_images)
     sel = cfg.selection
     counts = src.groupby("identity_id").agg(
@@ -56,16 +57,22 @@ def select_identities(cfg: Config, max_identities: int | None = None, target_ima
     rng = random.Random(cfg.random_seed)
     rng.shuffle(eligible)
 
-    # Cap = shortest prefix of the seeded order satisfying the configured limits.
+    # Expected queries per identity: images minus enrollment, capped so a few
+    # large identities cannot dominate the query set.
+    per_cap = sel.get("max_queries_per_identity")
+    exp_q = counts["num_images"] - int(cfg.enrollment.num_images)
+    counts["expected_queries"] = exp_q if per_cap is None else exp_q.clip(upper=int(per_cap))
+
+    # Selection = shortest prefix of the seeded order satisfying the limits.
     # A CLI override replaces both config limits.
-    if max_identities is not None or target_images is not None:
-        cap, target = max_identities, target_images
+    if max_identities is not None or target_queries is not None:
+        cap, target = max_identities, target_queries
     else:
-        cap, target = sel.get("max_identities"), sel.get("target_images")
+        cap, target = sel.get("max_identities"), sel.get("target_queries")
     if cap is not None:
         eligible = eligible[: int(cap)]
     if target is not None:
-        cum = counts.loc[eligible, "num_images"].cumsum().to_numpy()
+        cum = counts.loc[eligible, "expected_queries"].cumsum().to_numpy()
         eligible = eligible[: int((cum < int(target)).sum()) + 1]
 
     pattern = split_pattern(
@@ -78,12 +85,13 @@ def select_identities(cfg: Config, max_identities: int | None = None, target_ima
 
     write_csv_atomic(out, cfg.paths.splits)
     log.info(
-        "Identities: %d source, %d eligible (>= %d images), %d selected with %d images (%s)",
+        "Identities: %d source, %d eligible (>= %d images), %d selected: %d images, ~%d queries (%s)",
         n_source,
         n_eligible,
         sel.min_images_per_identity,
         len(out),
         int(out.num_images.sum()),
+        int(out.expected_queries.sum()),
         ", ".join(f"{s}={int((out.split == s).sum())}" for s in SPLITS),
     )
     write_json_atomic(

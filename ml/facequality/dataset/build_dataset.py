@@ -3,10 +3,11 @@
     python -m ml.facequality.dataset.build_dataset <stage> [options]
 
 Stages (in pipeline order):
-    prepare     fetch/parse the source dataset into work/source_images.csv
-    split       filter identities, cap, assign identity-disjoint splits
-    preprocess  landmark-aligned crops + cheap image metadata
-    select      choose enrollment references per identity
+    prepare     fetch/parse source annotations into work/source_images.csv
+    split       filter identities, sample to a query budget, assign identity-disjoint splits
+    preprocess  fetch sampled photos; bbox+margin crops, crop-relative landmarks, metadata
+    select      choose clean enrollment references per identity
+    queries     choose queries per identity; degrade ~50% (geometry-preserving)
     enroll      create Rekognition users, index + associate references   [AWS]
     label       SearchUsersByImage for every query crop                    [AWS]
     assemble    write the SCHEMA.md contract outputs (no AWS calls)
@@ -22,23 +23,25 @@ import argparse
 import sys
 import time
 
-from . import assemble, enroll_rekognition, label_rekognition, preprocess_faces, report, select_enrollment, splits
+from . import assemble, enroll_rekognition, label_rekognition, make_queries, preprocess_faces, report, select_enrollment, splits
 from .sources import SOURCES
 from .utils import DEFAULT_CONFIG, Config, load_config, log, setup_logging
 
 AWS_STAGES = {"enroll", "label"}
-ORDER = ["prepare", "split", "preprocess", "select", "enroll", "label", "assemble", "report"]
+ORDER = ["prepare", "split", "preprocess", "select", "queries", "enroll", "label", "assemble", "report"]
 
 
 def run_stage(stage: str, cfg: Config, args: argparse.Namespace) -> None:
     if stage == "prepare":
         SOURCES[cfg.source.type].prepare(cfg)
     elif stage == "split":
-        splits.select_identities(cfg, args.max_identities, args.target_images)
+        splits.select_identities(cfg, args.max_identities, args.target_queries)
     elif stage == "preprocess":
         preprocess_faces.preprocess(cfg, args.workers)
     elif stage == "select":
         select_enrollment.select(cfg)
+    elif stage == "queries":
+        make_queries.make_queries(cfg, args.workers)
     elif stage == "enroll":
         enroll_rekognition.enroll(cfg, dry_run=args.dry_run, yes=args.yes)
     elif stage == "label":
@@ -57,13 +60,13 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--config", default=str(DEFAULT_CONFIG), help="path to dataset.yaml")
     ap.add_argument("--max-identities", type=int, default=None,
                     help="cap selected identities after filtering (overrides config; only ever adds identities as it grows)")
-    ap.add_argument("--target-images", type=int, default=None,
-                    help="take identities in seeded order until their images total >= N (overrides config)")
+    ap.add_argument("--target-queries", type=int, default=None,
+                    help="take identities in seeded order until expected queries total >= N (overrides config)")
     ap.add_argument("--dry-run", action="store_true", help="AWS stages: report what would be called and the cost, make no calls")
     ap.add_argument("--yes", action="store_true", help="allow AWS runs larger than aws.confirm_calls_above")
     ap.add_argument("--skip-aws", action="store_true", help="with 'all': skip enroll + label")
     ap.add_argument("--resume", action="store_true", help="accepted for clarity; every stage always resumes")
-    ap.add_argument("--workers", type=int, default=None, help="threads for preprocessing (default: CPU count)")
+    ap.add_argument("--workers", type=int, default=None, help="threads for preprocessing / query building (default: CPU count)")
     ap.add_argument("-v", "--verbose", action="store_true")
     args = ap.parse_args(argv)
 

@@ -8,6 +8,11 @@ dependencies:
   - python=3.11
   - pip
   - numpy
+  # Pin the BLAS backend: conda-forge's default MKL 2026 build crashes numpy
+  # linear algebra on Windows (fatal exception 0xc06d007f).
+  - libblas=*=*openblas
+  - liblapack=*=*openblas
+  - libcblas=*=*openblas
   - pandas
   - pyarrow
   - pyyaml

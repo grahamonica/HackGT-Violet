@@ -14,20 +14,33 @@ import pandas as pd
 
 from .enroll_rekognition import load_enrollment_state
 from .label_rekognition import FINAL_STATUSES
-from .utils import SCHEMA_VERSION, Config, iter_jsonl, log, read_csv, write_csv_atomic, write_json_atomic
+from .utils import (
+    CROP_LANDMARK_COLS,
+    SCHEMA_VERSION,
+    Config,
+    iter_jsonl,
+    log,
+    read_csv,
+    write_csv_atomic,
+    write_json_atomic,
+)
 
-PROVENANCE = ["image_id", "identity_id", "source_dataset", "source_identity_id", "session_id", "split",
-              "crop_path", "source_image_path"]
-IMAGE_META = ["yaw_proxy", "pitch_proxy", "roll_deg", "orig_face_w", "orig_face_h", "out_of_frame_frac",
-              "sharpness", "brightness", "contrast"]
+PROVENANCE = ["image_id", "source_image_id", "identity_id", "source_dataset", "source_identity_id", "session_id",
+              "split", "crop_path", "source_image_path"]
+GEOMETRY = ["crop_width", "crop_height", "crop_x0", "crop_y0", "source_width", "source_height",
+            "face_w", "face_h", "landmarks_in_crop"]
+AUGMENTATION = ["augmentation_applied", "augmentation_type", "augmentation_severity", "augmentation_params"]
+IMAGE_META = ["yaw_proxy", "pitch_proxy", "roll_deg", "sharpness", "brightness", "contrast"]
 AWS_COLS = ["aws_status", "aws_gallery_size", "aws_num_faces", "aws_num_candidates",
             "aws_top1_id", "aws_top1_similarity", "aws_top2_id", "aws_top2_similarity",
             "aws_true_rank", "aws_true_similarity", "aws_best_wrong_id", "aws_best_wrong_similarity",
             "aws_correct_top1", "aws_true_returned",
             "aws_face_confidence", "aws_face_sharpness", "aws_face_brightness",
             "aws_face_yaw", "aws_face_pitch", "aws_face_roll", "aws_face_model_version"]
-QUERY_COLS = PROVENANCE + IMAGE_META + AWS_COLS
-INT_COLS = ["orig_face_w", "orig_face_h", "aws_gallery_size", "aws_num_faces", "aws_num_candidates",
+QUERY_COLS = PROVENANCE + GEOMETRY + CROP_LANDMARK_COLS + AUGMENTATION + IMAGE_META + AWS_COLS
+IMAGE_COLS = [c for c in PROVENANCE if c != "source_image_id"] + GEOMETRY + CROP_LANDMARK_COLS + IMAGE_META
+INT_COLS = ["crop_width", "crop_height", "crop_x0", "crop_y0", "source_width", "source_height", "face_w", "face_h",
+            "landmarks_in_crop", "augmentation_applied", "aws_gallery_size", "aws_num_faces", "aws_num_candidates",
             "aws_true_rank", "aws_correct_top1", "aws_true_returned", "num_images", "num_enrollment",
             "num_query", "aws_enrolled", "is_enrollment"]
 
@@ -122,18 +135,22 @@ def assemble(cfg: Config) -> pd.DataFrame:
         enroll_rows.append(row)
     enrollment = pd.DataFrame(enroll_rows)
 
-    # images.csv: every image of a selected identity.
+    # images.csv: every image of a selected identity, as its CLEAN crop.
     images = (pre.drop(columns=["identity_id"])
-              .merge(src.drop(columns=[c for c in src if c.startswith("lm_")]), on="image_id")
+              .merge(src.drop(columns=[c for c in src if c.startswith(("lm_", "bbox_"))]), on="image_id")
               .merge(splits[["identity_id", "split"]], on="identity_id"))
     images["is_enrollment"] = images.image_id.isin(enroll_role).astype(int)
     images["enroll_role"] = images.image_id.map(enroll_role)
     ok_ids = set(sel.identity_id[sel.status == "ok"])
-    write_csv_atomic(_as_int(images[PROVENANCE + IMAGE_META + ["is_enrollment", "enroll_role", "preprocess_status"]]
+    write_csv_atomic(_as_int(images[IMAGE_COLS + ["is_enrollment", "enroll_role", "preprocess_status"]]
                              .sort_values("image_id")), paths.manifests / "images.csv")
 
-    # queries.csv
-    q = images[(images.preprocess_status == "ok") & (images.is_enrollment == 0) & images.identity_id.isin(ok_ids)]
+    # queries.csv: the query plan (clean or degraded final crops), minus anything actually enrolled.
+    qwork = read_csv(paths.work / "queries.csv")
+    meta = images.drop(columns=["crop_path", *[c for c in IMAGE_META if c in ("sharpness", "brightness", "contrast")],
+                                "crop_width", "crop_height", "landmarks_in_crop"])
+    q = qwork.drop(columns=["identity_id", "clean_crop_path"]).merge(meta, on="image_id", how="left")
+    q = q[(q.is_enrollment == 0) & q.identity_id.isin(ok_ids)]
     labels, errors = _latest_labels(cfg), _label_errors(cfg)
     flat = []
     for r in q.itertuples():
@@ -172,11 +189,14 @@ def assemble(cfg: Config) -> pd.DataFrame:
         "config_hash": cfg.hash(),
         "random_seed": cfg.random_seed,
         "sources": sorted(images.source_dataset.unique().tolist()),
-        "crop": ({"mode": "none", "note": "source images used as-is (CelebA aligned, 178x218)", "format": "jpeg"}
-                 if cfg.crop.mode == "none" else
-                 {"mode": "align", "size": int(cfg.crop.crop_size), "face_scale": float(cfg.crop.face_scale),
-                  "template": "arcface_5pt_112", "format": "jpeg",
-                  "tight_face_box_px": int(round(cfg.crop.crop_size * cfg.crop.face_scale))}),
+        "crop": {"method": "source bbox expanded by margin on each side, clamped to the image; no alignment or resizing",
+                 "margin": float(cfg.crop.margin), "format": "jpeg", "clean_jpeg_quality": int(cfg.crop.jpeg_quality),
+                 "landmarks": "crop-relative pixels, CelebA 5-point order"},
+        "augmentation": {"degrade_fraction": float(cfg.queries.degrade_fraction),
+                         "types": list(cfg.queries.types), "severities": list(cfg.queries.severities),
+                         "params": {k: dict(v) for k, v in cfg.queries.params.items()},
+                         "param_jitter": float(cfg.queries.param_jitter),
+                         "counts": queries.augmentation_type.value_counts().to_dict()},
         "aws": {"region": cfg.aws.region, "collection_id": cfg.aws.collection_id,
                 "face_model_versions": fmv, "gallery_sizes": sorted(int(g) for g in gallery),
                 "search_params": {"UserMatchThreshold": cfg.aws.search_user_match_threshold,

@@ -17,7 +17,7 @@ import numpy as np
 import pandas as pd
 import yaml
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 DATASET_DIR = Path(__file__).resolve().parent
 DEFAULT_CONFIG = DATASET_DIR / "configs" / "dataset.yaml"
 
@@ -31,7 +31,7 @@ def setup_logging(verbose: bool = False) -> None:
         datefmt="%H:%M:%S",
     )
     # boto's own logging is very chatty at DEBUG.
-    for noisy in ("botocore", "boto3", "urllib3"):
+    for noisy in ("botocore", "boto3", "urllib3", "httpx", "httpcore", "huggingface_hub", "fsspec"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
@@ -232,41 +232,24 @@ def log_failure(writer: JsonlWriter, stage: str, image_id: str | None, error: st
 # Face geometry
 # ---------------------------------------------------------------------------
 
-# InsightFace / ArcFace 5-point template in a 112x112 frame:
-# image-left eye, image-right eye, nose tip, image-left mouth corner, image-right mouth corner.
-ARCFACE_TEMPLATE = np.array(
-    [
-        [38.2946, 51.6963],
-        [73.5318, 51.5014],
-        [56.0252, 71.7366],
-        [41.5493, 92.3655],
-        [70.7299, 92.2041],
-    ],
-    dtype=np.float32,
-)
+LANDMARK_NAMES = ["left_eye", "right_eye", "nose", "left_mouth", "right_mouth"]
+# Source-table landmark columns (lm_0 = image-left eye, ... in CelebA order).
+LANDMARK_COLS = [f"lm_{i}_{a}" for i in range(5) for a in ("x", "y")]
+# Contract (crop-relative) landmark columns.
+CROP_LANDMARK_COLS = [f"{n}_{a}" for n in LANDMARK_NAMES for a in ("x", "y")]
+BBOX_COLS = ["bbox_x", "bbox_y", "bbox_w", "bbox_h"]
 
 
-def crop_template(crop_size: int, face_scale: float) -> np.ndarray:
-    """ArcFace template scaled so the 112 frame fills the central face_scale of the crop."""
-    s = crop_size * face_scale / 112.0
-    offset = crop_size * (1.0 - face_scale) / 2.0
-    return ARCFACE_TEMPLATE * s + offset
-
-
-def align_face(img: np.ndarray, landmarks: np.ndarray, crop_size: int, face_scale: float) -> tuple[np.ndarray, float]:
-    """Similarity-warp img so its 5 landmarks match the template.
-
-    Returns (crop, out_of_frame_frac).
-    """
-    dst = crop_template(crop_size, face_scale)
-    M, _ = cv2.estimateAffinePartial2D(landmarks.astype(np.float32), dst, method=cv2.LMEDS)
-    if M is None:
-        raise ValueError("could not estimate similarity transform")
-    crop = cv2.warpAffine(img, M, (crop_size, crop_size), flags=cv2.INTER_LINEAR, borderValue=(0, 0, 0))
-    mask = cv2.warpAffine(
-        np.full(img.shape[:2], 255, np.uint8), M, (crop_size, crop_size), flags=cv2.INTER_NEAREST, borderValue=0
-    )
-    return crop, float((mask == 0).mean())
+def margin_crop_box(bbox: tuple[float, float, float, float], margin: float, img_w: int, img_h: int) -> tuple[int, int, int, int]:
+    """Expand (x, y, w, h) by `margin` * w/h on every side, clamp to the image. Returns (x0, y0, x1, y1)."""
+    x, y, w, h = bbox
+    x0 = int(max(0, np.floor(x - margin * w)))
+    y0 = int(max(0, np.floor(y - margin * h)))
+    x1 = int(min(img_w, np.ceil(x + w + margin * w)))
+    y1 = int(min(img_h, np.ceil(y + h + margin * h)))
+    if x1 <= x0 or y1 <= y0:
+        raise ValueError(f"empty crop box for bbox {bbox} in {img_w}x{img_h} image")
+    return x0, y0, x1, y1
 
 
 def pose_proxies(lm: np.ndarray) -> dict[str, float]:
@@ -296,9 +279,8 @@ def pose_proxies(lm: np.ndarray) -> dict[str, float]:
 def face_region_stats(img: np.ndarray, lm: np.ndarray) -> dict[str, float]:
     """Sharpness / brightness / contrast over a square box around the landmarks.
 
-    Measured on the source image so the numbers do not depend on crop.mode.
     Box: centered on the landmark centroid, side 2x the larger of interocular
-    and eye-to-mouth distance (roughly brows to chin).
+    and eye-to-mouth distance (roughly brows to chin), clipped to the image.
     """
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     eye_mid, mouth_mid = (lm[0] + lm[1]) / 2, (lm[3] + lm[4]) / 2

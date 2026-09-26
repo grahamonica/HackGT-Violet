@@ -24,6 +24,7 @@ from botocore.exceptions import ClientError
 from tqdm import tqdm
 
 from .aws import (
+    RETRY_COUNTS,
     RateLimiter,
     call_with_retry,
     ensure_collection,
@@ -185,3 +186,4 @@ def enroll(cfg: Config, dry_run: bool = False, yes: bool = False) -> None:
                 n_err += 1
                 log_failure(fails, "enroll", None, f"{type(e).__name__}: {e}", identity_id=ident)
     log.info("Enroll done: %d enrolled, %d errors (see %s)", n_done, n_err, paths.rel(paths.failures))
+    log.info("Transient retries (throttling etc.): %s", dict(RETRY_COUNTS) or "none")

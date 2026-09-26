@@ -1,16 +1,15 @@
-"""Face crops + cheap per-image metadata.
+"""Clean face crops + crop-relative landmarks + cheap per-image metadata.
 
-No detector is run: every source provides 5-point landmarks (CelebA ships
-them). crop.mode selects how the model/Rekognition input is produced:
+For every image of a selected identity:
+  1. fetch the original in-the-wild photo if needed (source adapter)
+  2. expand the source bbox by crop.margin on every side, clamp to the image
+  3. crop that region (no detector, no alignment, no resizing)
+  4. convert the 5 source landmarks into crop-relative coordinates
+  5. save the crop to crops/<source>/<identity_id>/<image_id>.jpg
 
-  none   use the source image as-is (CelebA's aligned 178x218 images);
-         crop_path == source_image_path and no new file is written
-  align  similarity-warp onto the ArcFace 5-point template at crop_size,
-         written to crops/<source>/<identity_id>/<image_id>.jpg
-
-Mediocre faces are kept on purpose; only images whose file or landmarks are
-unusable are logged as failures. Resumable: rows already in
-work/preprocessing.csv whose crop exists are skipped.
+These clean crops serve both enrollment and clean queries; degraded queries
+are derived from them later (make_queries) without changing their geometry.
+Resumable: rows already in work/preprocessing.csv whose crop exists are skipped.
 """
 
 from __future__ import annotations
@@ -23,16 +22,18 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from .prepare_celeba import LANDMARK_COLS
 from .sources import SOURCES
 from .utils import (
+    BBOX_COLS,
+    CROP_LANDMARK_COLS,
+    LANDMARK_COLS,
     Config,
     JsonlWriter,
-    align_face,
     dhash,
     face_region_stats,
     log,
     log_failure,
+    margin_crop_box,
     pose_proxies,
     read_csv,
     write_csv_atomic,
@@ -41,39 +42,52 @@ from .utils import (
 CHECKPOINT_EVERY = 2000
 
 
-def crop_rel_path(cfg: Config, row: pd.Series) -> str:
-    if cfg.crop.mode == "none":
-        return row.source_image_path
+def crop_rel_path(row) -> str:
     return f"crops/{row.source_dataset}/{row.identity_id}/{row.image_id}.jpg"
 
 
-def _process_one(cfg: Config, row: pd.Series) -> dict:
+def save_jpeg(img: np.ndarray, dst, quality: int) -> None:
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    tmp = dst.with_suffix(".tmp.jpg")
+    if not cv2.imwrite(str(tmp), img, [cv2.IMWRITE_JPEG_QUALITY, int(quality)]):
+        raise IOError(f"failed to write {dst}")
+    os.replace(tmp, dst)
+
+
+def crop_metadata(crop: np.ndarray, lm_crop: np.ndarray) -> dict:
+    """Metadata computed on a stored crop (clean or degraded)."""
+    h, w = crop.shape[:2]
+    inside = (lm_crop[:, 0] >= 0) & (lm_crop[:, 0] < w) & (lm_crop[:, 1] >= 0) & (lm_crop[:, 1] < h)
+    return {
+        "crop_width": w,
+        "crop_height": h,
+        "landmarks_in_crop": int(inside.all()),
+        **face_region_stats(crop, lm_crop),
+    }
+
+
+def _process_one(cfg: Config, row) -> dict:
     paths = cfg.paths
-    crop_cfg = cfg.crop
-    out = {"image_id": row.image_id, "identity_id": row.identity_id, "crop_path": crop_rel_path(cfg, row)}
-    lm = row[LANDMARK_COLS].to_numpy(dtype=np.float64).reshape(5, 2)
-    if np.isnan(lm).any():
-        raise ValueError("missing landmarks")
+    out = {"image_id": row.image_id, "identity_id": row.identity_id, "crop_path": crop_rel_path(row)}
     img = cv2.imread(str(paths.abs(row.source_image_path)), cv2.IMREAD_COLOR)
     if img is None:
         raise ValueError(f"unreadable image {row.source_image_path}")
+    src_h, src_w = img.shape[:2]
+    bbox = tuple(float(getattr(row, c)) for c in BBOX_COLS)
+    x0, y0, x1, y1 = margin_crop_box(bbox, float(cfg.crop.margin), src_w, src_h)
+    crop = img[y0:y1, x0:x1]
 
-    if crop_cfg.mode == "none":
-        crop, oof = img, 0.0
-    elif crop_cfg.mode == "align":
-        crop, oof = align_face(img, lm, crop_cfg.crop_size, crop_cfg.face_scale)
-        dst = paths.abs(out["crop_path"])
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        tmp = dst.with_suffix(".tmp.jpg")
-        if not cv2.imwrite(str(tmp), crop, [cv2.IMWRITE_JPEG_QUALITY, int(crop_cfg.jpeg_quality)]):
-            raise IOError(f"failed to write {dst}")
-        os.replace(tmp, dst)
-    else:
-        raise ValueError(f"unknown crop.mode {crop_cfg.mode!r}")
+    lm_src = np.array([getattr(row, c) for c in LANDMARK_COLS], dtype=np.float64).reshape(5, 2)
+    lm_crop = lm_src - np.array([x0, y0], dtype=np.float64)
 
-    out.update(pose_proxies(lm))
-    out.update(face_region_stats(img, lm))
-    out["out_of_frame_frac"] = oof
+    save_jpeg(crop, paths.abs(out["crop_path"]), cfg.crop.jpeg_quality)
+
+    out.update({"source_width": src_w, "source_height": src_h,
+                "crop_x0": x0, "crop_y0": y0,
+                "face_w": bbox[2], "face_h": bbox[3]})
+    out.update(dict(zip(CROP_LANDMARK_COLS, lm_crop.flatten().tolist())))
+    out.update(pose_proxies(lm_crop))
+    out.update(crop_metadata(crop, lm_crop))
     out["dhash"] = f"{dhash(crop):016x}"
     out["preprocess_status"] = "ok"
     return out
@@ -99,16 +113,15 @@ def preprocess(cfg: Config, workers: int | None = None) -> pd.DataFrame:
     results: list[dict] = ok_done.to_dict("records")
     n_fail = 0
 
-    def run(row: pd.Series) -> dict:
+    def run(row) -> dict:
         try:
             return _process_one(cfg, row)
         except Exception as e:  # noqa: BLE001 - logged per image, never fatal
-            return {"image_id": row.image_id, "identity_id": row.identity_id, "crop_path": crop_rel_path(cfg, row),
+            return {"image_id": row.image_id, "identity_id": row.identity_id, "crop_path": crop_rel_path(row),
                     "preprocess_status": "failed", "error": str(e)}
 
     with JsonlWriter(paths.failures) as fails, ThreadPoolExecutor(workers or os.cpu_count()) as ex:
-        rows = (r for _, r in todo.iterrows())
-        for i, res in enumerate(tqdm(ex.map(run, rows), total=len(todo), desc="crops", unit="img"), 1):
+        for i, res in enumerate(tqdm(ex.map(run, todo.itertuples()), total=len(todo), desc="crops", unit="img"), 1):
             if res["preprocess_status"] == "failed":
                 n_fail += 1
                 log_failure(fails, "preprocess", res["image_id"], res.pop("error"))
@@ -117,7 +130,6 @@ def preprocess(cfg: Config, workers: int | None = None) -> pd.DataFrame:
                 write_csv_atomic(pd.DataFrame(results), paths.preprocessing)
 
     df = pd.DataFrame(results)
-    # Only keep rows for currently selected identities, in a stable order.
     df = df[df.image_id.isin(set(todo_src.image_id))].sort_values("image_id").reset_index(drop=True)
     write_csv_atomic(df, paths.preprocessing)
     log.info("Preprocess done: %d ok, %d failed this run", int((df.preprocess_status == "ok").sum()), n_fail)

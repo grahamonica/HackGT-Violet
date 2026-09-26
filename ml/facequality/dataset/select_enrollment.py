@@ -1,10 +1,10 @@
-"""Automatic, deterministic enrollment/reference selection.
+"""Automatic, deterministic enrollment/reference selection (always clean crops).
 
 Per identity, from successfully preprocessed images:
-  1. gate "sufficiently good" candidates (face size, exposure, roll, yaw <= side
-     range max, framing)
+  1. gate "sufficiently good" candidates (source face size, exposure, roll,
+     yaw <= side range max, all landmarks inside the crop)
   2. score quality as a weighted sum of within-identity percentile ranks
-     (sharpness, original face size, exposure), so it is scale-free
+     (sharpness, source face size, exposure), so it is scale-free
   3. pick roles in order:
        frontal: best quality with |yaw| <= frontal_max_abs_yaw
                 (else the smallest |yaw| candidate)
@@ -32,7 +32,7 @@ NUM_BACKUPS = 5
 
 
 def _quality(g: pd.DataFrame, w: dict) -> pd.Series:
-    face_px = np.minimum(g.orig_face_w, g.orig_face_h)
+    face_px = np.minimum(g.face_w, g.face_h)
     exposure = -(g.brightness - 128.0).abs()
     ranks = {
         "sharpness": g.sharpness.rank(pct=True),
@@ -50,11 +50,11 @@ def _select_for_identity(g: pd.DataFrame, e) -> tuple[list[tuple[str, str]], lis
 
     lo, hi = e.brightness_range
     good = g[
-        (np.minimum(g.orig_face_w, g.orig_face_h) >= e.min_orig_face_px)
+        (np.minimum(g.face_w, g.face_h) >= e.min_face_px)
         & g.brightness.between(lo, hi)
         & (g.roll_deg.abs() <= e.max_abs_roll_deg)
         & (g.yaw_proxy.abs() <= e.side_yaw_range[1])
-        & (g.out_of_frame_frac <= e.max_out_of_frame)
+        & (g.landmarks_in_crop == 1)
     ]
 
     chosen: list[tuple[str, str]] = []
@@ -103,8 +103,7 @@ def select(cfg: Config) -> pd.DataFrame:
     e = cfg.enrollment
     splits = read_csv(paths.splits)
     pre = read_csv(paths.preprocessing)
-    src = read_csv(paths.source_images, usecols=["image_id", "orig_face_w", "orig_face_h"])
-    pre = pre[pre.preprocess_status == "ok"].merge(src, on="image_id")
+    pre = pre[pre.preprocess_status == "ok"]
 
     need = e.num_images + e.min_query_images
     rows = []

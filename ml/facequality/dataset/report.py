@@ -57,6 +57,13 @@ def build_report(cfg: Config) -> dict:
             "queries": len(q),
             "queries_per_split": q.split.value_counts().to_dict(),
             "crops_per_split": images[images.preprocess_status == "ok"].split.value_counts().to_dict(),
+            "crop_width_px": _dist(images.crop_width),
+            "landmarks_outside_crop": int((images.landmarks_in_crop == 0).sum()),
+        },
+        "augmentation": {
+            "degraded_fraction": round(float(q.augmentation_applied.mean()), 4) if len(q) else None,
+            "by_type": q.augmentation_type.value_counts().to_dict(),
+            "by_severity": q.augmentation_severity.value_counts().to_dict(),
         },
         "failures": {
             "preprocess": sum(f["stage"] == "preprocess" for f in fails),
@@ -81,6 +88,13 @@ def build_report(cfg: Config) -> dict:
             "top1_similarity": _dist(lab.aws_top1_similarity),
             "best_wrong_similarity": _dist(lab.aws_best_wrong_similarity),
             "true_similarity_histogram": _hist(lab.aws_true_similarity),
+            "by_augmentation": {
+                t: {"n": int(len(g)), "top1_accuracy": round(float(g.aws_correct_top1.mean()), 4),
+                    "true_returned": round(float(g.aws_true_returned.mean()), 4),
+                    "no_face": round(float((g.aws_status == "no_face").mean()), 4),
+                    "true_similarity_p50": _dist(g.aws_true_similarity).get("p50")}
+                for t, g in labeled.groupby(labeled.augmentation_type.astype(str) + ":" + labeled.augmentation_severity.fillna("-").astype(str))
+            },
         }
     write_json_atomic(rep, p.report / "report.json")
     (p.report / "report.md").write_text(_markdown(rep), encoding="utf-8")
@@ -122,7 +136,8 @@ def _preview(cfg: Config, ids: pd.DataFrame, images: pd.DataFrame, q: pd.DataFra
                 sub = f"top1 {top} {x.aws_top1_similarity:.1f} · true {true_sim}"
             else:
                 cls, sub = "miss" if x.aws_status == "no_face" else "pending", x.aws_status
-            tiles.append(_tile(x.crop_path, x.image_id, sub, cls))
+            aug = "clean" if x.augmentation_type == "none" else f"{x.augmentation_type} · {x.augmentation_severity}"
+            tiles.append(_tile(x.crop_path, aug, sub, cls))
         cards.append(
             f'<section><h2>{html.escape(ident)} <small>{meta.split} · {meta.num_query} queries</small></h2>'
             f'<div class="row">{"".join(tiles)}</div></section>'
@@ -135,7 +150,7 @@ body{{font:13px/1.4 system-ui,sans-serif;background:var(--bg);color:var(--fg);ma
 section{{background:var(--card);border-radius:8px;padding:10px 12px;margin:0 0 12px}}
 h2{{font-size:14px;margin:0 0 8px}} small{{color:var(--muted);font-weight:normal}}
 .row{{display:flex;flex-wrap:wrap;gap:8px}} figure{{margin:0;width:128px}}
-img{{width:128px;height:128px;border-radius:4px;border:3px solid var(--pending);display:block}}
+img{{width:128px;height:128px;object-fit:contain;background:#0003;border-radius:4px;border:3px solid var(--pending);display:block}}
 .enroll img{{border-color:var(--enroll)}} .hit img{{border-color:var(--hit)}} .miss img{{border-color:var(--miss)}}
 figcaption{{font-size:11px;color:var(--muted);word-break:break-all}}
 </style></head><body>
