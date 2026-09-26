@@ -106,7 +106,10 @@ secrets_phase.shell_script = <<~SH
   /bin/cp "$output_file" "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Secrets.json"
   /usr/bin/xattr -cr "$TARGET_BUILD_DIR/$WRAPPER_NAME" || true
 SH
-secrets_phase.input_paths = ["$(SRCROOT)/scripts/generate_secrets.rb"]
+secrets_phase.input_paths = [
+  "$(SRCROOT)/scripts/generate_secrets.rb",
+  "$(SRCROOT)/../.env"
+]
 secrets_phase.output_paths = ["$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Secrets.json"]
 
 project.save
