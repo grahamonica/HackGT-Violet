@@ -1,5 +1,8 @@
 import Foundation
 import Observation
+import ReferentApple
+import ReferentCore
+import ReferentRekognition
 
 @Observable
 @MainActor
@@ -20,17 +23,20 @@ final class AppModel {
   @ObservationIgnored private let environment: AppEnvironment
   @ObservationIgnored private let store: LocalStore
   @ObservationIgnored private let remoteAPI: RemoteAPI
-  @ObservationIgnored private let recognizer: PersonRecognizing
+  @ObservationIgnored private let enroller: RekognitionEnroller?
   @ObservationIgnored private let speaker: ElevenLabsSpeaker
   @ObservationIgnored private var syncTask: Task<Void, Never>?
   @ObservationIgnored private var hasStarted = false
   @ObservationIgnored private var recognitionCount = 0
+  @ObservationIgnored private var isCollectionReady = false
+  @ObservationIgnored private var isEnrolling = false
 
   init(environment: AppEnvironment = .load()) {
     self.environment = environment
     self.store = LocalStore()
     self.remoteAPI = RemoteAPI(environment: environment)
-    self.recognizer = OpenAIRecognitionService(environment: environment)
+    // Search and enrollment share one config so they always use the same collection.
+    self.enroller = environment.rekognition.map { RekognitionEnroller(config: $0) }
     self.speaker = ElevenLabsSpeaker(environment: environment)
     self.glasses = GlassesManager()
   }
@@ -42,12 +48,13 @@ final class AppModel {
     people = cache.people
     isLoading = false
 
-    glasses.onVioletCapture = { [weak self] timestamp, image, _ in
+    glasses.onVioletCapture = { [weak self] timestamp, result in
       Task { @MainActor in
-        await self?.processCapture(timestamp: timestamp, image: image)
+        await self?.processCapture(timestamp: timestamp, result: result)
       }
     }
     glasses.startMonitoring()
+    await loadPipeline()
     startSyncLoop()
   }
 
@@ -120,6 +127,7 @@ final class AppModel {
         updatedAt: saved.updatedAt
       )
       people = cache.people
+      await enrollChangedPeople()
     } catch {
       notice = "\(person.name) is saved on this phone and will sync when the connection returns."
     }
@@ -174,6 +182,68 @@ final class AppModel {
       // Cached data remains the source of truth while offline.
       people = cache.people
     }
+
+    await enrollChangedPeople()
+  }
+
+  private func loadPipeline() async {
+    guard let rekognition = environment.rekognition else {
+      notice = "Face recognition is not configured."
+      return
+    }
+    do {
+      let model = try await FaceQualityModel.bundled()
+      glasses.pipeline = ReferentPipeline(
+        analyzer: VisionFaceAnalyzer(model: model),
+        identifier: RekognitionIdentifier(config: rekognition)
+      )
+    } catch {
+      violetTrace("face quality model failed to load: \(error)")
+      notice = "Face recognition could not start."
+    }
+  }
+
+  /// Rekognition only recognizes enrolled people, and its UserId is the person's ID. Anyone new
+  /// or changed since their last enrollment is enrolled again; people waiting to upload are
+  /// skipped because their ID changes once the database assigns one.
+  private func enrollChangedPeople() async {
+    guard let enroller, !isEnrolling else { return }
+    isEnrolling = true
+    defer { isEnrolling = false }
+
+    do {
+      if !isCollectionReady {
+        try await enroller.ensureCollection()
+        isCollectionReady = true
+      }
+    } catch {
+      violetTrace("ensureCollection failed: \(error)")
+      return
+    }
+
+    let defaultsKey = "rekognitionEnrolledAt.\(enroller.config.collectionID)"
+    var enrolledAt = UserDefaults.standard.dictionary(forKey: defaultsKey) as? [String: Double] ?? [:]
+    for person in people where !person.needsUpload {
+      let version = person.updatedAt.timeIntervalSince1970
+      guard enrolledAt[person.id] != version else { continue }
+      do {
+        let enrollment = try await enroller.enroll(
+          personID: person.id,
+          photos: [person.frontPhoto, person.leftPhoto, person.rightPhoto]
+        )
+        if !enrollment.photosWithoutFace.isEmpty {
+          notice = "Violet could not find a face in \(enrollment.photosWithoutFace.count) of \(person.name)’s photos."
+        }
+        enrolledAt[person.id] = version
+      } catch RekognitionError.noFaceInPhotos {
+        notice = "Violet could not find a face in any of \(person.name)’s photos."
+        enrolledAt[person.id] = version
+      } catch {
+        // Retried on the next one-minute sync.
+        violetTrace("enrollment failed for \(person.name): \(error)")
+      }
+    }
+    UserDefaults.standard.set(enrolledAt, forKey: defaultsKey)
   }
 
   private func startSyncLoop() {
@@ -191,7 +261,7 @@ final class AppModel {
     "You can add up to \(AppLimits.maximumPeople) people. Delete someone from MongoDB to add another."
   }
 
-  private func processCapture(timestamp: Date, image: Data?) async {
+  private func processCapture(timestamp: Date, result: ReferentResult?) async {
     recognitionCount += 1
     isRecognizing = true
     defer {
@@ -200,14 +270,17 @@ final class AppModel {
     }
 
     let matchedPerson: FamiliarPerson?
-    if let image {
-      do {
-        let decision = try await recognizer.recognize(candidate: image, among: people)
-        matchedPerson = decision.personID.flatMap { id in people.first(where: { $0.id == id }) }
-      } catch {
+    if let result {
+      violetTrace("referent diagnostics: \(result.diagnostics)")
+      switch result.outcome {
+      case .identified(let match):
+        matchedPerson = people.first(where: { $0.id == match.userID })
+      case .failed(let error):
         violetTrace("recognition failed: \(error)")
         matchedPerson = nil
         notice = "I could not complete the comparison, so I did not guess."
+      case .ambiguous, .notRecognized, .poorQuality, .noFace:
+        matchedPerson = nil
       }
     } else {
       matchedPerson = nil

@@ -42,7 +42,7 @@ test_refs = test_files.map do |path|
 end
 test_target.add_file_references(test_refs)
 logic_refs = source_refs.select do |reference|
-  %w[FrameSelector.swift WakeWordDetector.swift].include?(File.basename(reference.path))
+  %w[WakeWordDetector.swift].include?(File.basename(reference.path))
 end
 test_target.add_file_references(logic_refs)
 
@@ -68,6 +68,20 @@ test_target.add_file_references(logic_refs)
   end
 end
 
+referent_package = project.new(Xcodeproj::Project::Object::XCLocalSwiftPackageReference)
+referent_package.relative_path = "Packages/VioletReferent"
+project.root_object.package_references << referent_package
+
+%w[ReferentCore ReferentApple ReferentRekognition].each do |product_name|
+  dependency = project.new(Xcodeproj::Project::Object::XCSwiftPackageProductDependency)
+  dependency.package = referent_package
+  dependency.product_name = product_name
+  app_target.package_product_dependencies << dependency
+  build_file = project.new(Xcodeproj::Project::Object::PBXBuildFile)
+  build_file.product_ref = dependency
+  app_target.frameworks_build_phase.files << build_file
+end
+
 project.build_configurations.each do |configuration|
   configuration.build_settings["IPHONEOS_DEPLOYMENT_TARGET"] = "17.2"
   configuration.build_settings["SWIFT_VERSION"] = "6.0"
@@ -79,7 +93,7 @@ app_target.build_configurations.each do |configuration|
   settings["CODE_SIGN_ENTITLEMENTS"] = "Violet/Violet.entitlements"
   settings["CODE_SIGN_STYLE"] = "Automatic"
   settings["CURRENT_PROJECT_VERSION"] = "1"
-  settings["DEVELOPMENT_TEAM"] = ""
+  settings["DEVELOPMENT_TEAM"] = "4SDD363WP4"
   settings["ENABLE_USER_SCRIPT_SANDBOXING"] = "NO"
   settings["GENERATE_INFOPLIST_FILE"] = "NO"
   settings["INFOPLIST_FILE"] = "Violet/Info.plist"

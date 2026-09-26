@@ -3,6 +3,7 @@ import MWDATCamera
 import MWDATCore
 import MWDATSpeech
 import Observation
+import ReferentCore
 import UIKit
 
 // TEMP DEBUG: capture-path tracing; remove once the dropout is diagnosed.
@@ -39,11 +40,12 @@ final class GlassesManager {
   private(set) var lastTranscript = ""
   private(set) var errorMessage: String?
   private(set) var isSetupComplete = false
-  var onVioletCapture: ((Date, Data?, Int) -> Void)?
+  /// Delivers the trigger time and the pipeline's answer, or nil when no capture could run.
+  var onVioletCapture: ((Date, ReferentResult?) -> Void)?
+  @ObservationIgnored var pipeline: ReferentPipeline?
 
   @ObservationIgnored private let wearables: WearablesInterface
   @ObservationIgnored private let deviceSelector: AutoDeviceSelector
-  @ObservationIgnored private let frameSelector: FrameSelecting
   @ObservationIgnored private var session: DeviceSession?
   @ObservationIgnored private var speech: Speech?
   @ObservationIgnored private var camera: MWDATCamera.Camera?
@@ -55,6 +57,7 @@ final class GlassesManager {
   @ObservationIgnored private var registrationTask: Task<Void, Never>?
   @ObservationIgnored private var deviceTask: Task<Void, Never>?
   @ObservationIgnored private var captureTask: Task<Void, Never>?
+  @ObservationIgnored private var recognitionTask: Task<Void, Never>?
   @ObservationIgnored private var activeDevice: DeviceIdentifier?
   @ObservationIgnored private var wakeWordDetector = WakeWordDetector()
   @ObservationIgnored private var userRequestedSetup = false
@@ -65,13 +68,9 @@ final class GlassesManager {
   @ObservationIgnored private var pendingTrigger: Date?
   @ObservationIgnored private var teardownTask: Task<Void, Never>?
 
-  init(
-    wearables: WearablesInterface = Wearables.shared,
-    frameSelector: FrameSelecting = FirstFrameSelector()
-  ) {
+  init(wearables: WearablesInterface = Wearables.shared) {
     self.wearables = wearables
     self.deviceSelector = AutoDeviceSelector(wearables: wearables)
-    self.frameSelector = frameSelector
     if case .registered = wearables.registrationState {
       isSetupComplete = true
     }
@@ -284,11 +283,10 @@ final class GlassesManager {
       pendingTrigger = triggeredAt
       return
     }
-    guard let session, session.state == .started else {
-      onVioletCapture?(triggeredAt, nil, 0)
+    guard let session, session.state == .started, let pipeline else {
+      onVioletCapture?(triggeredAt, nil)
       return
     }
-    frameSelector.reset()
     isCaptureTimerRunning = false
     isCapturing = true
     let configuration = StreamConfiguration(
@@ -304,23 +302,41 @@ final class GlassesManager {
       }
       camera = newCamera
       state = .capturing
-      observeStream(newCamera.stream, triggeredAt: triggeredAt)
+      observeStream(newCamera.stream, triggeredAt: triggeredAt, pipeline: pipeline)
+      // The answer can arrive before the five-second stream ends; later frames are ignored.
+      recognitionTask = Task { @MainActor [weak self] in
+        await pipeline.begin()
+        let result = await pipeline.resolve(earliest: .seconds(2), deadline: .seconds(5))
+        self?.onVioletCapture?(triggeredAt, result)
+      }
       newCamera.stream.start()
     } catch {
       completeCapture(triggeredAt: triggeredAt, error: error.localizedDescription)
     }
   }
 
-  private func observeStream(_ stream: MWDATCamera.Stream, triggeredAt: Date) {
-    let selector = frameSelector
+  private func observeStream(
+    _ stream: MWDATCamera.Stream,
+    triggeredAt: Date,
+    pipeline: ReferentPipeline
+  ) {
     stream.statePublisher.listen { [weak self] streamState in
       Task { @MainActor in self?.handleStreamState(streamState, triggeredAt: triggeredAt) }
     }.store(in: streamTokens)
     stream.videoFramePublisher.listen { frame in
-      guard let image = frame.makeUIImage(), let jpeg = image.jpegData(compressionQuality: 0.86) else {
-        return
+      // Frames carry no timestamp of their own; stamp them with a monotonic clock on arrival.
+      let arrivedAt = ProcessInfo.processInfo.systemUptime
+      guard var image = frame.makeUIImage() else { return }
+      // The face analyzer ignores JPEG orientation metadata, so hand it upright pixels.
+      if image.imageOrientation != .up {
+        violetTrace("frame orientation \(image.imageOrientation.rawValue); redrawing upright")
+        let source = image
+        image = UIGraphicsImageRenderer(size: source.size, format: source.imageRendererFormat)
+          .image { _ in source.draw(at: .zero) }
       }
-      selector.consider(jpegData: jpeg)
+      guard let jpeg = image.jpegData(compressionQuality: 0.86) else { return }
+      let referentFrame = ReferentFrame(jpegData: jpeg, timestamp: arrivedAt)
+      Task { await pipeline.consider(referentFrame) }
     }.store(in: streamTokens)
     stream.errorPublisher.listen { [weak self] error in
       Task { @MainActor in
@@ -353,15 +369,15 @@ final class GlassesManager {
     // Stream errors and the five-second timer can both land; deliver once.
     guard isCapturing else { return }
     isCapturing = false
-    violetTrace("complete capture; frames=\(frameSelector.frameCount) error=\(error ?? "none")")
+    violetTrace("complete capture; error=\(error ?? "none")")
     captureTask?.cancel()
     captureTask = nil
-    let selection = frameSelector.selection()
-    let count = frameSelector.frameCount
     beginCameraTeardown()
     state = speech?.state == .started ? .listening : .connecting
     if let error { errorMessage = error }
-    onVioletCapture?(triggeredAt, selection, count)
+    // A running recognition delivers its own answer; otherwise the camera never started.
+    if recognitionTask == nil { onVioletCapture?(triggeredAt, nil) }
+    recognitionTask = nil
   }
 
   /// Stopping the camera is asynchronous. Keep the stream listeners until it reports
@@ -426,6 +442,7 @@ final class GlassesManager {
     captureTask = nil
     teardownTask?.cancel()
     teardownTask = nil
+    recognitionTask = nil
     isCapturing = false
     isCameraStopping = false
     pendingTrigger = nil

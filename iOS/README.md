@@ -1,8 +1,8 @@
 # Violet for iOS
 
-Violet is the patient-facing iOS companion for Meta AI glasses. While the app is active, the glasses listen for the word “Violet.” A trigger starts a five-second, 15 FPS glasses-camera stream. The current frame selector intentionally chooses the first usable frame; it is isolated behind `FrameSelecting` so an on-device quality model can replace it later.
+Violet is the patient-facing iOS companion for Meta AI glasses. While the app is active, the glasses listen for the word “Violet.” A trigger starts a five-second, 15 FPS glasses-camera stream whose frames go to [`Packages/VioletReferent`](Packages/VioletReferent/README.md), wired in per [`INTEGRATION.md`](Packages/VioletReferent/INTEGRATION.md).
 
-That replacement lives in [`Packages/VioletReferent`](Packages/VioletReferent/README.md): on-device face detection and quality scoring, AWS Rekognition search and enrollment, and choosing which person the user meant. It is not wired into the app yet; follow [`Packages/VioletReferent/INTEGRATION.md`](Packages/VioletReferent/INTEGRATION.md) to integrate it.
+That package does on-device face detection and quality scoring, AWS Rekognition search and enrollment, and chooses which person the user meant. The app enrolls every synced person into the Rekognition collection and re-enrolls them when their record changes.
 
 ## What is implemented
 
@@ -10,7 +10,7 @@ That replacement lives in [`Packages/VioletReferent`](Packages/VioletReferent/RE
 - “Violet” on-glasses speech trigger and “Hey Meta, start Violet” launch fallback
 - Five-second `.raw` camera capture at 15 FPS, with immediate stream teardown afterward
 - Local relationship and recognition-log cache with one-minute incremental sync straight to MongoDB Atlas, offline upload retry, and no patient-side delete action
-- OpenAI Responses API vision request with structured output and conservative `HIGHLY_LIKELY` handling
+- AWS Rekognition identification through `VioletReferent`; anything other than a clear single match is announced as not a family member
 - ElevenLabs speech routed through the active iOS audio output (including connected glasses)
 - One-page family grid and a dismissible add-person sheet for the three required photos, name, relationship, bio, and year met
 
@@ -25,14 +25,16 @@ That replacement lives in [`Packages/VioletReferent`](Packages/VioletReferent/RE
 Supported `.env` keys:
 
 ```text
-OPENAI_API_KEY=
-OPENAI_MODEL=gpt-4.1-mini
 ELEVEN_LABS_API_KEY=
 ELEVEN_LABS_VOICE_ID=
 MONGO_URI=mongodb+srv://...
 MONGO_DB_NAME=violet
 MONGO_RELATIONSHIPS_PATH=relationships
 MONGO_LOGS_PATH=logs
+AWS_REKOGNITION_ACCESS_KEY_ID=
+AWS_REKOGNITION_SECRET_ACCESS_KEY=
+AWS_REKOGNITION_REGION=us-east-1
+AWS_REKOGNITION_COLLECTION_ID=violet-demo
 ```
 
 The app connects to Atlas directly with `MONGO_URI` through [MongoKitten](https://github.com/orlandos-nl/MongoKitten), the same URI the provider portal uses. `MONGO_DB_NAME` and the two collection names are optional and match the portal's defaults. The older `MONGO_DB_ENDPOINT`/`MONGO_DB_API_KEY` Data API keys are no longer read. Atlas **Network Access** must allow the phone's IP address.
@@ -43,7 +45,7 @@ Developer Mode intentionally uses `META_APP_ID = 0` and no client token, as supp
 
 - Meta’s Speech and Voice Invocations capabilities are experimental and, in SDK 1.0.0, are available for development/beta but not production release channels.
 - iOS cannot guarantee an arbitrary custom wake word while the app process is suspended. “Violet” works through the active device session; the supported cold/background fallback is “Hey Meta, start Violet,” after approval in Wearables Developer Center.
-- Shipping third-party API keys inside a client app is not production-safe. The `.env` bridge is appropriate for this prototype only. The bundled `MONGO_URI` carries database credentials, so move OpenAI, ElevenLabs, and Mongo access behind an authenticated backend before distribution.
+- Shipping third-party API keys inside a client app is not production-safe. The `.env` bridge is appropriate for this prototype only. The bundled `MONGO_URI` carries database credentials, so move Rekognition, ElevenLabs, and Mongo access behind an authenticated backend before distribution.
 - Face matching is assistive and fallible. The app only announces a person for `HIGHLY_LIKELY`; all other outcomes use the explicit unknown-person response. A production system needs consent, retention controls, human evaluation, and a purpose-built biometric model rather than relying on a general vision model.
 
 ## Data contract

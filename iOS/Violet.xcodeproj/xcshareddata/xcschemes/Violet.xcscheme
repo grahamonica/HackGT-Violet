@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
-   LastUpgradeVersion = "1500"
+   LastUpgradeVersion = "1600"
    version = "1.3">
    <BuildAction
       parallelizeBuildables = "YES"
@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "A7B98C4A6AF3B7907E25400D"
+               BlueprintIdentifier = "78416C821142A0F625E61C3C"
                BuildableName = "Violet.app"
                BlueprintName = "Violet"
                ReferencedContainer = "container:Violet.xcodeproj">
@@ -30,7 +30,7 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "A7B98C4A6AF3B7907E25400D"
+            BlueprintIdentifier = "78416C821142A0F625E61C3C"
             BuildableName = "Violet.app"
             BlueprintName = "Violet"
             ReferencedContainer = "container:Violet.xcodeproj">
@@ -41,7 +41,7 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "FBFBA95792D2B7440FAC960A"
+               BlueprintIdentifier = "4FA116AA734F1E060F3D0235"
                BuildableName = "VioletTests.xctest"
                BlueprintName = "VioletTests"
                ReferencedContainer = "container:Violet.xcodeproj">
@@ -63,7 +63,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "A7B98C4A6AF3B7907E25400D"
+            BlueprintIdentifier = "78416C821142A0F625E61C3C"
             BuildableName = "Violet.app"
             BlueprintName = "Violet"
             ReferencedContainer = "container:Violet.xcodeproj">
@@ -80,7 +80,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "A7B98C4A6AF3B7907E25400D"
+            BlueprintIdentifier = "78416C821142A0F625E61C3C"
             BuildableName = "Violet.app"
             BlueprintName = "Violet"
             ReferencedContainer = "container:Violet.xcodeproj">

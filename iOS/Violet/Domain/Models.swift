@@ -82,16 +82,6 @@ struct RelationshipDraft: Sendable {
   }
 }
 
-enum MatchLikelihood: String, Codable, Sendable {
-  case highlyLikely = "HIGHLY_LIKELY"
-  case notHighlyLikely = "NOT_HIGHLY_LIKELY"
-}
-
-struct RecognitionDecision: Codable, Sendable {
-  let likelihood: MatchLikelihood
-  let personID: String?
-}
-
 struct LocalCache: Codable, Sendable {
   var people: [FamiliarPerson]
   var logs: [RecognitionLog]

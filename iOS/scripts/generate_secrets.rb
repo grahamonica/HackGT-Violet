@@ -9,14 +9,16 @@ input_path = ARGV.fetch(0)
 output_path = ARGV.fetch(1)
 
 allowed_keys = %w[
-  OPENAI_API_KEY
-  OPENAI_MODEL
   ELEVEN_LABS_API_KEY
   ELEVEN_LABS_VOICE_ID
   MONGO_URI
   MONGO_DB_NAME
   MONGO_RELATIONSHIPS_PATH
   MONGO_LOGS_PATH
+  AWS_REKOGNITION_ACCESS_KEY_ID
+  AWS_REKOGNITION_SECRET_ACCESS_KEY
+  AWS_REKOGNITION_REGION
+  AWS_REKOGNITION_COLLECTION_ID
 ].freeze
 
 values = {}
@@ -40,16 +42,18 @@ rescue Timeout::Error
   abort "Could not read #{input_path}. If it is stored in iCloud, choose Download Now in Finder and rebuild."
 end
 
-values["OPENAI_MODEL"] = "gpt-4.1-mini" if values.fetch("OPENAI_MODEL", "").empty?
 values["MONGO_DB_NAME"] = "violet" if values.fetch("MONGO_DB_NAME", "").empty?
 values["MONGO_RELATIONSHIPS_PATH"] = "relationships" if values.fetch("MONGO_RELATIONSHIPS_PATH", "").empty?
 values["MONGO_LOGS_PATH"] = "logs" if values.fetch("MONGO_LOGS_PATH", "").empty?
 
 required_keys = %w[
-  OPENAI_API_KEY
   ELEVEN_LABS_API_KEY
   ELEVEN_LABS_VOICE_ID
   MONGO_URI
+  AWS_REKOGNITION_ACCESS_KEY_ID
+  AWS_REKOGNITION_SECRET_ACCESS_KEY
+  AWS_REKOGNITION_REGION
+  AWS_REKOGNITION_COLLECTION_ID
 ]
 missing_keys = required_keys.select { |key| values.fetch(key, "").empty? }
 abort "Missing required .env keys: #{missing_keys.join(", ")}" unless missing_keys.empty?
