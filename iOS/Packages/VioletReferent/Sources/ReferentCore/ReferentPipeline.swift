@@ -29,6 +29,7 @@ public actor ReferentPipeline {
   private let analyzer: any FaceAnalyzing
   private let identifier: any FaceIdentifying
   private let rateLimiter: RateLimiter
+  private let latency: LatencyRecorder?
   private let clock = ContinuousClock()
 
   // Capture state (cleared by reset()).
@@ -44,11 +45,16 @@ public actor ReferentPipeline {
   private var inFlight: [Int: Task<Void, Never>] = [:]
   private var generation = 0
 
-  public init(config: ReferentConfig = ReferentConfig(), analyzer: any FaceAnalyzing, identifier: any FaceIdentifying) {
+  /// `latency`, when given, receives the pipeline's stage timings (see `LatencyRecorder`).
+  public init(
+    config: ReferentConfig = ReferentConfig(), analyzer: any FaceAnalyzing, identifier: any FaceIdentifying,
+    latency: LatencyRecorder? = nil
+  ) {
     self.resolver = ReferentResolver(config: config)
     self.analyzer = analyzer
     self.identifier = identifier
     self.rateLimiter = RateLimiter(limit: config.maxIdentificationsPerSecond)
+    self.latency = latency
   }
 
   /// Starts a new capture, discarding anything from a previous one.
@@ -69,10 +75,17 @@ public actor ReferentPipeline {
     let previous = analysis
     let analyzer = analyzer
     let generation = generation
+    let latency = latency
+    let arrived = clock.now
+    latency?.mark("first frame reached the pipeline")
     analysis = Task {
       await previous?.value
+      let clock = ContinuousClock()
+      let started = clock.now
+      latency?.add("frame waiting for analysis", started - arrived)
       let faces: [DetectedFace]?
       do { faces = try await analyzer.analyze(frame) } catch { faces = nil }
+      latency?.add("frame analysis (total)", clock.now - started)
       self.record(faces, frameIndex: index, timestamp: frame.timestamp, generation: generation)
     }
   }
@@ -175,15 +188,23 @@ public actor ReferentPipeline {
     let identifier = identifier
     let rateLimiter = rateLimiter
     let timeout = resolver.config.identificationTimeout
+    let latency = latency
+    latency?.mark("first Rekognition call queued")
     inFlight[index] = Task {
+      let clock = ContinuousClock()
+      let queued = clock.now
       guard await rateLimiter.acquire() else { return }  // cancelled while waiting for a slot
+      let sent = clock.now
+      latency?.add("Rekognition rate-limit wait", sent - queued)
       let result = await Self.identify(crop, with: identifier, timeout: timeout)
+      latency?.add("Rekognition call", clock.now - sent)
       self.complete(index, result, generation: generation)
     }
   }
 
   private func complete(_ index: Int, _ result: Result<[IdentityMatch], any Error>, generation: Int) {
     guard generation == self.generation, inFlight.removeValue(forKey: index) != nil else { return }
+    latency?.mark("first Rekognition reply")
     results[index] = result
     if case .success = result { sent[index] = .succeeded } else { sent[index] = .failed }
   }
@@ -203,6 +224,11 @@ public actor ReferentPipeline {
     diagnostics.answeredEarly = early
     let elapsed = (clock.now - started).components
     diagnostics.secondsToAnswer = Double(elapsed.seconds) + Double(elapsed.attoseconds) / 1e18
+    latency?.mark("pipeline decided")
+    latency?.note("frames", "\(diagnostics.framesConsidered)")
+    latency?.note("faces", "\(diagnostics.facesDetected)")
+    latency?.note("Rekognition calls", "\(diagnostics.identificationCalls)")
+    if early { latency?.note("answered early", "yes") }
     reset()
     return ReferentResult(outcome: outcome, diagnostics: diagnostics)
   }
@@ -234,6 +260,7 @@ public actor ReferentPipeline {
       return
     }
     diagnostics.facesDetected += faces.count
+    if !faces.isEmpty { latency?.mark("first face found") }
     observations += faces.map { FaceObservation(frameIndex: frameIndex, timestamp: timestamp, face: $0) }
   }
 }

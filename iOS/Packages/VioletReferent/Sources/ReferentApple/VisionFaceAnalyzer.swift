@@ -21,26 +21,36 @@ public struct VisionFaceAnalyzer: FaceAnalyzing {
   /// Fraction of the face box added on each side of the Rekognition crop.
   public var cropMargin = 0.2
   public var jpegQuality = 0.95
+  /// Receives per-step timings (decode, Vision, crop, alignment, Core ML) when set.
+  public var latency: LatencyRecorder?
 
-  public init(model: FaceQualityModel) {
+  public init(model: FaceQualityModel, latency: LatencyRecorder? = nil) {
     self.model = model
+    self.latency = latency
   }
 
   public func analyze(_ frame: ReferentFrame) async throws -> [DetectedFace] {
-    guard let image = ImageConversion.cgImage(from: frame.jpegData) else {
+    let latency = latency
+    func timed<T>(_ stage: String, _ body: () throws -> T) rethrows -> T {
+      guard let latency else { return try body() }
+      return try latency.measure(stage, body)
+    }
+    guard let image = timed("frame JPEG decode", { ImageConversion.cgImage(from: frame.jpegData) }) else {
       throw CocoaError(.fileReadCorruptFile, userInfo: [NSLocalizedDescriptionKey: "frame is not a decodable image"])
     }
     let width = Double(image.width), height = Double(image.height)
-    return try Self.faces(in: image).compactMap { face in
+    return try timed("Apple Vision faces + landmarks", { try Self.faces(in: image) }).compactMap { face in
       let crop = Self.cropRect(face.box, margin: cropMargin, width: width, height: height)
       guard let cropImage = image.cropping(to: crop),
-            let cropJPEG = ImageConversion.jpegData(cropImage, quality: jpegQuality),
+            let cropJPEG = timed("face crop JPEG encode", { ImageConversion.jpegData(cropImage, quality: jpegQuality) }),
             let cropPixels = ImageConversion.rgbImage(cropImage)
       else { return nil }
       // Landmarks relative to the crop: the model is trained on crop pixels.
       let local = face.landmarks.map { Point2D(x: $0.x - crop.minX, y: $0.y - crop.minY) }
-      let aligned = FaceAlignment.align(cropPixels, landmarks: local, size: model.inputSize)
-      let quality = try model.predict(alignedFace: aligned, interocularPx: FaceAlignment.interocularDistance(local))
+      let aligned = timed("face alignment") { FaceAlignment.align(cropPixels, landmarks: local, size: model.inputSize) }
+      let quality = try timed("quality model (Core ML)") {
+        try model.predict(alignedFace: aligned, interocularPx: FaceAlignment.interocularDistance(local))
+      }
       let box = NormalizedRect(
         x: face.box.minX / width, y: face.box.minY / height, width: face.box.width / width, height: face.box.height / height)
       return DetectedFace(box: box, quality: quality, crop: cropJPEG)

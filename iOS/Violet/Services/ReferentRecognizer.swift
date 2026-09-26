@@ -22,13 +22,16 @@ final class ReferentRecognizer: FrameSelecting, @unchecked Sendable {
   private var queue: Task<Void, Never>?
   private var resultTask: Task<ReferentResult?, Never>?
   private var count = 0
+  private let latency: LatencyRecorder?
 
-  init(config: RekognitionConfig) {
+  init(config: RekognitionConfig, latency: LatencyRecorder? = nil) {
+    self.latency = latency
     let identifier = RekognitionIdentifier(config: config)
     pipelineTask = Task {
       do {
         let model = try await FaceQualityModel.bundled()
-        return ReferentPipeline(analyzer: VisionFaceAnalyzer(model: model), identifier: identifier)
+        return ReferentPipeline(
+          analyzer: VisionFaceAnalyzer(model: model, latency: latency), identifier: identifier, latency: latency)
       } catch {
         violetTrace("face quality model failed to load: \(error)")
         return nil
@@ -73,10 +76,11 @@ final class ReferentRecognizer: FrameSelecting, @unchecked Sendable {
       count += 1
       let previous = queue
       let pipelineTask = pipelineTask
+      let latency = latency
       queue = Task {
         await previous?.value
         guard let pipeline = await pipelineTask.value else { return }
-        let upright = Self.upright(jpegData)
+        let upright = latency?.measure("frame rotation fix") { Self.upright(jpegData) } ?? Self.upright(jpegData)
         await pipeline.consider(ReferentFrame(jpegData: upright, timestamp: timestamp))
       }
     }

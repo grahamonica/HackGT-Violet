@@ -28,7 +28,12 @@ final class AppModel {
   @ObservationIgnored private let enrollment: FaceEnrollment?
   @ObservationIgnored private var syncTask: Task<Void, Never>?
   @ObservationIgnored private var hasStarted = false
-  @ObservationIgnored private var recognitionCount = 0
+  /// Per-request timings, printed to the console after each answer. Nil (and free)
+  /// unless the app is launched with `-VioletLatency YES`.
+  @ObservationIgnored private let latency: LatencyRecorder?
+  /// Plays a short "one moment" line if the answer is slow; cancelled once it's ready.
+  @ObservationIgnored private var fillerTask: Task<Void, Never>?
+  @ObservationIgnored private var nextFiller = 0
 
   init(environment: AppEnvironment = .load()) {
     self.environment = environment
@@ -36,10 +41,12 @@ final class AppModel {
     self.remoteAPI = RemoteAPI(environment: environment)
     self.recognizer = OpenAIRecognitionService(environment: environment)
     self.speaker = ElevenLabsSpeaker(environment: environment)
-    let referent = environment.rekognition.map(ReferentRecognizer.init(config:))
+    let latency = UserDefaults.standard.bool(forKey: "VioletLatency") ? LatencyRecorder() : nil
+    self.latency = latency
+    let referent = environment.rekognition.map { ReferentRecognizer(config: $0, latency: latency) }
     self.referent = referent
     self.enrollment = environment.rekognition.map { FaceEnrollment(config: $0) }
-    self.glasses = referent.map { GlassesManager(frameSelector: $0) } ?? GlassesManager()
+    self.glasses = GlassesManager(frameSelector: referent ?? FirstFrameSelector(), latency: latency)
   }
 
   func start() async {
@@ -53,7 +60,7 @@ final class AppModel {
     referent?.onResult = { [weak self] in
       Task { @MainActor in self?.glasses.finishCaptureEarly() }
     }
-    glasses.isRecognitionRunning = { [weak self] in self?.isRecognizing ?? false }
+    glasses.onRequestStarted = { [weak self] in self?.scheduleFiller() }
     glasses.onVioletCapture = { [weak self] timestamp, image, frameCount in
       Task { @MainActor in
         await self?.processCapture(timestamp: timestamp, image: image, frameCount: frameCount)
@@ -208,36 +215,54 @@ final class AppModel {
     "You can add up to \(AppLimits.maximumPeople) people. Delete someone from MongoDB to add another."
   }
 
+  /// Handles one request from capture to the end of the spoken answer. The glasses
+  /// ignore new triggers until this returns.
   private func processCapture(timestamp: Date, image: Data?, frameCount: Int) async {
-    recognitionCount += 1
     isRecognizing = true
     defer {
-      recognitionCount -= 1
-      isRecognizing = recognitionCount > 0
+      isRecognizing = false
+      glasses.requestFinished()
+      if let latency { print(latency.report()) }
     }
 
     let matchedPerson: FamiliarPerson?
     var unmatchedSpeech = Announcement.notFamily
     if let referent {
-      if frameCount > 0, let result = await referent.latestResult() {
+      if frameCount == 0 {
+        matchedPerson = nil
+        unmatchedSpeech = Announcement.noFace
+        latency?.note("outcome", "no camera frames")
+        notice = "The glasses did not return a usable image."
+      } else if let result = await referent.latestResult() {
+        latency?.mark("result reached the app")
         (matchedPerson, unmatchedSpeech) = interpret(result, fallback: unmatchedSpeech)
       } else {
+        // Only happens when the face quality model failed to load at launch.
+        violetTrace("no recognition result: the face quality model is not loaded")
         matchedPerson = nil
-        notice = "The glasses did not return a usable image."
+        unmatchedSpeech = Announcement.noFace
+        latency?.note("outcome", "face model not loaded")
+        notice = "Violet is having trouble recognizing faces right now. Try closing and reopening the app."
       }
     } else if let image {
       do {
         let decision = try await recognizer.recognize(candidate: image, among: people)
         matchedPerson = decision.personID.flatMap { id in people.first(where: { $0.id == id }) }
+        latency?.note("outcome", matchedPerson == nil ? "not recognized (OpenAI)" : "identified (OpenAI)")
       } catch {
         violetTrace("recognition failed: \(error)")
         matchedPerson = nil
+        unmatchedSpeech = Announcement.unsure
+        latency?.note("outcome", "OpenAI failed")
         notice = "I could not complete the comparison, so I did not guess."
       }
     } else {
       matchedPerson = nil
+      unmatchedSpeech = Announcement.noFace
+      latency?.note("outcome", "no camera frames")
       notice = "The glasses did not return a usable image."
     }
+    isRecognizing = false
 
     let identifiedName = matchedPerson?.name ?? "Unknown"
     let log = RecognitionLog(timestamp: timestamp, identifiedPerson: identifiedName)
@@ -253,9 +278,18 @@ final class AppModel {
     lastAnnouncement = speech
     let elapsed = Date().timeIntervalSince(timestamp).formatted(.number.precision(.fractionLength(2)))
     violetTrace("speaking \(elapsed)s after trigger: \(speech)")
+    // A filler that hasn't started yet is dropped; one already playing finishes and
+    // the answer follows it.
+    fillerTask?.cancel()
+    fillerTask = nil
+    latency?.note("voice", speaker.isPrepared(speech) ? "cached" : "generated now")
+    latency?.mark("answer chosen")
     do {
-      try await speaker.speak(speech)
-      violetTrace("voice audio started \(Date().timeIntervalSince(timestamp).formatted(.number.precision(.fractionLength(2))))s after trigger")
+      try await speaker.speak(speech) { [latency = self.latency] in
+        latency?.mark("voice started")
+        violetTrace("voice audio started \(Date().timeIntervalSince(timestamp).formatted(.number.precision(.fractionLength(2))))s after trigger")
+      }
+      latency?.mark("voice finished")
     } catch {
       violetTrace("speech failed: \(error)")
       notice = error.localizedDescription
@@ -285,6 +319,7 @@ final class AppModel {
         + "calls=\(d.identificationCalls) failures=\(d.identificationFailures) "
         + "seconds=\(d.secondsToAnswer.formatted(.number.precision(.fractionLength(2))))"
     )
+    latency?.note("outcome", Self.describe(result.outcome))
     switch result.outcome {
     case .identified(let match):
       violetTrace("referent identified \(match.userID) similarity=\(match.bestSimilarity)")
@@ -316,6 +351,33 @@ final class AppModel {
     }
   }
 
+  /// After `Announcement.fillerDelay` without an answer, says the next filler line.
+  /// Only lines already generated are used, so one never starts late (after the answer).
+  private func scheduleFiller() {
+    fillerTask?.cancel()
+    fillerTask = Task { @MainActor [weak self] in
+      try? await Task.sleep(for: Announcement.fillerDelay)
+      guard !Task.isCancelled, let self else { return }
+      let line = Announcement.fillers[self.nextFiller % Announcement.fillers.count]
+      self.nextFiller += 1
+      guard self.speaker.isPrepared(line) else { return }
+      try? await self.speaker.speak(line) { [latency = self.latency] in
+        latency?.mark("filler started")
+      }
+    }
+  }
+
+  private static func describe(_ outcome: ReferentOutcome) -> String {
+    switch outcome {
+    case .identified: "identified"
+    case .ambiguous: "ambiguous"
+    case .notRecognized: "not recognized"
+    case .poorQuality: "faces too unclear"
+    case .noFace: "no face"
+    case .failed: "Rekognition failed"
+    }
+  }
+
   private func preparePeople() {
     // Prepare every sentence Violet can say now, so answers and bios play without waiting on
     // ElevenLabs. Runs after each sync, so a bio or relation edited on the portal is
@@ -337,9 +399,12 @@ final class AppModel {
 /// Everything Violet says after a capture, in one place so it can be pre-generated.
 enum Announcement {
   static let notFamily = "This is not one of your family members."
-  static let noFace = "I couldn't see anyone's face."
+  static let noFace = "I couldn't see anyone's face. Try looking right at the person and ask me again."
   static let unsure = "I couldn't tell who this is, so I won't guess."
-  static let fixed = [notFamily, noFace, unsure]
+  /// Said in turn when an answer takes longer than `fillerDelay`.
+  static let fillers = ["One moment.", "Just a second.", "Let me take a look."]
+  static let fillerDelay: Duration = .seconds(3)
+  static let fixed = [notFamily, noFace, unsure] + fillers
 
   static func identified(_ person: FamiliarPerson) -> String {
     "This is \(person.name), your \(person.relation)."

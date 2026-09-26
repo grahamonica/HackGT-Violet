@@ -1,14 +1,22 @@
 # Violet for iOS
 
-Violet is the patient-facing iOS companion for Meta AI glasses. While the app is active, the glasses listen for the word “Violet.” A trigger starts a five-second, 15 FPS glasses-camera stream. The current frame selector intentionally chooses the first usable frame; it is isolated behind `FrameSelecting` so an on-device quality model can replace it later.
+Violet is the patient-facing iOS companion for Meta AI glasses. While the app is active, the glasses listen for the word “Violet.” A trigger starts a glasses-camera stream at 15 FPS for up to five seconds, ending early once the answer is known.
 
-That replacement lives in [`Packages/VioletReferent`](Packages/VioletReferent/README.md): on-device face detection and quality scoring, AWS Rekognition search and enrollment, and choosing which person the user meant. It is not wired into the app yet; follow [`Packages/VioletReferent/INTEGRATION.md`](Packages/VioletReferent/INTEGRATION.md) to integrate it.
+Frames go to [`Packages/VioletReferent`](Packages/VioletReferent/README.md): on-device face detection and quality scoring (Apple Vision and a Core ML model), AWS Rekognition search and enrollment, and choosing which person the user meant. The app uses it whenever the `AWS_REKOGNITION_*` keys are set. Without them it falls back to sending the first frame to OpenAI.
+
+Violet handles one request at a time: a trigger (“Violet”, the capture button, or “Hey Meta, start Violet”) while it is capturing, recognizing, or speaking is ignored. If the answer takes more than three seconds, Violet says a short filler line (“One moment.”, “Just a second.”, “Let me take a look.”, in turn), and the answer plays right after it.
+
+### Latency
+
+To see where the time goes, tick `-VioletLatency YES` under **Product › Scheme › Edit Scheme › Run › Arguments**. After each answer, the Xcode console prints one block: a timeline from the trigger (camera start, first frame, first face, first Rekognition reply, voice start and end) and per-stage timings (frame conversion, Apple Vision, Core ML quality model, Rekognition calls). Type `[Latency]` in the console's filter field to hide everything else. With the argument off, nothing is measured.
 
 ## What is implemented
 
 - Meta Wearables Device Access Toolkit 1.0.0 registration, session, speech, camera, and voice-invocation plumbing
-- “Violet” on-glasses speech trigger and “Hey Meta, start Violet” launch fallback
-- Five-second `.raw` camera capture at 15 FPS, with immediate stream teardown afterward
+- “Violet” on-glasses speech trigger, the glasses capture button, and “Hey Meta, start Violet” launch fallback
+- Up-to-five-second `.raw` camera capture at 15 FPS, with immediate stream teardown afterward
+- On-device face detection and quality scoring, Rekognition search, and automatic Rekognition enrollment of the people on the phone
+- Distinct spoken answers for an identified person, someone not in the family, no visible face, and an uncertain result
 - Local relationship and recognition-log cache with one-minute incremental sync straight to MongoDB Atlas, offline upload retry, and no patient-side delete action
 - OpenAI Responses API vision request with structured output and conservative `HIGHLY_LIKELY` handling
 - ElevenLabs speech routed through the active iOS audio output (including connected glasses)

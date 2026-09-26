@@ -4,7 +4,9 @@ struct WakeWordDetector: Sendable {
   private(set) var lastTrigger: Date?
   let cooldown: TimeInterval
 
-  init(cooldown: TimeInterval = 8) {
+  /// Only de-duplicates one utterance (the partial and final transcripts both contain
+  /// "Violet"); triggers during a request are ignored by `GlassesManager`.
+  init(cooldown: TimeInterval = 2) {
     self.cooldown = cooldown
   }
 
