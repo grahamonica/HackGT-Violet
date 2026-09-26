@@ -2,6 +2,8 @@
 
 Violet is the patient-facing iOS companion for Meta AI glasses. While the app is active, the glasses listen for the word “Violet.” A trigger starts a five-second, 15 FPS glasses-camera stream. The current frame selector intentionally chooses the first usable frame; it is isolated behind `FrameSelecting` so an on-device quality model can replace it later.
 
+That replacement lives in [`Packages/VioletReferent`](Packages/VioletReferent/README.md): on-device face detection and quality scoring, AWS Rekognition search and enrollment, and choosing which person the user meant. It is not wired into the app yet; follow [`Packages/VioletReferent/INTEGRATION.md`](Packages/VioletReferent/INTEGRATION.md) to integrate it.
+
 ## What is implemented
 
 - Meta Wearables Device Access Toolkit 1.0.0 registration, session, speech, camera, and voice-invocation plumbing
