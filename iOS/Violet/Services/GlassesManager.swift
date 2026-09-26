@@ -4,6 +4,7 @@ import MWDATCore
 import MWDATInputs
 import MWDATSpeech
 import Observation
+import ReferentCore
 import UIKit
 
 // TEMP DEBUG: capture-path tracing; remove once the dropout is diagnosed.
@@ -41,13 +42,16 @@ final class GlassesManager {
   private(set) var errorMessage: String?
   private(set) var isSetupComplete = false
   var onVioletCapture: ((Date, Data?, Int) -> Void)?
-  /// True while the app is still working on the previous answer (after the camera
-  /// has stopped); capture-button presses are ignored until it is done.
-  var isRecognitionRunning: (() -> Bool)?
+  /// Called when a trigger is accepted, before the camera starts.
+  var onRequestStarted: (@MainActor () -> Void)?
 
   @ObservationIgnored private let wearables: WearablesInterface
   @ObservationIgnored private let deviceSelector: AutoDeviceSelector
   @ObservationIgnored private let frameSelector: FrameSelecting
+  @ObservationIgnored private let latency: LatencyRecorder?
+  /// True from an accepted trigger until the app calls `requestFinished()` after the
+  /// answer has been spoken. Every trigger in between is ignored.
+  @ObservationIgnored private var isRequestActive = false
   @ObservationIgnored private var session: DeviceSession?
   @ObservationIgnored private var speech: Speech?
   @ObservationIgnored private var inputs: Inputs?
@@ -76,11 +80,13 @@ final class GlassesManager {
 
   init(
     wearables: WearablesInterface = Wearables.shared,
-    frameSelector: FrameSelecting = FirstFrameSelector()
+    frameSelector: FrameSelecting = FirstFrameSelector(),
+    latency: LatencyRecorder? = nil
   ) {
     self.wearables = wearables
     self.deviceSelector = AutoDeviceSelector(wearables: wearables)
     self.frameSelector = frameSelector
+    self.latency = latency
     if case .registered = wearables.registrationState {
       isSetupComplete = true
     }
@@ -285,14 +291,28 @@ final class GlassesManager {
     lastTranscript = transcript
     violetTrace("transcript: \(transcript)")
     guard wakeWordDetector.consume(transcript) else { return }
-    triggerViolet()
+    triggerViolet(source: "wake word")
   }
 
   /// The one entry point for a request: "Violet", "Hey Meta, start Violet", and the
-  /// glasses capture button all come through here.
-  private func triggerViolet() {
-    acknowledgeWakeWord()
+  /// glasses capture button all come through here. One request at a time: a trigger
+  /// while Violet is capturing, recognizing or speaking is ignored.
+  private func triggerViolet(source: String) {
+    guard !isRequestActive else {
+      violetTrace("\(source) ignored: Violet is still answering")
+      return
+    }
+    isRequestActive = true
+    latency?.begin()
+    latency?.note("trigger", source)
+    wakeChime.play()
+    onRequestStarted?()
     beginVioletCapture(at: .now)
+  }
+
+  /// Called by the app once the answer has finished playing; triggers work again.
+  func requestFinished() {
+    isRequestActive = false
   }
 
   /// Listens for the glasses capture button for as long as the device session runs.
@@ -328,27 +348,15 @@ final class GlassesManager {
   private func handleCaptureButton(_ press: CapturePressType) {
     violetTrace("capture button: \(press)")
     guard press == .shortPress else { return }
-    let busy = isCapturing || isCameraStopping || pendingTrigger != nil
-      || (isRecognitionRunning?() ?? false)
-    guard !busy else {
-      violetTrace("capture button ignored: a recognition is already running")
-      return
-    }
-    triggerViolet()
-  }
-
-  /// Dings once per request; saying "Violet" again during a capture is not a new one.
-  private func acknowledgeWakeWord() {
-    guard !isCapturing, pendingTrigger == nil else { return }
-    wakeChime.play()
+    triggerViolet(source: "capture button")
   }
 
   private func beginVioletCapture(at triggeredAt: Date) {
     violetTrace("begin capture; camera=\(camera != nil) session=\(String(describing: session?.state))")
-    // A capture already in progress answers this trigger too.
     guard !isCapturing else { return }
-    // The glasses reject a new stream until the previous one has fully stopped,
-    // so hold the trigger and start it once teardown finishes.
+    // The glasses reject a new stream until the previous one has fully stopped
+    // (possible when the last answer was short), so hold the trigger and start it
+    // once teardown finishes.
     guard !isCameraStopping else {
       pendingTrigger = triggeredAt
       return
@@ -367,6 +375,7 @@ final class GlassesManager {
       frameRate: 15
     )
 
+    latency?.mark("camera requested")
     do {
       guard let newCamera = try session.addCamera(config: configuration) else {
         completeCapture(triggeredAt: triggeredAt, error: "The glasses camera was unavailable.")
@@ -383,13 +392,15 @@ final class GlassesManager {
 
   private func observeStream(_ stream: MWDATCamera.Stream, triggeredAt: Date) {
     let selector = frameSelector
+    let latency = latency
     stream.statePublisher.listen { [weak self] streamState in
       Task { @MainActor in self?.handleStreamState(streamState, triggeredAt: triggeredAt) }
     }.store(in: streamTokens)
     stream.videoFramePublisher.listen { frame in
-      guard let image = frame.makeUIImage(), let jpeg = image.jpegData(compressionQuality: 0.86) else {
-        return
-      }
+      latency?.mark("first camera frame")
+      let convert = { frame.makeUIImage()?.jpegData(compressionQuality: 0.86) }
+      let converted = if let latency { latency.measure("frame to JPEG (on arrival)", convert) } else { convert() }
+      guard let jpeg = converted else { return }
       selector.consider(jpegData: jpeg)
     }.store(in: streamTokens)
     stream.errorPublisher.listen { [weak self] error in
@@ -403,6 +414,7 @@ final class GlassesManager {
     violetTrace("stream state: \(streamState)")
     switch streamState {
     case .streaming:
+      latency?.mark("camera streaming")
       guard !isCaptureTimerRunning else { return }
       isCaptureTimerRunning = true
       captureTask = Task { @MainActor [weak self] in
@@ -431,6 +443,7 @@ final class GlassesManager {
     // Stream errors and the five-second timer can both land; deliver once.
     guard isCapturing else { return }
     isCapturing = false
+    latency?.mark("capture ended")
     violetTrace("complete capture; frames=\(frameSelector.frameCount) error=\(error ?? "none")")
     captureTask?.cancel()
     captureTask = nil
@@ -462,6 +475,7 @@ final class GlassesManager {
   private func finishCameraTeardown() {
     teardownTask?.cancel()
     teardownTask = nil
+    if isCameraStopping { latency?.mark("camera stopped") }
     streamTokens.clear()
     camera = nil
     isCameraStopping = false
@@ -482,7 +496,7 @@ final class GlassesManager {
           guard let launch = invocation as? LaunchApp else { return }
           Task {
             _ = await launch.responseHandle.sendSuccess(actionOutput: nil)
-            await MainActor.run { self?.triggerViolet() }
+            await MainActor.run { self?.triggerViolet(source: "Hey Meta") }
           }
         }.store(in: voiceTokens)
         stream.errorPublisher.listen { [weak self] error in
@@ -500,6 +514,9 @@ final class GlassesManager {
   }
 
   private func cleanupSession() {
+    // A capture cut off here never reaches the app, which would otherwise be the one
+    // to end the request; end it so the next trigger works.
+    if isCapturing || pendingTrigger != nil { isRequestActive = false }
     captureTask?.cancel()
     captureTask = nil
     teardownTask?.cancel()

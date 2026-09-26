@@ -138,5 +138,9 @@ project.save
 scheme = Xcodeproj::XCScheme.new
 scheme.add_build_target(app_target)
 scheme.set_launch_target(app_target)
+# Tick this in Edit Scheme > Run > Arguments to print per-request latency to the console.
+scheme.launch_action.command_line_arguments = Xcodeproj::XCScheme::CommandLineArguments.new([
+  { argument: "-VioletLatency YES", enabled: false }
+])
 scheme.add_test_target(test_target)
 scheme.save_as(PROJECT_PATH, "Violet", true)

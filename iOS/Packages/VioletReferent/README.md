@@ -7,7 +7,8 @@ Self-contained Swift package; it does not touch the app's capture, audio or
 UI code. The app feeds it frames and switches on the outcome. It also enrolls
 people into the Rekognition collection it searches.
 
-**Integrating into the app: see [INTEGRATION.md](INTEGRATION.md).**
+**In the app:** `Violet/Services/ReferentRecognizer.swift` feeds it frames and keeps
+enrollment in sync (`FaceEnrollment`); `AppModel` turns the outcome into speech.
 
 ```
 frames ─→ face detection + landmarks ─→ local quality model ─→ Rekognition ─→ referent scoring ─→ outcome
@@ -40,6 +41,14 @@ case .failed(let error):        // no identification succeeded: network errors o
 The caller decides what to say for each case. `result.diagnostics` has counts
 (frames, faces, tracks, calls, failures), `secondsToAnswer`, `answeredEarly`,
 and every accepted identity with its evidence, for logging and tuning.
+
+For timing, pass a `LatencyRecorder` (in `ReferentCore`) as `latency:` to
+`ReferentPipeline` and `VisionFaceAnalyzer`. It records milestones (first
+frame, first face, first Rekognition call and reply, decision) and per-stage
+durations (frame queue wait, analysis, JPEG decode, Vision, alignment, Core ML,
+Rekognition rate-limit wait and calls); `report()` formats them as console
+lines prefixed `[Latency]`. The app adds its own stages to the same recorder
+(camera, voice). Without a recorder (the default) nothing is measured.
 
 - **Capture:** runs from `begin()` until `resolve` answers. Frames outside a
   capture are ignored, so the camera can keep streaming after an early answer.
@@ -74,9 +83,11 @@ import ReferentRekognition
 
 let model = try await FaceQualityModel.bundled()          // bundled model, compiled on first use
 guard let aws = RekognitionConfig(values: secrets) else { … }  // AWS_REKOGNITION_* keys
+let latency: LatencyRecorder? = nil                        // or LatencyRecorder() to time each request
 let pipeline = ReferentPipeline(
-  analyzer: VisionFaceAnalyzer(model: model),
-  identifier: RekognitionIdentifier(config: aws))
+  analyzer: VisionFaceAnalyzer(model: model, latency: latency),
+  identifier: RekognitionIdentifier(config: aws),
+  latency: latency)
 
 // Enrollment, from the same config (so search and enrollment share a collection):
 let enroller = RekognitionEnroller(config: aws)
@@ -158,7 +169,11 @@ differ from that data, so log `diagnostics` on real sessions and re-check
 ## Rekognition access
 
 The app calls Rekognition directly with credentials baked in at build time,
-like its other API keys (keys: see INTEGRATION.md, step 2).
+like its other API keys: `AWS_REKOGNITION_ACCESS_KEY_ID`,
+`AWS_REKOGNITION_SECRET_ACCESS_KEY`, `AWS_REKOGNITION_REGION` (e.g. `us-east-1`) and
+`AWS_REKOGNITION_COLLECTION_ID` (e.g. `violet-demo`; not `violet-fiqa-wild`, which
+holds the CelebA training people) in the repo-root `.env`, passed through by
+`iOS/scripts/generate_secrets.rb`. The app uses Rekognition only when all four are set.
 
 **Demo setup:** one IAM user with full Rekognition access
 (`AmazonRekognitionFullAccess`), used for both search and enrollment. Anything in
@@ -177,7 +192,7 @@ the account, so:
 
 | target | contents | builds on |
 |---|---|---|
-| `ReferentCore` | contract, config, tracking, scoring, resolution, pipeline, rate limiting, alignment | any platform (Linux included) |
+| `ReferentCore` | contract, config, tracking, scoring, resolution, pipeline, rate limiting, alignment, latency recorder | any platform (Linux included) |
 | `ReferentRekognition` | SigV4 signing, search (identifier) and enrollment clients | any platform (swift-crypto on Linux) |
 | `ReferentApple` | Vision analyzer, Core ML model (`Resources/FaceQuality.mlpackage`) | iOS / macOS only |
 
@@ -204,14 +219,21 @@ folder and is shared out of band, not committed.
 | check | where | result |
 |---|---|---|
 | decision logic, pipeline, deadlines, rate limit | WSL | all tests pass |
+| latency recorder and pipeline timing hooks | WSL | tests pass |
 | Swift alignment vs Python | WSL | max difference 1/255 over 24 faces |
 | SigV4 signing | WSL | matches AWS's published test vector |
 | Rekognition search and enrollment requests, responses, retries | WSL | fake-AWS tests pass |
 | live Rekognition round trip | needs the key in `.env` | not yet run |
 | `ReferentApple` compiles | **Mac** | not yet run |
 | Core ML vs PyTorch, Vision landmarks vs CelebA, end-to-end score | **Mac** | not yet run |
+| on-device smoke test (below) | **iPhone + glasses** | not yet run |
 
 On the Mac, `testVisionLandmarksAgreeWithCelebA` prints how far Vision's
 derived points sit from CelebA's annotations. If the error is large or
 systematic (e.g. the nose point), the mapping in `VisionFaceAnalyzer.fivePoints`
 is the thing to adjust.
+
+On-device smoke test: enroll one teammate, look at them and say "Violet"; expect
+their name. Then try with nobody in view (the "couldn't see anyone's face" line)
+and with a stranger ("not one of your family members"). With `-VioletLatency YES`
+on, check the `[Latency]` block's timings and Rekognition call count look sane.

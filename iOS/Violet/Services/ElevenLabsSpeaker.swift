@@ -27,6 +27,12 @@ final class ElevenLabsSpeaker: NSObject {
   private let cacheDirectory: URL
   private var player: AVAudioPlayer?
   private var inFlight: [String: Task<Data, Error>] = [:]
+  /// Resumed when the current sentence ends.
+  private var playbackFinished: CheckedContinuation<Void, Never>?
+  /// Sentences play one after another: true while one holds the turn, and later
+  /// ones wait here in order.
+  private var isPlaying = false
+  private var waitingForTurn: [CheckedContinuation<Void, Never>] = []
 
   init(environment: AppEnvironment, session: URLSession = .shared) {
     self.environment = environment
@@ -35,9 +41,37 @@ final class ElevenLabsSpeaker: NSObject {
       .appendingPathComponent("violet-speech", isDirectory: true)
   }
 
-  func speak(_ text: String) async throws {
+  /// Speaks `text` and returns once it has finished playing. If another sentence is
+  /// playing, this one waits and plays right after it (its audio loads meanwhile).
+  /// `onStart` runs when the audio begins.
+  func speak(_ text: String, onStart: (() -> Void)? = nil) async throws {
     let data = try await audio(for: text)
-    try play(data)
+    await takeTurn()
+    defer { releaseTurn() }
+    let player = try play(data)
+    onStart?()
+    await waitUntilFinished(player)
+  }
+
+  private func takeTurn() async {
+    if isPlaying {
+      await withCheckedContinuation { waitingForTurn.append($0) }
+    }
+    isPlaying = true
+  }
+
+  /// Hands the turn straight to the next waiting sentence, if any.
+  private func releaseTurn() {
+    if waitingForTurn.isEmpty {
+      isPlaying = false
+    } else {
+      waitingForTurn.removeFirst().resume()
+    }
+  }
+
+  /// True when `text` is already on disk and plays without a network request.
+  func isPrepared(_ text: String) -> Bool {
+    FileManager.default.fileExists(atPath: cacheURL(for: text).path)
   }
 
   /// Makes the cache hold exactly these sentences: audio for text that is no longer
@@ -117,15 +151,50 @@ final class ElevenLabsSpeaker: NSObject {
     return data
   }
 
-  private func play(_ data: Data) throws {
+  private func play(_ data: Data) throws -> AVAudioPlayer {
     let audioSession = AVAudioSession.sharedInstance()
     // .playback already routes to A2DP outputs such as the glasses; passing
     // .allowBluetoothA2DP here is invalid for this category and throws -50.
     try audioSession.setCategory(.playback, mode: .spokenAudio)
     try audioSession.setActive(true)
     let newPlayer = try AVAudioPlayer(data: data)
+    newPlayer.delegate = self
     newPlayer.prepareToPlay()
     guard newPlayer.play() else { throw SpeechServiceError.invalidResponse }
     player = newPlayer
+    return newPlayer
+  }
+
+  /// Waits for the delegate to report the end, or for the clip's length plus a margin
+  /// in case it never does (e.g. an audio interruption).
+  private func waitUntilFinished(_ player: AVAudioPlayer) async {
+    let id = ObjectIdentifier(player)
+    let limit = player.duration + 2
+    await withCheckedContinuation { continuation in
+      playbackFinished = continuation
+      Task { @MainActor [weak self] in
+        try? await Task.sleep(for: .seconds(limit))
+        self?.endPlayback(of: id)
+      }
+    }
+  }
+
+  /// Releases the waiter, if player `id` is still the current one.
+  private func endPlayback(of id: ObjectIdentifier) {
+    guard player.map(ObjectIdentifier.init) == id else { return }
+    playbackFinished?.resume()
+    playbackFinished = nil
+  }
+}
+
+extension ElevenLabsSpeaker: AVAudioPlayerDelegate {
+  nonisolated func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
+    let id = ObjectIdentifier(player)
+    Task { @MainActor in self.endPlayback(of: id) }
+  }
+
+  nonisolated func audioPlayerDecodeErrorDidOccur(_ player: AVAudioPlayer, error: Error?) {
+    let id = ObjectIdentifier(player)
+    Task { @MainActor in self.endPlayback(of: id) }
   }
 }
