@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Person, PersonDraft, RecognitionLog, SyncResponse } from "@/lib/types";
+import type { PeopleSyncResponse, Person, PersonDraft, RecognitionLog, SyncResponse } from "@/lib/types";
 import { readStored, writeStored } from "./storage";
 
 const CACHE_KEY = "patient-data-v1";
@@ -52,16 +52,19 @@ export function usePatientData() {
     const peopleQuery = current.peopleCursor ? `?updatedAfter=${encodeURIComponent(current.peopleCursor)}` : "";
     const logsQuery = current.logsCursor ? `?after=${encodeURIComponent(current.logsCursor)}` : "";
     const [peopleResult, logsResult] = await Promise.allSettled([
-      getJSON<SyncResponse<Person>>(`/api/relationships${peopleQuery}`),
+      getJSON<PeopleSyncResponse>(`/api/relationships${peopleQuery}`),
       getJSON<SyncResponse<RecognitionLog>>(`/api/logs${logsQuery}`),
     ]);
 
     let next = current;
     const errors: string[] = [];
     if (peopleResult.status === "fulfilled") {
+      const liveIds = new Set(peopleResult.value.ids);
       next = {
         ...next,
-        people: mergeById(next.people, peopleResult.value.items).sort((a, b) => a.name.localeCompare(b.name)),
+        people: mergeById(next.people, peopleResult.value.items)
+          .filter((person) => liveIds.has(person.id))
+          .sort((a, b) => a.name.localeCompare(b.name)),
         peopleCursor: peopleResult.value.serverTime,
       };
     } else {
@@ -132,5 +135,13 @@ export function usePatientData() {
     return body.item;
   }, [commit]);
 
-  return { ...cache, hydrated, syncing, error, sync, addPerson, updatePerson };
+  const deletePerson = useCallback(async (id: string) => {
+    const response = await fetch(`/api/relationships?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+    const body = (await response.json().catch(() => ({}))) as { error?: string };
+    if (!response.ok) throw new Error(body.error ?? `Could not delete (${response.status}).`);
+    const current = cacheRef.current;
+    commit({ ...current, people: current.people.filter((person) => person.id !== id) });
+  }, [commit]);
+
+  return { ...cache, hydrated, syncing, error, sync, addPerson, updatePerson, deletePerson };
 }

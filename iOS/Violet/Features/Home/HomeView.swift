@@ -68,7 +68,7 @@ struct HomeView: View {
     .alert("10-person limit reached", isPresented: $showsPeopleLimit) {
       Button("OK", role: .cancel) {}
     } message: {
-      Text("Delete someone from MongoDB, then tap the plus button again.")
+      Text("Delete someone in the provider portal, then tap the plus button again.")
     }
   }
 

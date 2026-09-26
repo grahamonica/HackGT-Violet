@@ -36,6 +36,8 @@ export type SyncResponse<T> = {
   serverTime: string;
 };
 
+export type PeopleSyncResponse = SyncResponse<Person> & { ids: string[] };
+
 export type PatientProfile = {
   name: string;
   gender: string;
