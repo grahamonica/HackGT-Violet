@@ -1,7 +1,8 @@
 # Violet face-quality (FIQA) dataset builder configuration.
 #
-# Relative paths below are resolved against `paths.root`, which is itself
-# relative to THIS config file's directory.
+# `paths.root` is relative to THIS config file's directory. DATA_ROOT is
+# <root>/<data_dir>, overridable with the VIOLET_FIQA_DATA_DIR env var.
+# Source paths below are relative to DATA_ROOT.
 
 paths:
   root: ..            # -> ml/facequality/dataset
@@ -15,24 +16,30 @@ random_seed: 42
 source:
   type: celeba
   celeba:
-    # Downloaded via torchvision.datasets.CelebA (falls back to manual download).
-    # torchvision places files under <raw_root>/celeba/.
-    raw_root: data/raw
-    images_dir: data/raw/celeba/img_align_celeba
-    identity_file: data/raw/celeba/identity_CelebA.txt
-    landmarks_file: data/raw/celeba/list_landmarks_align_celeba.txt
-    bbox_file: data/raw/celeba/list_bbox_celeba.txt
-    attr_file: data/raw/celeba/list_attr_celeba.txt
+    # Paths are relative to DATA_ROOT. Missing files are fetched from this
+    # Hugging Face dataset mirror of the official release. CelebA must be used
+    # under its own license terms (non-commercial research).
+    hf_repo: Yuehao/celeba
+    raw_dir: raw/celeba
+    images_zip: img_align_celeba.zip
+    images_dir: raw/celeba/img_align_celeba
+    identity_file: raw/celeba/identity_CelebA.txt
+    landmarks_file: raw/celeba/list_landmarks_align_celeba.txt
+    bbox_file: raw/celeba/list_bbox_celeba.txt
+    attr_file: raw/celeba/list_attr_celeba.txt
 
 # ---------------------------------------------------------------------------
 # Identity filtering / capping / splitting
 # ---------------------------------------------------------------------------
 selection:
   min_images_per_identity: 10
-  # Applied AFTER filtering + deterministic shuffle. null = all eligible.
-  # Growing this later only ADDS identities; existing split assignments
-  # never change.
+  # Caps applied AFTER filtering + the seeded shuffle; the selection is the
+  # shortest prefix of that fixed order satisfying both (null = no limit).
+  # Eligible CelebA: 8369 identities, 193k images, ~23 images/identity.
+  # Growing either cap only ADDS identities; existing splits never change.
+  # Test the pipeline first with: --max-identities 30
   max_identities: null
+  target_images: 10000       # -> 429 identities / 10,010 images at seed 42
 
 splits:
   train_fraction: 0.70
@@ -40,15 +47,15 @@ splits:
   test_fraction: 0.15
 
 # ---------------------------------------------------------------------------
-# Face alignment (no detector: CelebA ships 5-point landmarks)
+# Crops (no detector: sources ship 5-point landmarks)
 # ---------------------------------------------------------------------------
 crop:
-  # Output crop is crop_size x crop_size, warped from CelebA's 5-point
-  # landmarks onto the ArcFace template. face_scale is the fraction of the crop
-  # occupied by the canonical 112x112 ArcFace frame: 1.0 == tight ArcFace crop,
-  # smaller == more context. A tighter crop is a centered
-  # (crop_size * face_scale) square. 0.75 keeps the warp mostly inside the
-  # 178x218 aligned CelebA frame.
+  # none:  use source images as-is (CelebA img_align_celeba is already
+  #        aligned + cropped, 178x218). crop_path == source_image_path.
+  # align: similarity-warp onto the ArcFace 5-point template at crop_size;
+  #        for future sources that are not pre-aligned. face_scale is the
+  #        fraction of the crop occupied by the canonical 112x112 ArcFace frame.
+  mode: none
   crop_size: 224
   face_scale: 0.75
   jpeg_quality: 95
@@ -92,6 +99,8 @@ aws:
   search_user_match_threshold: 0
   search_max_users: 5
   search_quality_filter: NONE
+  # An enroll/label run needing more calls than this requires --yes.
+  confirm_calls_above: 2000
   # Throughput / resilience
   max_requests_per_second: 5
   max_workers: 4

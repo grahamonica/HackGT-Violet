@@ -1,0 +1,27 @@
+# Shared Violet ML environment.
+#   conda env create -f ml/environment.yml
+#   conda activate violet-ml
+name: violet-ml
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - numpy
+  - pandas
+  - pyarrow
+  - pyyaml
+  - tqdm
+  - pillow
+  - pip:
+      # Dataset builder
+      - opencv-python-headless
+      - boto3
+      - python-dotenv
+      - huggingface_hub
+      # Training: CUDA 12.6 wheels (NVIDIA driver >= 560). Use --index-url so
+      # pip cannot silently pick the CPU-only build from PyPI.
+      - --index-url https://download.pytorch.org/whl/cu126
+      - --extra-index-url https://pypi.org/simple
+      - torch==2.14.0+cu126
+      - torchvision==0.29.0+cu126
