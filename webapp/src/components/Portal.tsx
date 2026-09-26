@@ -5,6 +5,7 @@ import { dashboardAnalytics } from "@/lib/analytics";
 import { usePatientData } from "@/lib/client/usePatientData";
 import { useGoogleCalendar } from "@/lib/client/useGoogleCalendar";
 import { usePatientProfile } from "@/lib/client/usePatientProfile";
+import { useProviderNotes } from "@/lib/client/useProviderNotes";
 import { PortalHeader } from "./PortalHeader";
 import { PatientPanel } from "./PatientPanel";
 import { AnalyticsDashboard } from "./AnalyticsDashboard";
@@ -20,6 +21,7 @@ export function Portal() {
   const [now] = useState(() => new Date());
   const patient = usePatientData();
   const profile = usePatientProfile();
+  const providerNotes = useProviderNotes();
   const calendar = useGoogleCalendar(weeks);
 
   useEffect(() => {
@@ -37,7 +39,7 @@ export function Portal() {
       {patient.error && <p className="database-error" role="status">Database: {patient.error}</p>}
       <div className="dashboard-layout">
         <div className="left-column">
-          <PatientPanel profile={profile.profile} connected={calendar.connected} connecting={calendar.connecting} error={calendar.error} onConnect={calendar.connect} onEdit={() => setEditor({ kind: "patient" })} />
+          <PatientPanel profile={profile.profile} now={now} notes={providerNotes.notes} notesError={providerNotes.error} onAddNote={providerNotes.add} onUpdateNote={providerNotes.update} onRemoveNote={providerNotes.remove} connected={calendar.connected} connecting={calendar.connecting} error={calendar.error} onConnect={calendar.connect} onEdit={() => setEditor({ kind: "patient" })} />
         </div>
         <AnalyticsDashboard analytics={analytics} loading={!patient.hydrated || !calendar.hydrated} weeks={weeks} onWeeksChange={setWeeks} />
       </div>

@@ -15,6 +15,9 @@ export const serverEnv = {
   get logsPath() {
     return read("MONGO_LOGS_PATH") || "logs";
   },
+  get notesPath() {
+    return read("MONGO_NOTES_PATH") || "provider_notes";
+  },
   get googleClientId() {
     return read("GOOGLE_CLIENT_ID");
   },

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import type { CalendarEvent, CalendarEventDraft, PatientProfile, Person } from "@/lib/types";
+import { GENDERS, MOCA_MAX } from "@/lib/types";
 import { CalendarEditor } from "./CalendarEditor";
 
 type Props = {
@@ -28,7 +29,7 @@ export function EditPatientModal({ profile, people, onSave, onAddPerson, onEditP
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    onSave({ ...draft, name: draft.name.trim(), providerNotes: draft.providerNotes.trim() });
+    onSave({ ...draft, name: draft.name.trim(), mocaScore: draft.mocaScore.trim(), caregiverName: draft.caregiverName.trim(), caregiverPhone: draft.caregiverPhone.trim() });
     onClose();
   }
 
@@ -38,8 +39,18 @@ export function EditPatientModal({ profile, people, onSave, onAddPerson, onEditP
         <div className="modal-heading"><h2 id="edit-patient-title">Edit patient details</h2><button className="close-button" onClick={onClose} aria-label="Close">×</button></div>
         <form className="patient-form" onSubmit={submit}>
           <label><span>Name</span><input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>
-          <label><span>Date of birth</span><input type="date" value={draft.dateOfBirth} onChange={(event) => setDraft({ ...draft, dateOfBirth: event.target.value })} /></label>
-          <label><span>Provider notes</span><textarea value={draft.providerNotes} onChange={(event) => setDraft({ ...draft, providerNotes: event.target.value })} /></label>
+          <div className="field-pair">
+            <label><span>Gender</span><select value={draft.gender} onChange={(event) => setDraft({ ...draft, gender: event.target.value })}>{GENDERS.map((gender) => <option key={gender} value={gender}>{gender}</option>)}</select></label>
+            <label><span>Date of birth</span><input type="date" value={draft.dateOfBirth} onChange={(event) => setDraft({ ...draft, dateOfBirth: event.target.value })} /></label>
+          </div>
+          <div className="field-pair">
+            <label><span>Primary caregiver</span><input value={draft.caregiverName} onChange={(event) => setDraft({ ...draft, caregiverName: event.target.value })} /></label>
+            <label><span>Caregiver phone</span><input type="tel" value={draft.caregiverPhone} onChange={(event) => setDraft({ ...draft, caregiverPhone: event.target.value })} /></label>
+          </div>
+          <div className="field-pair">
+            <label><span>Latest MoCA score</span><input value={draft.mocaScore} onChange={(event) => setDraft({ ...draft, mocaScore: event.target.value })} inputMode="numeric" placeholder={`0 to ${MOCA_MAX}`} /></label>
+            <label><span>Date administered</span><input type="date" value={draft.mocaDate} onChange={(event) => setDraft({ ...draft, mocaDate: event.target.value })} /></label>
+          </div>
           <div className="edit-people-header"><h3>Familiar people ({people.length}/10)</h3><button type="button" className="text-button" onClick={onAddPerson} disabled={people.length >= 10}>Add person</button></div>
           <div className="edit-people-list">{people.map((person) => <div key={person.id}><div><strong>{person.name}</strong><span>{person.relation} · met {person.yearMet}</span></div><button type="button" className="text-button" onClick={() => onEditPerson(person)}>Edit</button></div>)}</div>
           <CalendarEditor events={calendarEvents} connected={calendarConnected} connecting={calendarConnecting} onConnect={onConnectCalendar} onSave={onSaveCalendarEvent} />

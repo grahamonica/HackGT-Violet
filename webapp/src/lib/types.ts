@@ -38,8 +38,28 @@ export type SyncResponse<T> = {
 
 export type PatientProfile = {
   name: string;
+  gender: string;
   dateOfBirth: string;
-  providerNotes: string;
+  mocaScore: string;
+  mocaDate: string;
+  caregiverName: string;
+  caregiverPhone: string;
 };
+
+export const MOCA_MAX = 30;
+
+export type ProviderNote = {
+  id: string;
+  title: string;
+  body: string;
+  createdAt: string;
+  updatedAt: string;
+  // Deletes are soft so the incremental sync can tell other open portals to drop the note.
+  deleted?: boolean;
+};
+
+export type ProviderNoteDraft = { title: string; body: string };
+
+export const GENDERS = ["Male", "Female", "Other"];
 
 export const UNKNOWN_PERSON = "Unknown";
