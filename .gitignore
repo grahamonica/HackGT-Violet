@@ -1,2 +1,16 @@
-.env
+**/.env
 .DS_Store
+
+ml/data
+# ML generated data / artifacts
+ml/**/data/
+ml/**/models/
+ml/**/cache/
+*.onnx
+*.pt
+*.pth
+.aws/
+credentials
+__pycache__/
+*.pyc
+.ipynb_checkpoints/

@@ -1,0 +1,135 @@
+# Violet face-quality (FIQA) dataset builder configuration.
+#
+# `paths.root` is relative to THIS config file's directory. DATA_ROOT is
+# <root>/<data_dir>, overridable with the VIOLET_FIQA_DATA_DIR env var.
+# Source paths below are relative to DATA_ROOT.
+
+paths:
+  root: ..            # -> ml/facequality/dataset
+  data_dir: data      # everything generated lives here (gitignored)
+
+random_seed: 42
+
+# ---------------------------------------------------------------------------
+# Source dataset
+# ---------------------------------------------------------------------------
+source:
+  type: celeba
+  celeba:
+    # CelebA ORIGINAL in-the-wild photos (not img_align_celeba). Paths are
+    # relative to DATA_ROOT. Annotation files are fetched if missing; photos
+    # are range-read one by one from the mirror's zips, only for sampled
+    # identities (never the full ~9.7 GB). CelebA must be used under its own
+    # license terms (non-commercial research).
+    identity_repo: Yuehao/celeba                  # identity_CelebA.txt, list_attr_celeba.txt
+    wild_repo: hfaus/CelebA_bbox_and_facepoints   # in-the-wild zips, bboxes, landmarks
+    identity_file: raw/celeba/identity_CelebA.txt
+    attr_file: raw/celeba/list_attr_celeba.txt
+    bbox_file: raw/celeba_in_the_wild/data/list_bbox_celeba.txt
+    landmarks_file: raw/celeba_in_the_wild/data/list_landmarks_celeba.txt
+    partition_file: raw/celeba_in_the_wild/data/list_eval_partition.txt
+    images_dir: raw/celeba_in_the_wild/img_celeba
+
+# ---------------------------------------------------------------------------
+# Identity filtering / capping / splitting
+# ---------------------------------------------------------------------------
+selection:
+  min_images_per_identity: 10
+  # Queries per identity = its images minus enrollment, capped here so a few
+  # large identities cannot dominate the query set.
+  max_queries_per_identity: 20
+  # Identities are taken in a fixed seeded order until the expected query
+  # count reaches target_queries (and/or max_identities is hit; null = no
+  # limit). Growing either only ADDS identities; existing splits never change.
+  # Test the pipeline first with: --max-identities 30
+  max_identities: null
+  target_queries: 10000      # -> ~570 identities at seed 42
+
+splits:
+  train_fraction: 0.70
+  val_fraction: 0.15
+  test_fraction: 0.15
+
+# ---------------------------------------------------------------------------
+# Crops: CelebA bbox + margin, clamped to the photo. No detector, no alignment,
+# no resizing. Landmarks are stored relative to the crop.
+# ---------------------------------------------------------------------------
+crop:
+  margin: 0.2                # fraction of bbox width/height added on EACH side
+  jpeg_quality: 95           # clean crops (and non-JPEG degradations) are saved at this quality
+
+# ---------------------------------------------------------------------------
+# Enrollment / reference selection (no downstream model involved)
+# ---------------------------------------------------------------------------
+enrollment:
+  num_images: 3
+  # Identities need at least num_images + min_query_images detected faces.
+  min_query_images: 3
+  # "Sufficiently good" gates for reference candidates. If too few images
+  # pass, selection falls back to the best-scoring detected faces.
+  min_face_px: 40            # short side of the source bbox
+  brightness_range: [40, 215]
+  max_abs_roll_deg: 25
+  # Landmark yaw proxy (see README): 0 == frontal, +/-1 ~ nose at an eye.
+  frontal_max_abs_yaw: 0.25
+  side_yaw_range: [0.25, 0.8]
+  # Minimum dHash Hamming distance between chosen references (near-dup guard).
+  min_dhash_distance: 8
+  quality_weights:
+    sharpness: 0.4
+    face_size: 0.3
+    exposure: 0.3
+
+# ---------------------------------------------------------------------------
+# Query sampling + synthetic degradation (enrollment images are never degraded)
+# ---------------------------------------------------------------------------
+queries:
+  degrade_fraction: 0.5      # per identity, of its (capped) queries
+  min_clean_per_identity: 1
+  # At most one degradation per query. All are pixel-value only: same size,
+  # same pixel grid, so crop-relative landmarks stay valid.
+  types: [gaussian_blur, motion_blur, darken, low_contrast, jpeg, noise]
+  severities: [light, medium, strong]
+  param_jitter: 0.2          # each drawn parameter = base * U(1-j, 1+j), seeded per image
+  params:                    # [light, medium, strong]
+    gaussian_blur: {sigma_frac_face: [0.01, 0.025, 0.05]}   # sigma = frac * face width (px)
+    motion_blur: {length_frac_face: [0.05, 0.10, 0.20]}     # kernel length = frac * face width, random angle
+    darken: {linear_gain: [0.25, 0.10, 0.04]}               # exposure gain in linear light (~-2, -3.3, -4.6 EV)
+    low_contrast: {alpha: [0.6, 0.4, 0.2]}                  # blend toward the image mean
+    jpeg: {quality: [30, 15, 6]}                            # saved at this JPEG quality
+    noise: {sigma: [8, 18, 35]}                             # additive Gaussian noise std (0-255 scale)
+
+# ---------------------------------------------------------------------------
+# AWS Rekognition
+# ---------------------------------------------------------------------------
+aws:
+  region: us-east-1
+  profile: null              # null -> default boto3 credential resolution
+  # Loaded (if present) before boto3 resolves credentials. Never committed.
+  env_file: .env
+  # violet-fiqa-training holds the archived aligned_v1 run; this run is separate.
+  collection_id: violet-fiqa-wild
+  # Enrollment
+  index_quality_filter: NONE
+  associate_user_match_threshold: 0
+  # Query labeling: keep low-confidence / poor-quality results on purpose.
+  search_user_match_threshold: 0
+  search_max_users: 5
+  search_quality_filter: NONE
+  # An enroll/label run needing more calls than this requires --yes.
+  confirm_calls_above: 2000
+  # Throughput / resilience
+  max_requests_per_second: 50   # us-east-1 default quota (~50 TPS); throttling retries with backoff
+  max_workers: 24
+  max_attempts: 8
+  backoff_base_seconds: 1.0
+  backoff_max_seconds: 60.0
+
+# ---------------------------------------------------------------------------
+# Sanity report
+# ---------------------------------------------------------------------------
+report:
+  low_similarity_threshold: 80.0   # top-1 similarity below this == low confidence
+  ambiguity_margin: 5.0            # top-1 minus top-2 below this == ambiguous
+  preview_identities: 30
+  preview_queries_per_identity: 6

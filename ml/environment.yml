@@ -1,0 +1,38 @@
+# Shared Violet ML environment.
+#   conda env create -f ml/environment.yml
+#   conda activate violet-ml
+name: violet-ml
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - numpy
+  # Pin the BLAS backend: conda-forge's default MKL 2026 build crashes numpy
+  # linear algebra on Windows (fatal exception 0xc06d007f).
+  - libblas=*=*openblas
+  - liblapack=*=*openblas
+  - libcblas=*=*openblas
+  - pandas
+  - pyarrow
+  - pyyaml
+  - tqdm
+  - pillow
+  - pip:
+      # Dataset builder
+      - opencv-python-headless
+      - boto3
+      - python-dotenv
+      - huggingface_hub
+      # Training: CUDA 12.6 wheels (NVIDIA driver >= 560). Use --index-url so
+      # pip cannot silently pick the CPU-only build from PyPI.
+      - --index-url https://download.pytorch.org/whl/cu126
+      - --extra-index-url https://pypi.org/simple
+      - torch==2.14.0+cu126
+      - torchvision==0.29.0+cu126
+      # Face-quality models: EdgeFace-S is built on timm's EdgeNeXt (pinned so
+      # checkpoint keys keep matching). onnx/onnxruntime are only used once, by
+      # models/prepare_weights.py, to convert the insightface ONNX releases.
+      - timm==1.0.30
+      - onnx
+      - onnxruntime
