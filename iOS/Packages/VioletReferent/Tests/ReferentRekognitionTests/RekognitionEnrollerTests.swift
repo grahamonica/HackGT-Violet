@@ -85,6 +85,34 @@ final class RekognitionEnrollerTests: XCTestCase {
     XCTAssertLessThan(operations.firstIndex(of: "DeleteFaces")!, operations.firstIndex(of: "IndexFaces")!)
   }
 
+  func testEnrollingANewPersonToleratesDeleteUserInvalidParameter() async throws {
+    // Live Rekognition rejects DeleteUser for a user that doesn't exist this way.
+    let transport = ScriptedTransport { operation, _ in
+      switch operation {
+      case "ListFaces": return (200, #"{"Faces":[]}"#)
+      case "DeleteUser": return (400, #"{"__type":"InvalidParameterException","Message":"Request has invalid parameters"}"#)
+      case "IndexFaces": return (200, #"{"FaceRecords":[{"Face":{"FaceId":"new"}}]}"#)
+      case "CreateUser": return (200, "{}")
+      case "AssociateFaces": return (200, #"{"AssociatedFaces":[{"FaceId":"new"}]}"#)
+      default: return (500, "{}")
+      }
+    }
+    let result = try await RekognitionEnroller(config: config, transport: transport).enroll(personID: "p1", photos: [Data([1])])
+    XCTAssertEqual(result.faceIDs, ["new"])
+  }
+
+  func testEnrolledPersonIDsFollowsPagination() async throws {
+    let transport = ScriptedTransport { operation, body in
+      guard operation == "ListUsers" else { return (500, "{}") }
+      if body["NextToken"] == nil {
+        return (200, #"{"Users":[{"UserId":"a"},{"UserId":"b"}],"NextToken":"t"}"#)
+      }
+      return (200, #"{"Users":[{"UserId":"c"}]}"#)
+    }
+    let ids = try await RekognitionEnroller(config: config, transport: transport).enrolledPersonIDs()
+    XCTAssertEqual(ids, ["a", "b", "c"])
+  }
+
   func testNoFaceInAnyPhotoLeavesThePersonUnenrolled() async {
     let transport = ScriptedTransport { operation, _ in
       operation == "IndexFaces" ? (200, #"{"FaceRecords":[]}"#) : Self.notFound

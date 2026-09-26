@@ -68,6 +68,20 @@ test_target.add_file_references(logic_refs)
   end
 end
 
+referent_ref = project.new(Xcodeproj::Project::Object::XCLocalSwiftPackageReference)
+referent_ref.relative_path = "Packages/VioletReferent"
+project.root_object.package_references << referent_ref
+
+%w[ReferentCore ReferentApple ReferentRekognition].each do |product_name|
+  dependency = project.new(Xcodeproj::Project::Object::XCSwiftPackageProductDependency)
+  dependency.package = referent_ref
+  dependency.product_name = product_name
+  app_target.package_product_dependencies << dependency
+  build_file = project.new(Xcodeproj::Project::Object::PBXBuildFile)
+  build_file.product_ref = dependency
+  app_target.frameworks_build_phase.files << build_file
+end
+
 project.build_configurations.each do |configuration|
   configuration.build_settings["IPHONEOS_DEPLOYMENT_TARGET"] = "17.2"
   configuration.build_settings["SWIFT_VERSION"] = "6.0"

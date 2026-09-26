@@ -108,7 +108,7 @@ struct HomeView: View {
       Spacer(minLength: 8)
 
       if needsSetupAction {
-        Button("Set up") {
+        Button("Set up glasses") {
           Task { await model.enableGlasses() }
         }
         .font(VioletDesign.heading(14, bold: true))
@@ -122,11 +122,12 @@ struct HomeView: View {
     .padding(.top, 8)
   }
 
+  /// Shown whenever the glasses aren't working, even after an earlier registration:
+  /// permissions or the device link can be lost (e.g. after reinstalling).
   private var needsSetupAction: Bool {
-    guard !model.glasses.isSetupComplete else { return false }
     switch model.glasses.state {
-    case .needsSetup, .unavailable: return true
-    default: return false
+    case .needsSetup, .unavailable, .waitingForGlasses: return true
+    case .connecting, .listening, .capturing: return false
     }
   }
 

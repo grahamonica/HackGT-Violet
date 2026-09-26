@@ -1,5 +1,6 @@
 import Foundation
 import Observation
+import ReferentCore
 
 @Observable
 @MainActor
@@ -22,6 +23,9 @@ final class AppModel {
   @ObservationIgnored private let remoteAPI: RemoteAPI
   @ObservationIgnored private let recognizer: PersonRecognizing
   @ObservationIgnored private let speaker: ElevenLabsSpeaker
+  /// Rekognition path; nil when AWS isn't configured, which keeps the OpenAI recognizer.
+  @ObservationIgnored private let referent: ReferentRecognizer?
+  @ObservationIgnored private let enrollment: FaceEnrollment?
   @ObservationIgnored private var syncTask: Task<Void, Never>?
   @ObservationIgnored private var hasStarted = false
   @ObservationIgnored private var recognitionCount = 0
@@ -32,7 +36,10 @@ final class AppModel {
     self.remoteAPI = RemoteAPI(environment: environment)
     self.recognizer = OpenAIRecognitionService(environment: environment)
     self.speaker = ElevenLabsSpeaker(environment: environment)
-    self.glasses = GlassesManager()
+    let referent = environment.rekognition.map(ReferentRecognizer.init(config:))
+    self.referent = referent
+    self.enrollment = environment.rekognition.map { FaceEnrollment(config: $0) }
+    self.glasses = referent.map { GlassesManager(frameSelector: $0) } ?? GlassesManager()
   }
 
   func start() async {
@@ -41,10 +48,14 @@ final class AppModel {
     let cache = await store.load()
     people = cache.people
     isLoading = false
+    preparePeople()
 
-    glasses.onVioletCapture = { [weak self] timestamp, image, _ in
+    referent?.onResult = { [weak self] in
+      Task { @MainActor in self?.glasses.finishCaptureEarly() }
+    }
+    glasses.onVioletCapture = { [weak self] timestamp, image, frameCount in
       Task { @MainActor in
-        await self?.processCapture(timestamp: timestamp, image: image)
+        await self?.processCapture(timestamp: timestamp, image: image, frameCount: frameCount)
       }
     }
     glasses.startMonitoring()
@@ -103,6 +114,7 @@ final class AppModel {
       let cache = try await store.upsert(person)
       people = cache.people
       notice = "\(person.name) was added."
+      preparePeople()
     } catch LocalStoreError.peopleLimitReached {
       notice = peopleLimitNotice
       return false
@@ -139,7 +151,10 @@ final class AppModel {
   func syncNow() async {
     guard environment.mongoIsConfigured, !isSyncing else { return }
     isSyncing = true
-    defer { isSyncing = false }
+    defer {
+      isSyncing = false
+      preparePeople()
+    }
 
     var cache = await store.load()
     for person in cache.people where person.needsUpload {
@@ -191,7 +206,7 @@ final class AppModel {
     "You can add up to \(AppLimits.maximumPeople) people. Delete someone from MongoDB to add another."
   }
 
-  private func processCapture(timestamp: Date, image: Data?) async {
+  private func processCapture(timestamp: Date, image: Data?, frameCount: Int) async {
     recognitionCount += 1
     isRecognizing = true
     defer {
@@ -200,7 +215,15 @@ final class AppModel {
     }
 
     let matchedPerson: FamiliarPerson?
-    if let image {
+    var unmatchedSpeech = Announcement.notFamily
+    if let referent {
+      if frameCount > 0, let result = await referent.latestResult() {
+        (matchedPerson, unmatchedSpeech) = interpret(result, fallback: unmatchedSpeech)
+      } else {
+        matchedPerson = nil
+        notice = "The glasses did not return a usable image."
+      }
+    } else if let image {
       do {
         let decision = try await recognizer.recognize(candidate: image, among: people)
         matchedPerson = decision.personID.flatMap { id in people.first(where: { $0.id == id }) }
@@ -216,6 +239,28 @@ final class AppModel {
 
     let identifiedName = matchedPerson?.name ?? "Unknown"
     let log = RecognitionLog(timestamp: timestamp, identifiedPerson: identifiedName)
+    // Saved alongside the speech so a slow or unreachable server never delays the answer.
+    Task { @MainActor [weak self] in await self?.record(log) }
+
+    let speech: String
+    if let matchedPerson {
+      speech = Announcement.identified(matchedPerson)
+    } else {
+      speech = unmatchedSpeech
+    }
+    lastAnnouncement = speech
+    let elapsed = Date().timeIntervalSince(timestamp).formatted(.number.precision(.fractionLength(2)))
+    violetTrace("speaking \(elapsed)s after trigger: \(speech)")
+    do {
+      try await speaker.speak(speech)
+      violetTrace("voice audio started \(Date().timeIntervalSince(timestamp).formatted(.number.precision(.fractionLength(2))))s after trigger")
+    } catch {
+      violetTrace("speech failed: \(error)")
+      notice = error.localizedDescription
+    }
+  }
+
+  private func record(_ log: RecognitionLog) async {
     do {
       _ = try await store.append(log)
       if environment.mongoIsConfigured {
@@ -225,20 +270,73 @@ final class AppModel {
     } catch {
       // The local append is attempted first; pending remote logs are retried by sync.
     }
+  }
 
-    let speech: String
-    if let matchedPerson {
-      speech = "This is \(matchedPerson.name), your \(matchedPerson.relation)."
-    } else {
-      speech = "This is not one of your family members."
+  /// Maps a Rekognition result to a person, or to what to say when there isn't one.
+  private func interpret(
+    _ result: ReferentResult,
+    fallback: String
+  ) -> (FamiliarPerson?, String) {
+    let d = result.diagnostics
+    violetTrace(
+      "referent: frames=\(d.framesConsidered) faces=\(d.facesDetected) passing=\(d.facesPassingQuality) "
+        + "calls=\(d.identificationCalls) failures=\(d.identificationFailures) "
+        + "seconds=\(d.secondsToAnswer.formatted(.number.precision(.fractionLength(2))))"
+    )
+    switch result.outcome {
+    case .identified(let match):
+      violetTrace("referent identified \(match.userID) similarity=\(match.bestSimilarity)")
+      if let person = people.first(where: { $0.id == match.userID }) {
+        return (person, fallback)
+      }
+      return (nil, fallback)
+    case .notRecognized:
+      return (nil, fallback)
+    case .noFace:
+      return (nil, Announcement.noFace)
+    case .ambiguous(let options):
+      // The same person entered twice (e.g. from the portal and the phone) matches both
+      // entries equally; that's still one answer.
+      let candidates = options.compactMap { option in people.first(where: { $0.id == option.userID }) }
+      if candidates.count == options.count, let best = candidates.first,
+        candidates.allSatisfy({ $0.name.caseInsensitiveCompare(best.name) == .orderedSame })
+      {
+        violetTrace("referent ambiguous between entries for \(best.name); using the best match")
+        return (best, fallback)
+      }
+      return (nil, Announcement.unsure)
+    case .poorQuality:
+      return (nil, Announcement.unsure)
+    case .failed(let error):
+      violetTrace("referent failed: \(error)")
+      notice = "I could not complete the comparison, so I did not guess."
+      return (nil, Announcement.unsure)
     }
-    lastAnnouncement = speech
-    violetTrace("speaking: \(speech)")
-    do {
-      try await speaker.speak(speech)
-    } catch {
-      violetTrace("speech failed: \(error)")
-      notice = error.localizedDescription
+  }
+
+  private func preparePeople() {
+    // Prepare every sentence Violet can say now, so answers play without waiting on ElevenLabs.
+    let sentences = people.map(Announcement.identified) + Announcement.fixed
+    Task { @MainActor [weak self] in await self?.speaker.prefetch(sentences) }
+
+    guard let enrollment else { return }
+    let snapshot = people
+    Task { @MainActor [weak self] in
+      let withoutFace = await enrollment.sync(snapshot)
+      guard !withoutFace.isEmpty else { return }
+      self?.notice = "No clear face was found in the photos for \(withoutFace.joined(separator: ", ")). Add new photos so Violet can recognize them."
     }
+  }
+}
+
+/// Everything Violet says after a capture, in one place so it can be pre-generated.
+enum Announcement {
+  static let notFamily = "This is not one of your family members."
+  static let noFace = "I couldn't see anyone's face."
+  static let unsure = "I couldn't tell who this is, so I won't guess."
+  static let fixed = [notFamily, noFace, unsure]
+
+  static func identified(_ person: FamiliarPerson) -> String {
+    "This is \(person.name), your \(person.relation)."
   }
 }
