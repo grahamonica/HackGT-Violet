@@ -246,6 +246,7 @@ button.calendar-status:hover:not(:disabled) { color: var(--accent); }
 .photo-input input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
 .form-error { color: var(--high); font-size: 13px; }
 .form-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 4px; }
+.form-actions .danger { margin-right: auto; color: var(--high); }
 
 @media (min-width: 861px) {
   html, body { height: 100%; overflow: hidden; }

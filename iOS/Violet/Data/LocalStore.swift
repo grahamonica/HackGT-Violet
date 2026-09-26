@@ -57,8 +57,12 @@ actor LocalStore {
   }
 
   @discardableResult
-  func mergeRemote(_ people: [FamiliarPerson], syncedAt: Date) throws -> LocalCache {
+  func mergeRemote(_ people: [FamiliarPerson], liveIDs: Set<String>, syncedAt: Date) throws
+    -> LocalCache
+  {
     var value = load()
+    // Drop people deleted remotely; records still waiting to upload are not on the server yet.
+    value.people.removeAll { !$0.needsUpload && !liveIDs.contains($0.id) }
     for person in people {
       if let index = value.people.firstIndex(where: { $0.id == person.id }) {
         guard !value.people[index].needsUpload,

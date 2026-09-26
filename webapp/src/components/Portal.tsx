@@ -44,7 +44,7 @@ export function Portal() {
         <AnalyticsDashboard analytics={analytics} loading={!patient.hydrated || !calendar.hydrated} weeks={weeks} onWeeksChange={setWeeks} />
       </div>
       {editor?.kind === "patient" && <EditPatientModal profile={profile.profile} people={patient.people} onSave={profile.save} onAddPerson={() => setEditor({ kind: "person" })} onEditPerson={(person) => setEditor({ kind: "person", person })} calendarEvents={calendar.events} calendarConnected={calendar.connected} calendarConnecting={calendar.connecting} onConnectCalendar={calendar.connect} onSaveCalendarEvent={calendar.saveEvent} onClose={() => setEditor(null)} />}
-      {editor?.kind === "person" && <AddPersonModal person={editor.person} onClose={() => setEditor({ kind: "patient" })} onSubmit={(draft) => editor.person ? patient.updatePerson(editor.person.id, draft) : patient.addPerson(draft)} />}
+      {editor?.kind === "person" && <AddPersonModal person={editor.person} onClose={() => setEditor({ kind: "patient" })} onSubmit={(draft) => editor.person ? patient.updatePerson(editor.person.id, draft) : patient.addPerson(draft)} onDelete={patient.deletePerson} />}
     </main>
   );
 }

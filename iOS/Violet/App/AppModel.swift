@@ -185,7 +185,9 @@ final class AppModel {
       // Stamp the cursor before querying so edits made during the query are fetched next time.
       let startedAt = Date.now
       let changes = try await remoteAPI.fetchRelationshipChanges(since: cache.lastRelationshipSync)
-      cache = try await store.mergeRemote(changes, syncedAt: startedAt)
+      // Read IDs after the changes so a person added mid-sync is never dropped.
+      let liveIDs = try await remoteAPI.fetchRelationshipIDs()
+      cache = try await store.mergeRemote(changes, liveIDs: liveIDs, syncedAt: startedAt)
       people = cache.people
     } catch {
       // Cached data remains the source of truth while offline.
@@ -205,7 +207,7 @@ final class AppModel {
   }
 
   private var peopleLimitNotice: String {
-    "You can add up to \(AppLimits.maximumPeople) people. Delete someone from MongoDB to add another."
+    "You can add up to \(AppLimits.maximumPeople) people. Delete someone in the provider portal to add another."
   }
 
   private func processCapture(timestamp: Date, image: Data?, frameCount: Int) async {

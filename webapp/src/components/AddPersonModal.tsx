@@ -11,9 +11,9 @@ const SLOTS: Array<{ key: Slot; label: string; short: string }> = [
   { key: "rightPhoto", label: "Right-facing photo", short: "Right" },
 ];
 
-type Props = { person?: Person; onClose: () => void; onSubmit: (draft: PersonDraft) => Promise<Person> };
+type Props = { person?: Person; onClose: () => void; onSubmit: (draft: PersonDraft) => Promise<Person>; onDelete?: (id: string) => Promise<void> };
 
-export function AddPersonModal({ person, onClose, onSubmit }: Props) {
+export function AddPersonModal({ person, onClose, onSubmit, onDelete }: Props) {
   const [name, setName] = useState(person?.name ?? "");
   const [relation, setRelation] = useState(person?.relation ?? "");
   const [yearMet, setYearMet] = useState(person ? String(person.yearMet) : "");
@@ -25,6 +25,7 @@ export function AddPersonModal({ person, onClose, onSubmit }: Props) {
   });
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const firstInput = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -63,6 +64,22 @@ export function AddPersonModal({ person, onClose, onSubmit }: Props) {
       onClose();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not save this person.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove() {
+    if (!person || !onDelete) return;
+    if (!confirmingDelete) return setConfirmingDelete(true);
+    setBusy(true);
+    setError(null);
+    try {
+      await onDelete(person.id);
+      onClose();
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not delete this person.");
+      setConfirmingDelete(false);
     } finally {
       setBusy(false);
     }
@@ -109,6 +126,7 @@ export function AddPersonModal({ person, onClose, onSubmit }: Props) {
           </fieldset>
           {error && <p className="form-error" role="alert">{error}</p>}
           <div className="form-actions">
+            {person && onDelete && <button className="text-button danger" type="button" onClick={() => void remove()} onBlur={() => setConfirmingDelete(false)} disabled={busy}>{confirmingDelete ? `Delete ${person.name}? Click again to confirm` : "Delete person"}</button>}
             <button className="secondary-button" type="button" onClick={onClose} disabled={busy}>Cancel</button>
             <button className="primary-button" type="submit" disabled={busy}>{busy ? "Saving…" : person ? "Save changes" : "Save person"}</button>
           </div>

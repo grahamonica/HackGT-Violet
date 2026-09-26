@@ -39,6 +39,16 @@ actor RemoteAPI {
     return documents.compactMap(Self.person(from:))
   }
 
+  /// IDs of every relationship still in the database, so people deleted from the portal can be
+  /// dropped from the local cache.
+  func fetchRelationshipIDs() async throws -> Set<String> {
+    let documents = try await run { database in
+      try await database[self.environment.relationshipsPath].find()
+        .project(["_id": 1] as Document).drain()
+    }
+    return Set(documents.compactMap { ($0["_id"] as? ObjectId)?.hexString ?? $0["_id"] as? String })
+  }
+
   func upload(_ person: FamiliarPerson) async throws -> (id: String, updatedAt: Date) {
     let id = ObjectId()
     let now = Date()

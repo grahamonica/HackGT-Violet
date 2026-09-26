@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import type { PersonDraft, SyncResponse, Person } from "@/lib/types";
+import type { PeopleSyncResponse, PersonDraft } from "@/lib/types";
 import { serverEnv } from "@/lib/server/env";
-import { createRelationship, fetchRelationships, updateRelationship } from "@/lib/server/mongo";
+import { createRelationship, deleteRelationship, fetchRelationshipIds, fetchRelationships, updateRelationship } from "@/lib/server/mongo";
 
 export const dynamic = "force-dynamic";
 
@@ -14,10 +14,11 @@ export async function GET(request: Request) {
   if (serverEnv.mongoError) return NextResponse.json({ error: serverEnv.mongoError }, { status: 503 });
   const updatedAfter = new URL(request.url).searchParams.get("updatedAfter") ?? undefined;
   try {
-    const body: SyncResponse<Person> = {
-      items: await fetchRelationships(updatedAfter),
-      serverTime: new Date().toISOString(),
-    };
+    const serverTime = new Date().toISOString();
+    const items = await fetchRelationships(updatedAfter);
+    // Read IDs after the changes so a person added mid-request is never dropped from the client.
+    const ids = await fetchRelationshipIds();
+    const body: PeopleSyncResponse = { items, ids, serverTime };
     return NextResponse.json(body);
   } catch (error) {
     return failure(error);
@@ -80,6 +81,18 @@ export async function PATCH(request: Request) {
   if (typeof draft === "string") return NextResponse.json({ error: draft }, { status: 400 });
   try {
     return NextResponse.json({ item: await updateRelationship(id, draft) });
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+export async function DELETE(request: Request) {
+  if (serverEnv.mongoError) return NextResponse.json({ error: serverEnv.mongoError }, { status: 503 });
+  const id = new URL(request.url).searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "A familiar person ID is required." }, { status: 400 });
+  try {
+    await deleteRelationship(id);
+    return NextResponse.json({ ok: true });
   } catch (error) {
     return failure(error);
   }

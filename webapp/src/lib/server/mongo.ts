@@ -142,6 +142,20 @@ export async function updateRelationship(id: string, draft: PersonDraft): Promis
   return { ...draft, id, updatedAt: now.toISOString() };
 }
 
+// IDs of every current familiar person, so clients can drop people deleted since their last sync.
+export async function fetchRelationshipIds(): Promise<string[]> {
+  const db = await database();
+  const documents = await db.collection(serverEnv.relationshipsPath).find({}, { projection: { _id: 1 } }).toArray();
+  return documents.map((document) => document._id.toString());
+}
+
+export async function deleteRelationship(id: string): Promise<void> {
+  if (!ObjectId.isValid(id)) throw new Error("Invalid familiar person ID.");
+  const db = await database();
+  const result = await db.collection(serverEnv.relationshipsPath).deleteOne({ _id: new ObjectId(id) });
+  if (!result.deletedCount) throw new Error("Familiar person not found.");
+}
+
 function note(document: Document): ProviderNote {
   const createdAt = dateValue(document.createdAt, new Date(0)).toISOString();
   return {
