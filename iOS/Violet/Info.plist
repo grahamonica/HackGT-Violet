@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>$(DEVELOPMENT_LANGUAGE)</string>
+  <key>CFBundleDisplayName</key>
+  <string>Violet</string>
+  <key>CFBundleExecutable</key>
+  <string>$(EXECUTABLE_NAME)</string>
+  <key>CFBundleIdentifier</key>
+  <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>CFBundleName</key>
+  <string>$(PRODUCT_NAME)</string>
+  <key>CFBundlePackageType</key>
+  <string>$(PRODUCT_BUNDLE_PACKAGE_TYPE)</string>
+  <key>CFBundleShortVersionString</key>
+  <string>$(MARKETING_VERSION)</string>
+  <key>CFBundleVersion</key>
+  <string>$(CURRENT_PROJECT_VERSION)</string>
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleTypeRole</key>
+      <string>Editor</string>
+      <key>CFBundleURLName</key>
+      <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+      <key>CFBundleURLSchemes</key>
+      <array>
+        <string>violet</string>
+      </array>
+    </dict>
+  </array>
+  <key>MWDAT</key>
+  <dict>
+    <key>AppLinkURLScheme</key>
+    <string>violet://</string>
+    <key>MetaAppID</key>
+    <string>$(META_APP_ID)</string>
+    <key>ClientToken</key>
+    <string>$(META_CLIENT_TOKEN)</string>
+    <key>TeamID</key>
+    <string>$(DEVELOPMENT_TEAM)</string>
+    <key>Analytics</key>
+    <dict>
+      <key>OptOut</key>
+      <true/>
+    </dict>
+    <key>CrashReporting</key>
+    <dict>
+      <key>OptOut</key>
+      <true/>
+    </dict>
+  </dict>
+  <key>UIBackgroundModes</key>
+  <array>
+    <string>processing</string>
+    <string>bluetooth-central</string>
+    <string>bluetooth-peripheral</string>
+    <string>external-accessory</string>
+    <string>audio</string>
+  </array>
+  <key>UISupportedExternalAccessoryProtocols</key>
+  <array>
+    <string>com.meta.ar.wearable</string>
+  </array>
+  <key>NSBluetoothAlwaysUsageDescription</key>
+  <string>Violet connects to your Meta glasses to listen for your request and capture a short view.</string>
+  <key>NSLocalNetworkUsageDescription</key>
+  <string>Violet uses the local network for a faster connection to your glasses.</string>
+  <key>NSBonjourServices</key>
+  <array>
+    <string>_bonjour._tcp</string>
+  </array>
+  <key>NSCameraUsageDescription</key>
+  <string>Violet uses the phone camera to add the three reference photos for someone you know.</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Violet uses the glasses microphone to hear when you ask for Violet.</string>
+  <key>NSPhotoLibraryUsageDescription</key>
+  <string>Violet can use a photo from your library when the camera is unavailable.</string>
+  <key>UIApplicationSceneManifest</key>
+  <dict>
+    <key>UIApplicationSupportsMultipleScenes</key>
+    <false/>
+  </dict>
+  <key>UILaunchScreen</key>
+  <dict/>
+  <key>UIRequiredDeviceCapabilities</key>
+  <array>
+    <string>arm64</string>
+  </array>
+  <key>UIAppFonts</key>
+  <array>
+    <string>MuktaMalar-Light.ttf</string>
+    <string>Sansation-Regular.ttf</string>
+    <string>Sansation-Bold.ttf</string>
+  </array>
+  <key>UISupportedInterfaceOrientations</key>
+  <array>
+    <string>UIInterfaceOrientationPortrait</string>
+  </array>
+</dict>
+</plist>
+
