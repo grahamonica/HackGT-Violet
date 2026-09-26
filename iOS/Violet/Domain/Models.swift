@@ -96,12 +96,6 @@ struct LocalCache: Codable, Sendable {
   var people: [FamiliarPerson]
   var logs: [RecognitionLog]
   var lastRelationshipSync: Date?
-  var relationshipETag: String?
 
-  static let empty = LocalCache(
-    people: [],
-    logs: [],
-    lastRelationshipSync: nil,
-    relationshipETag: nil
-  )
+  static let empty = LocalCache(people: [], logs: [], lastRelationshipSync: nil)
 }

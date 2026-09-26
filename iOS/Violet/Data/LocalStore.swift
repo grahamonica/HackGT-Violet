@@ -44,11 +44,7 @@ actor LocalStore {
   }
 
   @discardableResult
-  func replaceRemoteSnapshot(
-    _ people: [FamiliarPerson],
-    syncedAt: Date,
-    etag: String?
-  ) throws -> LocalCache {
+  func replaceRemoteSnapshot(_ people: [FamiliarPerson], syncedAt: Date) throws -> LocalCache {
     var value = load()
     let pendingPeople = value.people.filter(\.needsUpload)
     let pendingIDs = Set(pendingPeople.map(\.id))
@@ -56,13 +52,12 @@ actor LocalStore {
     value.people = people.filter { !pendingIDs.contains($0.id) } + pendingPeople
     value.people.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     value.lastRelationshipSync = syncedAt
-    if let etag { value.relationshipETag = etag }
     try save(value)
     return value
   }
 
   @discardableResult
-  func mergeRemote(_ people: [FamiliarPerson], syncedAt: Date, etag: String?) throws -> LocalCache {
+  func mergeRemote(_ people: [FamiliarPerson], syncedAt: Date) throws -> LocalCache {
     var value = load()
     for person in people {
       if let index = value.people.firstIndex(where: { $0.id == person.id }) {
@@ -76,7 +71,6 @@ actor LocalStore {
     }
     value.people.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     value.lastRelationshipSync = syncedAt
-    if let etag { value.relationshipETag = etag }
     try save(value)
     return value
   }

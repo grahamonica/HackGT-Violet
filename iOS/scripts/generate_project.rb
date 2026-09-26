@@ -46,19 +46,26 @@ logic_refs = source_refs.select do |reference|
 end
 test_target.add_file_references(logic_refs)
 
-package_ref = project.new(Xcodeproj::Project::Object::XCRemoteSwiftPackageReference)
-package_ref.repositoryURL = "https://github.com/facebook/meta-wearables-dat-ios"
-package_ref.requirement = { "kind" => "exactVersion", "version" => "1.0.0" }
-project.root_object.package_references << package_ref
+{
+  "https://github.com/facebook/meta-wearables-dat-ios" => ["1.0.0", %w[MWDATCore MWDATCamera MWDATSpeech]],
+  "https://github.com/orlandos-nl/MongoKitten" => ["7.16.3", %w[MongoKitten]],
+  # MongoKitten supports iOS 13, but DNSClient 2.6.1+ requires iOS 16; pin the last compatible release.
+  "https://github.com/orlandos-nl/DNSClient" => ["2.6.0", []]
+}.each do |repository_url, (version, product_names)|
+  package_ref = project.new(Xcodeproj::Project::Object::XCRemoteSwiftPackageReference)
+  package_ref.repositoryURL = repository_url
+  package_ref.requirement = { "kind" => "exactVersion", "version" => version }
+  project.root_object.package_references << package_ref
 
-%w[MWDATCore MWDATCamera MWDATSpeech].each do |product_name|
-  dependency = project.new(Xcodeproj::Project::Object::XCSwiftPackageProductDependency)
-  dependency.package = package_ref
-  dependency.product_name = product_name
-  app_target.package_product_dependencies << dependency
-  build_file = project.new(Xcodeproj::Project::Object::PBXBuildFile)
-  build_file.product_ref = dependency
-  app_target.frameworks_build_phase.files << build_file
+  product_names.each do |product_name|
+    dependency = project.new(Xcodeproj::Project::Object::XCSwiftPackageProductDependency)
+    dependency.package = package_ref
+    dependency.product_name = product_name
+    app_target.package_product_dependencies << dependency
+    build_file = project.new(Xcodeproj::Project::Object::PBXBuildFile)
+    build_file.product_ref = dependency
+    app_target.frameworks_build_phase.files << build_file
+  end
 end
 
 project.build_configurations.each do |configuration|

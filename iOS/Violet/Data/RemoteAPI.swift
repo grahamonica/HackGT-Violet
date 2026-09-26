@@ -1,316 +1,284 @@
 import Foundation
+import MongoKitten
+import dnssd
 
 enum RemoteAPIError: LocalizedError {
   case notConfigured
-  case invalidResponse
-  case requestFailed(Int, String)
-  case invalidPhoto
+  case serverLookupFailed(String)
+  case writeRejected(String)
 
   var errorDescription: String? {
     switch self {
     case .notConfigured:
       "The remote database is not configured."
-    case .invalidResponse:
-      "The database returned an unreadable response."
-    case .requestFailed(let status, let message):
-      "Database request failed (\(status)): \(message)"
-    case .invalidPhoto:
-      "A relationship photo could not be read."
+    case .serverLookupFailed(let name):
+      "Could not look up the database servers for \(name)."
+    case .writeRejected(let message):
+      "The database rejected the change: \(message)"
     }
   }
 }
 
-struct RelationshipSyncBatch: Sendable {
-  let people: [FamiliarPerson]
-  let etag: String?
-  let notModified: Bool
-}
-
+/// Talks to MongoDB Atlas directly through `MONGO_URI`, using the same database, collections,
+/// and camelCase fields as the provider portal.
 actor RemoteAPI {
   private let environment: AppEnvironment
-  private let session: URLSession
+  private var connection: Task<MongoCluster, Error>?
 
-  init(environment: AppEnvironment, session: URLSession = .shared) {
+  init(environment: AppEnvironment) {
     self.environment = environment
-    self.session = session
   }
 
-  func fetchRelationshipChanges(since: Date?, etag: String?) async throws -> RelationshipSyncBatch {
-    var request = try request(path: environment.relationshipsPath, method: "GET")
-    if let since {
-      var components = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)
-      components?.queryItems = [
-        URLQueryItem(name: "updatedAfter", value: Self.dateString(since))
-      ]
-      request.url = components?.url
+  /// Relationships updated after `since`, or every relationship when `since` is nil.
+  func fetchRelationshipChanges(since: Date?) async throws -> [FamiliarPerson] {
+    let filter: Document = since.map { ["updatedAt": ["$gt": $0] as Document] } ?? [:]
+    let documents = try await run { database in
+      try await database[self.environment.relationshipsPath].find(filter).drain()
     }
-    if let etag { request.setValue(etag, forHTTPHeaderField: "If-None-Match") }
+    // Skip unreadable records so one bad document cannot block the rest of the sync.
+    return documents.compactMap(Self.person(from:))
+  }
 
-    let (data, response) = try await session.data(for: request)
-    guard let http = response as? HTTPURLResponse else { throw RemoteAPIError.invalidResponse }
-    if http.statusCode == 304 {
-      return RelationshipSyncBatch(people: [], etag: etag, notModified: true)
-    }
-    try validate(http, data: data)
-
-    let records: [RemotePerson]
-    if let array = try? Self.decoder.decode([RemotePerson].self, from: data) {
-      records = array
-    } else if let envelope = try? Self.decoder.decode(RelationshipEnvelope.self, from: data) {
-      records = envelope.items
-    } else {
-      throw RemoteAPIError.invalidResponse
-    }
-
-    var people: [FamiliarPerson] = []
-    for record in records {
-      people.append(try await record.person(using: session))
-    }
-    return RelationshipSyncBatch(
-      people: people,
-      etag: http.value(forHTTPHeaderField: "ETag"),
-      notModified: false
+  func upload(_ person: FamiliarPerson) async throws -> (id: String, updatedAt: Date) {
+    let id = ObjectId()
+    let now = Date()
+    try await insert(
+      [
+        "_id": id,
+        "name": person.name,
+        "frontPhoto": person.frontPhoto.base64EncodedString(),
+        "leftPhoto": person.leftPhoto.base64EncodedString(),
+        "rightPhoto": person.rightPhoto.base64EncodedString(),
+        "relation": person.relation,
+        "bio": person.bio,
+        "yearMet": person.yearMet,
+        "createdAt": now,
+        "updatedAt": now,
+      ],
+      into: environment.relationshipsPath
     )
-  }
-
-  func upload(_ person: FamiliarPerson) async throws -> (id: String?, updatedAt: Date) {
-    var request = try request(path: environment.relationshipsPath, method: "POST")
-    request.httpBody = try Self.encoder.encode(RemotePerson(person: person))
-    let (data, response) = try await session.data(for: request)
-    guard let http = response as? HTTPURLResponse else { throw RemoteAPIError.invalidResponse }
-    try validate(http, data: data)
-
-    guard !data.isEmpty,
-      let saved = try? Self.decoder.decode(RemoteSaveResponse.self, from: data)
-    else {
-      return (nil, .now)
-    }
-    return (saved.id, saved.updatedAt ?? .now)
+    return (id.hexString, now)
   }
 
   func upload(_ log: RecognitionLog) async throws {
-    var request = try request(path: environment.logsPath, method: "POST")
-    request.httpBody = try Self.encoder.encode(RemoteLog(log: log))
-    let (data, response) = try await session.data(for: request)
-    guard let http = response as? HTTPURLResponse else { throw RemoteAPIError.invalidResponse }
-    try validate(http, data: data)
+    try await insert(
+      ["timestamp": log.timestamp, "identifiedPerson": log.identifiedPerson],
+      into: environment.logsPath
+    )
   }
 
-  private func request(path: String, method: String) throws -> URLRequest {
-    guard let endpoint = environment.mongoEndpoint, !environment.mongoAPIKey.isEmpty else {
-      throw RemoteAPIError.notConfigured
-    }
-    let cleanPath = path.trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-    let url = cleanPath.isEmpty ? endpoint : endpoint.appendingPathComponent(cleanPath)
-    var request = URLRequest(url: url)
-    request.httpMethod = method
-    request.timeoutInterval = 30
-    request.setValue("application/json", forHTTPHeaderField: "Accept")
-    request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-    request.setValue(environment.mongoAPIKey, forHTTPHeaderField: "api-key")
-    return request
-  }
-
-  private func validate(_ response: HTTPURLResponse, data: Data) throws {
-    guard (200..<300).contains(response.statusCode) else {
-      let message = String(data: Data(data.prefix(300)), encoding: .utf8) ?? "Unknown error"
-      throw RemoteAPIError.requestFailed(response.statusCode, message)
+  /// Closes the connection while the app is in the background; the next call reconnects.
+  func disconnect() async {
+    let connection = self.connection
+    self.connection = nil
+    if let cluster = try? await connection?.value {
+      await cluster.disconnect()
     }
   }
 
-  private static let encoder: JSONEncoder = {
-    let encoder = JSONEncoder()
-    encoder.dateEncodingStrategy = .custom { date, encoder in
-      var container = encoder.singleValueContainer()
-      try container.encode(dateString(date))
+  private func insert(_ document: Document, into collection: String) async throws {
+    let reply = try await run { database in
+      try await database[collection].insert(document)
     }
-    return encoder
-  }()
-
-  private static let decoder: JSONDecoder = {
-    let decoder = JSONDecoder()
-    decoder.dateDecodingStrategy = .custom { decoder in
-      let container = try decoder.singleValueContainer()
-      let value = try container.decode(String.self)
-      if let date = parseDate(value) {
-        return date
-      }
-      throw DecodingError.dataCorruptedError(
-        in: container,
-        debugDescription: "Invalid ISO-8601 date"
+    // Validation failures come back as `ok: 1` with write errors instead of throwing.
+    guard reply.insertCount == 1 else {
+      throw RemoteAPIError.writeRejected(
+        reply.writeErrors?.first?.message ?? "Nothing was inserted."
       )
     }
-    return decoder
-  }()
-
-  private static func dateString(_ date: Date) -> String {
-    let formatter = ISO8601DateFormatter()
-    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    return formatter.string(from: date)
   }
 
-  private static func parseDate(_ value: String) -> Date? {
-    let fractional = ISO8601DateFormatter()
-    fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    return fractional.date(from: value) ?? ISO8601DateFormatter().date(from: value)
-  }
-}
-
-private struct RelationshipEnvelope: Decodable {
-  let items: [RemotePerson]
-
-  enum CodingKeys: String, CodingKey {
-    case items
-    case relationships
-    case documents
-  }
-
-  init(from decoder: Decoder) throws {
-    let container = try decoder.container(keyedBy: CodingKeys.self)
-    if let items = try container.decodeIfPresent([RemotePerson].self, forKey: .items) {
-      self.items = items
-    } else if let relationships = try container.decodeIfPresent([RemotePerson].self, forKey: .relationships) {
-      self.items = relationships
-    } else {
-      self.items = try container.decode([RemotePerson].self, forKey: .documents)
+  private func run<Value: Sendable>(
+    _ operation: (MongoDatabase) async throws -> Value
+  ) async throws -> Value {
+    let database = try await database()
+    do {
+      return try await operation(database)
+    } catch {
+      // Drop a connection that may have gone stale; the next one-minute sync reconnects.
+      await disconnect()
+      throw error
     }
   }
-}
 
-private struct RemotePerson: Codable {
-  let id: String?
-  let name: String
-  let frontPhoto: String
-  let leftPhoto: String
-  let rightPhoto: String
-  let relation: String
-  let bio: String
-  let yearMet: Int
-  let updatedAt: Date?
-
-  enum CodingKeys: String, CodingKey {
-    case id
-    case mongoID = "_id"
-    case name
-    case frontPhoto = "front_photo"
-    case frontPhotoLegacy = "frontPhoto"
-    case leftPhoto = "left_photo"
-    case leftPhotoLegacy = "leftPhoto"
-    case rightPhoto = "right_photo"
-    case rightPhotoLegacy = "rightPhoto"
-    case relation
-    case bio
-    case yearMet = "year_met"
-    case yearMetLegacy = "yearMet"
-    case updatedAt = "updated_at"
-    case updatedAtLegacy = "updatedAt"
+  private func database() async throws -> MongoDatabase {
+    guard environment.mongoIsConfigured else { throw RemoteAPIError.notConfigured }
+    let connection =
+      self.connection
+      ?? Task { [uri = environment.mongoURI] in
+        try await MongoCluster(connectingTo: Self.connectionSettings(for: uri))
+      }
+    self.connection = connection
+    do {
+      return try await connection.value[environment.mongoDatabase]
+    } catch {
+      if self.connection == connection { self.connection = nil }
+      throw error
+    }
   }
 
-  init(person: FamiliarPerson) {
-    id = person.id
-    name = person.name
-    frontPhoto = person.frontPhoto.base64EncodedString()
-    leftPhoto = person.leftPhoto.base64EncodedString()
-    rightPhoto = person.rightPhoto.base64EncodedString()
-    relation = person.relation
-    bio = person.bio
-    yearMet = person.yearMet
-    updatedAt = person.updatedAt
+  /// MongoKitten resolves `mongodb+srv://` hosts by reading /etc/resolv.conf, which iOS apps
+  /// cannot rely on, so the seed list is resolved here with the system resolver instead.
+  private static func connectionSettings(for uri: String) async throws -> ConnectionSettings {
+    let parsed = try ConnectionSettings(uri)
+    guard parsed.isSRV, parsed.dnsServer == nil, let seed = parsed.hosts.first else {
+      return parsed
+    }
+    var settings = ConnectionSettings(
+      authentication: parsed.authentication,
+      authenticationSource: parsed.authenticationSource,
+      hosts: try await SRVLookup.hosts(for: "_mongodb._tcp.\(seed.hostname)"),
+      targetDatabase: parsed.targetDatabase,
+      useSSL: parsed.useSSL,
+      verifySSLCertificates: parsed.verifySSLCertificates,
+      maximumNumberOfConnections: parsed.maximumNumberOfConnections,
+      connectTimeout: parsed.connectTimeout,
+      socketTimeout: parsed.socketTimeout,
+      applicationName: parsed.applicationName
+    )
+    settings.sslCaCertificatePath = parsed.sslCaCertificatePath
+    settings.queryParameters = parsed.queryParameters
+    return settings
   }
 
-  init(from decoder: Decoder) throws {
-    let container = try decoder.container(keyedBy: CodingKeys.self)
-    id = try container.decodeIfPresent(String.self, forKey: .id)
-      ?? container.decodeIfPresent(String.self, forKey: .mongoID)
-    name = try container.decode(String.self, forKey: .name)
-    frontPhoto = try container.decodeIfPresent(String.self, forKey: .frontPhoto)
-      ?? container.decode(String.self, forKey: .frontPhotoLegacy)
-    leftPhoto = try container.decodeIfPresent(String.self, forKey: .leftPhoto)
-      ?? container.decode(String.self, forKey: .leftPhotoLegacy)
-    rightPhoto = try container.decodeIfPresent(String.self, forKey: .rightPhoto)
-      ?? container.decode(String.self, forKey: .rightPhotoLegacy)
-    relation = try container.decode(String.self, forKey: .relation)
-    bio = try container.decodeIfPresent(String.self, forKey: .bio) ?? ""
-    yearMet = try container.decodeIfPresent(Int.self, forKey: .yearMet)
-      ?? container.decode(Int.self, forKey: .yearMetLegacy)
-    updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt)
-      ?? container.decodeIfPresent(Date.self, forKey: .updatedAtLegacy)
-  }
-
-  func encode(to encoder: Encoder) throws {
-    var container = encoder.container(keyedBy: CodingKeys.self)
-    try container.encode(name, forKey: .name)
-    try container.encode(frontPhoto, forKey: .frontPhoto)
-    try container.encode(leftPhoto, forKey: .leftPhoto)
-    try container.encode(rightPhoto, forKey: .rightPhoto)
-    try container.encode(relation, forKey: .relation)
-    try container.encode(bio, forKey: .bio)
-    try container.encode(yearMet, forKey: .yearMet)
-  }
-
-  func person(using session: URLSession) async throws -> FamiliarPerson {
-    guard let front = await Self.photoData(frontPhoto, using: session),
-      let left = await Self.photoData(leftPhoto, using: session),
-      let right = await Self.photoData(rightPhoto, using: session)
+  private static func person(from document: Document) -> FamiliarPerson? {
+    guard let id = (document["_id"] as? ObjectId)?.hexString ?? document["_id"] as? String,
+      let name = document["name"] as? String,
+      let front = photo(document["frontPhoto"] ?? document["front_photo"]),
+      let left = photo(document["leftPhoto"] ?? document["left_photo"]),
+      let right = photo(document["rightPhoto"] ?? document["right_photo"]),
+      let relation = document["relation"] as? String
     else {
-      throw RemoteAPIError.invalidPhoto
+      return nil
     }
     return FamiliarPerson(
-      id: id ?? UUID().uuidString,
+      id: id,
       name: name,
       frontPhoto: front,
       leftPhoto: left,
       rightPhoto: right,
       relation: relation,
-      bio: bio,
-      yearMet: yearMet,
-      updatedAt: updatedAt ?? .distantPast,
+      bio: document["bio"] as? String ?? "",
+      yearMet: integer(document["yearMet"] ?? document["year_met"])
+        ?? Calendar.current.component(.year, from: .now),
+      updatedAt: (document["updatedAt"] ?? document["updated_at"]) as? Date ?? .distantPast,
       needsUpload: false
     )
   }
 
-  private static func photoData(_ value: String, using session: URLSession) async -> Data? {
-    if let decoded = Data(base64Encoded: value) { return decoded }
-    guard let url = URL(string: value), ["https", "http"].contains(url.scheme?.lowercased()) else {
-      return nil
+  private static func photo(_ value: Primitive?) -> Data? {
+    guard var base64 = value as? String else { return nil }
+    if base64.hasPrefix("data:"), let comma = base64.firstIndex(of: ",") {
+      base64 = String(base64[base64.index(after: comma)...])
     }
-    return try? await session.data(from: url).0
+    return Data(base64Encoded: base64, options: .ignoreUnknownCharacters)
+  }
+
+  /// The portal's Node driver stores whole numbers as int32; accept any BSON number.
+  private static func integer(_ value: Primitive?) -> Int? {
+    switch value {
+    case let value as Int: value
+    case let value as Int32: Int(value)
+    case let value as Double: Int(value)
+    default: nil
+    }
   }
 }
 
-private struct RemoteSaveResponse: Decodable {
-  let id: String?
-  let updatedAt: Date?
+/// A one-shot SRV query through the system DNS resolver (dnssd).
+private final class SRVLookup: @unchecked Sendable {
+  // Every stored property is only touched on `queue`, which is also the dnssd callback queue.
+  private let queue = DispatchQueue(label: "com.violet.patient.srv-lookup")
+  private var service: DNSServiceRef?
+  private var hosts: [ConnectionSettings.Host] = []
+  private var continuation: CheckedContinuation<[ConnectionSettings.Host], Error>?
 
-  enum CodingKeys: String, CodingKey {
-    case id
-    case mongoID = "_id"
-    case insertedID = "insertedId"
-    case updatedAt = "updated_at"
-    case updatedAtLegacy = "updatedAt"
+  static func hosts(for name: String, timeout: TimeInterval = 10) async throws
+    -> [ConnectionSettings.Host]
+  {
+    try await SRVLookup().run(name: name, timeout: timeout)
   }
 
-  init(from decoder: Decoder) throws {
-    let container = try decoder.container(keyedBy: CodingKeys.self)
-    id = try container.decodeIfPresent(String.self, forKey: .id)
-      ?? container.decodeIfPresent(String.self, forKey: .mongoID)
-      ?? container.decodeIfPresent(String.self, forKey: .insertedID)
-    updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt)
-      ?? container.decodeIfPresent(Date.self, forKey: .updatedAtLegacy)
+  private func run(name: String, timeout: TimeInterval) async throws -> [ConnectionSettings.Host] {
+    try await withCheckedThrowingContinuation { continuation in
+      queue.async {
+        self.continuation = continuation
+        // Balanced by the release in `finish`, which runs exactly once.
+        let context = Unmanaged.passRetained(self).toOpaque()
+        var service: DNSServiceRef?
+        let status = DNSServiceQueryRecord(
+          &service,
+          0,
+          0,
+          name,
+          UInt16(kDNSServiceType_SRV),
+          UInt16(kDNSServiceClass_IN),
+          { _, flags, _, status, _, _, _, length, data, _, context in
+            guard let context else { return }
+            Unmanaged<SRVLookup>.fromOpaque(context).takeUnretainedValue()
+              .receive(flags: flags, status: status, data: data, length: length)
+          },
+          context
+        )
+        guard status == kDNSServiceErr_NoError, let service else {
+          self.finish(.failure(RemoteAPIError.serverLookupFailed(name)))
+          return
+        }
+        self.service = service
+        DNSServiceSetDispatchQueue(service, self.queue)
+        self.queue.asyncAfter(deadline: .now() + timeout) {
+          self.finish(.failure(RemoteAPIError.serverLookupFailed(name)))
+        }
+      }
+    }
   }
-}
 
-private struct RemoteLog: Encodable {
-  let timestamp: Date
-  let identifiedPerson: String
-
-  init(log: RecognitionLog) {
-    timestamp = log.timestamp
-    identifiedPerson = log.identifiedPerson
+  private func receive(
+    flags: DNSServiceFlags,
+    status: DNSServiceErrorType,
+    data: UnsafeRawPointer?,
+    length: UInt16
+  ) {
+    guard status == kDNSServiceErr_NoError else {
+      finish(.failure(RemoteAPIError.serverLookupFailed("SRV status \(status)")))
+      return
+    }
+    if flags & kDNSServiceFlagsAdd != 0, let data,
+      let host = Self.host(fromSRV: UnsafeRawBufferPointer(start: data, count: Int(length)))
+    {
+      hosts.append(host)
+    }
+    if flags & kDNSServiceFlagsMoreComing == 0, !hosts.isEmpty {
+      finish(.success(hosts))
+    }
   }
 
-  enum CodingKeys: String, CodingKey {
-    case timestamp
-    case identifiedPerson = "identified_person"
+  private func finish(_ result: Result<[ConnectionSettings.Host], Error>) {
+    guard let continuation else { return }
+    self.continuation = nil
+    if let service {
+      DNSServiceRefDeallocate(service)
+      self.service = nil
+    }
+    Unmanaged.passUnretained(self).release()
+    continuation.resume(with: result)
+  }
+
+  /// SRV record data (RFC 2782): priority, weight, and port, then the uncompressed target name.
+  private static func host(fromSRV record: UnsafeRawBufferPointer) -> ConnectionSettings.Host? {
+    guard record.count > 7 else { return nil }
+    let port = Int(record[4]) << 8 | Int(record[5])
+    var labels: [String] = []
+    var index = 6
+    while index < record.count {
+      let length = Int(record[index])
+      index += 1
+      if length == 0 { break }
+      guard index + length <= record.count else { return nil }
+      labels.append(String(decoding: record[index..<(index + length)], as: UTF8.self))
+      index += length
+    }
+    guard !labels.isEmpty else { return nil }
+    return ConnectionSettings.Host(hostname: labels.joined(separator: "."), port: port)
   }
 }

@@ -5,8 +5,8 @@ struct AppEnvironment: Sendable {
   let openAIModel: String
   let elevenLabsKey: String
   let elevenLabsVoiceID: String
-  let mongoEndpoint: URL?
-  let mongoAPIKey: String
+  let mongoURI: String
+  let mongoDatabase: String
   let relationshipsPath: String
   let logsPath: String
 
@@ -26,8 +26,8 @@ struct AppEnvironment: Sendable {
       openAIModel: values["OPENAI_MODEL"].nonEmpty ?? "gpt-4.1-mini",
       elevenLabsKey: values["ELEVEN_LABS_API_KEY", default: ""],
       elevenLabsVoiceID: values["ELEVEN_LABS_VOICE_ID", default: ""],
-      mongoEndpoint: values["MONGO_DB_ENDPOINT"].flatMap(URL.init(string:)),
-      mongoAPIKey: values["MONGO_DB_API_KEY", default: ""],
+      mongoURI: values["MONGO_URI", default: ""].trimmingCharacters(in: .whitespacesAndNewlines),
+      mongoDatabase: values["MONGO_DB_NAME"].nonEmpty ?? "violet",
       relationshipsPath: values["MONGO_RELATIONSHIPS_PATH"].nonEmpty ?? "relationships",
       logsPath: values["MONGO_LOGS_PATH"].nonEmpty ?? "logs"
     )
@@ -35,7 +35,9 @@ struct AppEnvironment: Sendable {
 
   var openAIIsConfigured: Bool { !openAIKey.isEmpty }
   var elevenLabsIsConfigured: Bool { !elevenLabsKey.isEmpty && !elevenLabsVoiceID.isEmpty }
-  var mongoIsConfigured: Bool { mongoEndpoint != nil && !mongoAPIKey.isEmpty }
+  var mongoIsConfigured: Bool {
+    mongoURI.hasPrefix("mongodb://") || mongoURI.hasPrefix("mongodb+srv://")
+  }
 }
 
 private extension Optional where Wrapped == String {

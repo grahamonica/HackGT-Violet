@@ -10,6 +10,7 @@
 		056296BA5123D679A4DE0ACF /* MWDATCamera in Frameworks */ = {isa = PBXBuildFile; productRef = CDCA28262A52E14A872D9AA8 /* MWDATCamera */; };
 		1EA637BAEF24088A61C6D42A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B342E4612800028FFCB936EB /* Foundation.framework */; };
 		2DB57E78681EB969E48AEBDA /* CameraCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98E057A440B3B3622CCF1A8 /* CameraCaptureView.swift */; };
+		357AA5C573BBBA82D1B72FF1 /* MongoKitten in Frameworks */ = {isa = PBXBuildFile; productRef = CB485F87C601DC9CF09C209A /* MongoKitten */; };
 		4ADD74DAB3CE07008600B809 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B342E4612800028FFCB936EB /* Foundation.framework */; };
 		55A25B4CA51CC1A9D627B100 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11CF1511FAF0A474CFFDDC86 /* DesignSystem.swift */; };
 		5BDC97243A0B770C62555D52 /* VioletApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89B8EB596368F9C23C952A05 /* VioletApp.swift */; };
@@ -73,6 +74,7 @@
 				B7D74592049A2F0EA72B62DF /* MWDATCore in Frameworks */,
 				056296BA5123D679A4DE0ACF /* MWDATCamera in Frameworks */,
 				601581029110C9669DBF39C4 /* MWDATSpeech in Frameworks */,
+				357AA5C573BBBA82D1B72FF1 /* MongoKitten in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -178,6 +180,7 @@
 				A0EAA09D58A0AF5B40B7FCB3 /* MWDATCore */,
 				CDCA28262A52E14A872D9AA8 /* MWDATCamera */,
 				B69ECAF5952BEE01A6DFBAA6 /* MWDATSpeech */,
+				CB485F87C601DC9CF09C209A /* MongoKitten */,
 			);
 			productName = Violet;
 			productReference = 966F3BC06482288660275EAB /* Violet.app */;
@@ -220,6 +223,8 @@
 			mainGroup = 35E5CBEB1194C1399F5CD138;
 			packageReferences = (
 				BD079B8704335AF6568DDD12 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */,
+				503E3F2977D2CA8EBB3B6E3D /* XCRemoteSwiftPackageReference "MongoKitten" */,
+				5395BEBA23A19AB2560D3771 /* XCRemoteSwiftPackageReference "DNSClient" */,
 			);
 			productRefGroup = F63B70D0B309D1356C583CFF /* Products */;
 			projectDirPath = "";
@@ -553,6 +558,22 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		503E3F2977D2CA8EBB3B6E3D /* XCRemoteSwiftPackageReference "MongoKitten" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/orlandos-nl/MongoKitten";
+			requirement = {
+				kind = exactVersion;
+				version = 7.16.3;
+			};
+		};
+		5395BEBA23A19AB2560D3771 /* XCRemoteSwiftPackageReference "DNSClient" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/orlandos-nl/DNSClient";
+			requirement = {
+				kind = exactVersion;
+				version = 2.6.0;
+			};
+		};
 		BD079B8704335AF6568DDD12 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/facebook/meta-wearables-dat-ios";
@@ -573,6 +594,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = BD079B8704335AF6568DDD12 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */;
 			productName = MWDATSpeech;
+		};
+		CB485F87C601DC9CF09C209A /* MongoKitten */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 503E3F2977D2CA8EBB3B6E3D /* XCRemoteSwiftPackageReference "MongoKitten" */;
+			productName = MongoKitten;
 		};
 		CDCA28262A52E14A872D9AA8 /* MWDATCamera */ = {
 			isa = XCSwiftPackageProductDependency;

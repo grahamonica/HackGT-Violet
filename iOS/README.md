@@ -9,7 +9,7 @@ That replacement lives in [`Packages/VioletReferent`](Packages/VioletReferent/RE
 - Meta Wearables Device Access Toolkit 1.0.0 registration, session, speech, camera, and voice-invocation plumbing
 - “Violet” on-glasses speech trigger and “Hey Meta, start Violet” launch fallback
 - Five-second `.raw` camera capture at 15 FPS, with immediate stream teardown afterward
-- Local relationship and recognition-log cache with one-minute incremental sync, ETag support, offline upload retry, and no patient-side delete action
+- Local relationship and recognition-log cache with one-minute incremental sync straight to MongoDB Atlas, offline upload retry, and no patient-side delete action
 - OpenAI Responses API vision request with structured output and conservative `HIGHLY_LIKELY` handling
 - ElevenLabs speech routed through the active iOS audio output (including connected glasses)
 - One-page family grid and a dismissible add-person sheet for the three required photos, name, relationship, bio, and year met
@@ -29,13 +29,13 @@ OPENAI_API_KEY=
 OPENAI_MODEL=gpt-4.1-mini
 ELEVEN_LABS_API_KEY=
 ELEVEN_LABS_VOICE_ID=
-MONGO_DB_ENDPOINT=
-MONGO_DB_API_KEY=
+MONGO_URI=mongodb+srv://...
+MONGO_DB_NAME=violet
 MONGO_RELATIONSHIPS_PATH=relationships
 MONGO_LOGS_PATH=logs
 ```
 
-The two Mongo paths are optional and default to `relationships` and `logs`. The relationship endpoint should support `GET ?updatedAfter=<ISO-8601>` and `POST`; the log endpoint should support `POST`. `GET` may return either an array or `{ "items": [...], "nextCursor": "..." }`.
+The app connects to Atlas directly with `MONGO_URI` through [MongoKitten](https://github.com/orlandos-nl/MongoKitten), the same URI the provider portal uses. `MONGO_DB_NAME` and the two collection names are optional and match the portal's defaults. The older `MONGO_DB_ENDPOINT`/`MONGO_DB_API_KEY` Data API keys are no longer read. Atlas **Network Access** must allow the phone's IP address.
 
 Developer Mode intentionally uses `META_APP_ID = 0` and no client token, as supported by the SDK. For a production channel, set the `META_APP_ID` and `META_CLIENT_TOKEN` Xcode build settings from the app registered in Wearables Developer Center.
 
@@ -43,23 +43,25 @@ Developer Mode intentionally uses `META_APP_ID = 0` and no client token, as supp
 
 - Meta’s Speech and Voice Invocations capabilities are experimental and, in SDK 1.0.0, are available for development/beta but not production release channels.
 - iOS cannot guarantee an arbitrary custom wake word while the app process is suspended. “Violet” works through the active device session; the supported cold/background fallback is “Hey Meta, start Violet,” after approval in Wearables Developer Center.
-- Shipping third-party API keys inside a client app is not production-safe. The `.env` bridge is appropriate for this prototype only. Move OpenAI, ElevenLabs, and Mongo writes behind an authenticated backend before distribution.
+- Shipping third-party API keys inside a client app is not production-safe. The `.env` bridge is appropriate for this prototype only. The bundled `MONGO_URI` carries database credentials, so move OpenAI, ElevenLabs, and Mongo access behind an authenticated backend before distribution.
 - Face matching is assistive and fallible. The app only announces a person for `HIGHLY_LIKELY`; all other outcomes use the explicit unknown-person response. A production system needs consent, retention controls, human evaluation, and a purpose-built biometric model rather than relying on a general vision model.
 
 ## Data contract
 
-Relationship payloads use the seven requested domain fields:
+Relationship documents use the seven requested domain fields in camelCase, matching the Atlas collection validator and the provider portal:
 
 ```json
 {
   "name": "Jordan Lee",
-  "front_photo": "<base64 JPEG or HTTPS URL>",
-  "left_photo": "<base64 JPEG or HTTPS URL>",
-  "right_photo": "<base64 JPEG or HTTPS URL>",
+  "frontPhoto": "<base64 JPEG>",
+  "leftPhoto": "<base64 JPEG>",
+  "rightPhoto": "<base64 JPEG>",
   "relation": "daughter",
   "bio": "Jordan loves gardening and calls every Sunday.",
-  "year_met": 1998
+  "yearMet": 1998,
+  "createdAt": "<BSON date>",
+  "updatedAt": "<BSON date>"
 }
 ```
 
-`id`/`_id` and `updated_at`/`updatedAt` are treated as server metadata for incremental sync. The app sends snake_case to match `MONGO_DB.sql`, while accepting snake_case or legacy camelCase responses. Recognition logs use `{ "timestamp": "<ISO-8601>", "identified_person": "<name or Unknown>" }`.
+Incremental sync queries `updatedAt > last sync`. Recognition logs are `{ "timestamp": <BSON date>, "identifiedPerson": "<name or Unknown>" }`.

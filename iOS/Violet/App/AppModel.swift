@@ -57,6 +57,7 @@ final class AppModel {
     } else {
       syncTask?.cancel()
       syncTask = nil
+      Task { await remoteAPI.disconnect() }
     }
   }
 
@@ -71,15 +72,10 @@ final class AppModel {
   func prepareToAddPerson() async -> Bool {
     if environment.mongoIsConfigured {
       do {
-        let batch = try await remoteAPI.fetchRelationshipChanges(since: nil, etag: nil)
-        if !batch.notModified {
-          let cache = try await store.replaceRemoteSnapshot(
-            batch.people,
-            syncedAt: .now,
-            etag: batch.etag
-          )
-          people = cache.people
-        }
+        let startedAt = Date.now
+        let remotePeople = try await remoteAPI.fetchRelationshipChanges(since: nil)
+        let cache = try await store.replaceRemoteSnapshot(remotePeople, syncedAt: startedAt)
+        people = cache.people
       } catch {
         guard canAddPerson else {
           notice = "Violet could not refresh the people list. Check the connection and try again."
@@ -169,16 +165,11 @@ final class AppModel {
     }
 
     do {
-      let batch = try await remoteAPI.fetchRelationshipChanges(
-        since: cache.lastRelationshipSync,
-        etag: cache.relationshipETag
-      )
-      if batch.notModified {
-        people = cache.people
-      } else {
-        cache = try await store.mergeRemote(batch.people, syncedAt: .now, etag: batch.etag)
-        people = cache.people
-      }
+      // Stamp the cursor before querying so edits made during the query are fetched next time.
+      let startedAt = Date.now
+      let changes = try await remoteAPI.fetchRelationshipChanges(since: cache.lastRelationshipSync)
+      cache = try await store.mergeRemote(changes, syncedAt: startedAt)
+      people = cache.people
     } catch {
       // Cached data remains the source of truth while offline.
       people = cache.people
