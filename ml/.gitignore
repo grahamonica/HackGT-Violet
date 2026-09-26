@@ -1,0 +1,7 @@
+# ML generated data and artifacts (patterns apply anywhere under ml/)
+data/
+models/
+cache/
+*.onnx
+*.pt
+*.pth

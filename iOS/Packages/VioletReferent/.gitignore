@@ -1,0 +1,2 @@
+# Written by Linux builds (pins swift-crypto, which only Linux uses)
+Package.resolved

@@ -37,7 +37,9 @@ public enum ReferentScoring {
   public static func referentScore(
     box: NormalizedRect, timestamp: TimeInterval, start: TimeInterval, end: TimeInterval, config: ReferentConfig
   ) -> Double {
-    temporalWeight(timestamp: timestamp, start: start, end: end, floor: config.temporalFloor)
-      * geometry(box, config: config)
+    let temporal = config.temporalWeighting
+      ? temporalWeight(timestamp: timestamp, start: start, end: end, floor: config.temporalFloor)
+      : 1.0
+    return temporal * geometry(box, config: config)
   }
 }

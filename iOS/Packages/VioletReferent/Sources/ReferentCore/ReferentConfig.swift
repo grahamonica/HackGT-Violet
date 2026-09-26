@@ -41,6 +41,9 @@ public struct ReferentConfig: Sendable {
 
   // MARK: Referent scoring
 
+  /// Favor faces seen early in the capture (closest to "Hey Violet"). When
+  /// false, every frame counts equally and only geometry decides.
+  public var temporalWeighting = true
   /// Temporal weight of the last frame; the first frame always has weight 1.
   public var temporalFloor = 0.3
   /// Width of the centrality falloff, in units of the half-diagonal (0.35 means a

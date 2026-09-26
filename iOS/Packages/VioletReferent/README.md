@@ -4,7 +4,10 @@ Given the frames captured after "Hey Violet", decide **which enrolled person
 the user was looking at**, or say clearly why it can't.
 
 Self-contained Swift package; it does not touch the app's capture, audio or
-UI code. The app feeds it frames and switches on the outcome.
+UI code. The app feeds it frames and switches on the outcome. It also enrolls
+people into the Rekognition collection it searches.
+
+**Integrating into the app: see [INTEGRATION.md](INTEGRATION.md).**
 
 ```
 frames ─→ face detection + landmarks ─→ local quality model ─→ Rekognition ─→ referent scoring ─→ outcome
@@ -56,11 +59,49 @@ and every accepted identity with its evidence, for logging and tuning.
 
 | protocol | job | implementation |
 |---|---|---|
-| `FaceAnalyzing` | frame → faces: box, quality score, crop to send | Vision + Core ML (planned, `ReferentApple`) |
-| `FaceIdentifying` | crop → `[IdentityMatch]` (UserId, similarity 0-100) | Rekognition `SearchUsersByImage` (planned) |
+| `FaceAnalyzing` | frame → faces: box, quality score, crop to send | `VisionFaceAnalyzer` (`ReferentApple`) |
+| `FaceIdentifying` | crop → `[IdentityMatch]` (UserId, similarity 0-100) | `RekognitionIdentifier` (`ReferentRekognition`) |
 
 Both are plain protocols: the decision logic is tested with fakes, and the
 identifier can later move behind a backend without changing anything else.
+
+### Wiring it up in the app
+
+```swift
+import ReferentApple
+import ReferentCore
+import ReferentRekognition
+
+let model = try await FaceQualityModel.bundled()          // bundled model, compiled on first use
+guard let aws = RekognitionConfig(values: secrets) else { … }  // AWS_REKOGNITION_* keys
+let pipeline = ReferentPipeline(
+  analyzer: VisionFaceAnalyzer(model: model),
+  identifier: RekognitionIdentifier(config: aws))
+
+// Enrollment, from the same config (so search and enrollment share a collection):
+let enroller = RekognitionEnroller(config: aws)
+try await enroller.ensureCollection()
+try await enroller.enroll(personID: person.id, photos: [person.frontPhoto, person.leftPhoto, person.rightPhoto])
+try await enroller.remove(personID: person.id)
+```
+
+- **`VisionFaceAnalyzer`**: Vision face + landmark detection; the Rekognition crop
+  is the face box plus 20% on each side (as in training), JPEG-encoded; the 5
+  training landmarks are derived from Vision's (pupils, lowest nose-crest point,
+  outer-lip extremes); the face is aligned with `FaceAlignment` and scored.
+  Frames are assumed upright (JPEG orientation metadata is ignored).
+- **`RekognitionIdentifier`**: `SearchUsersByImage` with the same parameters the
+  training labels used (`MaxUsers` 5, threshold 0, `QualityFilter` NONE),
+  signed with SigV4 (no AWS SDK). "No face in crop" returns no matches;
+  throttling and 5xx errors are retried with jittered exponential backoff
+  (`maxAttempts` 3).
+- **`RekognitionEnroller`**: one Rekognition user per person, UserId = the app's
+  person ID (so a match *is* the person's ID). `enroll` indexes the largest face
+  of each photo (Rekognition keeps face vectors, not images), creates the user
+  and associates the faces, replacing any earlier enrollment; photos without a
+  face are skipped and reported. `remove` deletes the user and their faces.
+- **`FaceAlignment`** (in `ReferentCore`): pure-Swift port of the training
+  alignment; matches Python on the reference set to within 1 intensity level.
 
 ## How it decides
 
@@ -101,6 +142,7 @@ identifier can later move behind a backend without changing anything else.
 | `identificationTimeout` | 3 s | a single call taking longer counts as failed |
 | `pollInterval` | 100 ms | how often `resolve(earliest:deadline:)` re-checks |
 | `trackMinIoU`, `trackMaxGap` | 0.3, 0.5 s | linking faces across frames |
+| `temporalWeighting` | true | favor faces seen early in the capture; false = all frames count equally |
 | `temporalFloor` | 0.3 | temporal weight of the last frame |
 | `centralitySigma` | 0.35 | centrality falloff (fraction of the half-diagonal) |
 | `sizeWeight`, `minFaceHeight`, `maxFaceHeight` | 0.4, 0.05, 0.4 | size signal |
@@ -116,45 +158,60 @@ differ from that data, so log `diagnostics` on real sessions and re-check
 ## Rekognition access
 
 The app calls Rekognition directly with credentials baked in at build time,
-like its other API keys. Because anything in the app bundle can be extracted,
-**use a dedicated IAM user that can do exactly one thing**: search the one
-collection.
+like its other API keys (keys: see INTEGRATION.md, step 2).
 
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [{
-    "Effect": "Allow",
-    "Action": "rekognition:SearchUsersByImage",
-    "Resource": "arn:aws:rekognition:<region>:<account-id>:collection/<collection-id>"
-  }]
-}
-```
+**Demo setup:** one IAM user with full Rekognition access
+(`AmazonRekognitionFullAccess`), used for both search and enrollment. Anything in
+the app bundle can be extracted, and this key can use every Rekognition API in
+the account, so:
 
-- Never reuse broader credentials (e.g. the dataset builder's, which can create
-  collections and index faces).
-- Set an AWS billing alarm, and delete or rotate the key after the event and
-  before any build leaves the team's devices.
-- Moving to Cognito or a backend later only replaces the `FaceIdentifying`
-  implementation.
-
-Enrollment (creating the collection's users from each person's photos) is out
-of scope here. The returned `userID` is the Rekognition `UserId`.
+- Set an AWS billing alarm, and delete the key after the event and before any
+  build leaves the team's devices.
+- Beyond the demo: scope the user to the one collection
+  (`rekognition:SearchUsersByImage`, plus `CreateCollection`, `CreateUser`,
+  `DeleteUser`, `IndexFaces`, `AssociateFaces`, `ListFaces`, `DeleteFaces` for
+  enrollment, on `arn:aws:rekognition:<region>:<account>:collection/<id>`), or
+  move the calls behind a backend; only the `RekognitionConfig`/transport change.
 
 ## Development
 
 | target | contents | builds on |
 |---|---|---|
-| `ReferentCore` | contract, config, tracking, scoring, resolution, pipeline | any platform (Linux included) |
-| `ReferentApple` (planned) | Vision landmarks, alignment, Core ML quality model, Rekognition | iOS / macOS |
+| `ReferentCore` | contract, config, tracking, scoring, resolution, pipeline, rate limiting, alignment | any platform (Linux included) |
+| `ReferentRekognition` | SigV4 signing, search (identifier) and enrollment clients | any platform (swift-crypto on Linux) |
+| `ReferentApple` | Vision analyzer, Core ML model (`Resources/FaceQuality.mlpackage`) | iOS / macOS only |
+
+The model file is produced by `ml/facequality/training/export.py` (see the
+training README) and copied into `Sources/ReferentApple/Resources/`.
 
 ```bash
-swift test                         # on a Mac, from this directory
+swift test                                   # Mac, from this directory: all targets
+swift test --scratch-path ~/.cache/violet-referent-build   # Linux/WSL: Core + Rekognition
 ```
 
-On Linux/WSL, keep build output out of the repo:
-`swift test --scratch-path ~/.cache/violet-referent-build`.
+Optional test inputs (tests skip without them):
 
-Status: `ReferentCore` implemented and tested (43 tests). `ReferentApple` and
-the Core ML export of the quality model are next; the Rekognition identifier
-adds retry with backoff on throttling on top of the concurrency cap.
+| variable | enables |
+|---|---|
+| `VIOLET_REFERENCE_DIR=<repo>/ml/facequality/training/exports/FaceQuality_reference` | alignment parity (any platform); Core ML, Vision-landmark and end-to-end parity (Mac) |
+| `VIOLET_REKOGNITION_LIVE=1` (+ `.env` filled in, + the reference dir) | live round trip on a throwaway `<collection>-livetest` collection: enroll, search, remove |
+
+The reference set contains CelebA faces: it stays in the gitignored `exports/`
+folder and is shared out of band, not committed.
+
+### Verification status
+
+| check | where | result |
+|---|---|---|
+| decision logic, pipeline, deadlines, rate limit | WSL | all tests pass |
+| Swift alignment vs Python | WSL | max difference 1/255 over 24 faces |
+| SigV4 signing | WSL | matches AWS's published test vector |
+| Rekognition search and enrollment requests, responses, retries | WSL | fake-AWS tests pass |
+| live Rekognition round trip | needs the key in `.env` | not yet run |
+| `ReferentApple` compiles | **Mac** | not yet run |
+| Core ML vs PyTorch, Vision landmarks vs CelebA, end-to-end score | **Mac** | not yet run |
+
+On the Mac, `testVisionLandmarksAgreeWithCelebA` prints how far Vision's
+derived points sit from CelebA's annotations. If the error is large or
+systematic (e.g. the nose point), the mapping in `VisionFaceAnalyzer.fivePoints`
+is the thing to adjust.

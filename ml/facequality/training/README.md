@@ -178,6 +178,30 @@ training functions from your own script, put the calls under
 `if __name__ == "__main__":` (the CLIs already do). Each worker also costs ~3 GB
 of memory; use `--set data.num_workers=2` on machines with limited RAM.
 
+## Export to Core ML
+
+```bash
+python -m ml.facequality.training.export --run ml/facequality/training/runs/sweep1/mbf/finetune/d867b328-s0
+```
+
+Writes `exports/FaceQuality.mlpackage` (inputs `face`: RGB 112x112 image, raw
+0-255, aligned as in the input contract; `interocular_px`: float32 [1];
+output `quality`: float32 [1]) and `exports/FaceQuality_reference/`: test faces
+with their crops, landmarks, Python-aligned images and PyTorch scores, for
+checking an on-device implementation against this one.
+
+Needs `coremltools` (macOS or Linux/WSL; not native Windows). In WSL or on a
+Mac: `conda env create -f ml/environment.yml`, `conda activate violet-ml`,
+`pip install coremltools`, then run the command above from the repo root
+(tested with coremltools 9.0 and PyTorch 2.14; coremltools warns that it was
+only tested up to PyTorch 2.7; the traced model is checked against PyTorch here,
+and the Core ML output on a Mac, see below). Linux can convert
+but not run Core ML models, so the script only checks the interface there;
+numeric parity is checked on a Mac against the reference set. Default precision
+is float16 (`--precision float32` to compare). `exports/` is gitignored; the
+reference set contains CelebA faces and must stay out of git. The
+`.mlpackage` itself is meant to be copied into the iOS package.
+
 ## Files
 
 | file | role |
@@ -190,5 +214,6 @@ of memory; use `--set data.num_workers=2` on machines with limited RAM.
 | `metrics.py` | Spearman, AUROC, error-versus-reject |
 | `train.py` / `sweep.py` / `evaluate.py` | CLIs |
 | `prepare_weights.py` | pretrained weight download + ONNX conversion |
+| `export.py` | Core ML export + reference set for on-device parity |
 
-`weights/`, `runs/` and `cache/` are generated and gitignored.
+`weights/`, `runs/`, `cache/` and `exports/` are generated and gitignored.

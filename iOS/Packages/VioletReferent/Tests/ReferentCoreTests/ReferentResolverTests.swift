@@ -78,6 +78,17 @@ final class ReferentResolverTests: XCTestCase {
     XCTAssertEqual(identifiedID(run(obs, start: 0, end: 1).0), "sarah")
   }
 
+  func testTemporalWeightingCanBeTurnedOff() {
+    // Bob is more central but appears later. With temporal weighting Sarah
+    // (centered at the wake word) wins; without it, the more central Bob does.
+    let obs = [face(0, cx: 0.4, id: "sarah"), face(10, cx: 0.5, id: "bob")]
+    var config = ReferentConfig()
+    config.ambiguityMargin = 0
+    XCTAssertEqual(identifiedID(run(obs, start: 0, end: 1, config: config).0), "sarah")
+    config.temporalWeighting = false
+    XCTAssertEqual(identifiedID(run(obs, start: 0, end: 1, config: config).0), "bob")
+  }
+
   func testRekognitionResultNotLocalQualityPicksTheWinner() {
     // Bob's crop is sharper, but Sarah is the centered face; quality only gates.
     let obs = [face(0, cx: 0.5, quality: 0.3, id: "sarah"), face(0, cx: 0.85, quality: 0.99, id: "bob")]
