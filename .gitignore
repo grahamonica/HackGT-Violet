@@ -1,1 +1,14 @@
-.env
+**/.env
+
+ml/data
+# ML generated data / artifacts
+ml/**/data/
+ml/**/models/
+*.onnx
+*.pt
+*.pth
+.aws/
+credentials
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
