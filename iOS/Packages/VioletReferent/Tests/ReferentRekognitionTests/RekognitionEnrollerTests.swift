@@ -68,6 +68,24 @@ final class RekognitionEnrollerTests: XCTestCase {
     XCTAssertEqual(users.last, "p1")
   }
 
+  func testFirstEnrollmentToleratesLiveDeleteUserResponse() async throws {
+    // What live Rekognition returns for DeleteUser on a UserId that was never created.
+    let invalid = (400, #"{"__type":"InvalidParameterException","Message":"Request has invalid parameters"}"#)
+    let transport = ScriptedTransport { operation, _ in
+      switch operation {
+      case "ListFaces": return (200, #"{"Faces":[]}"#)
+      case "DeleteUser": return invalid
+      case "IndexFaces": return (200, #"{"FaceRecords":[{"Face":{"FaceId":"new"}}]}"#)
+      case "CreateUser": return (200, "{}")
+      case "AssociateFaces": return (200, #"{"AssociatedFaces":[{"FaceId":"new"}]}"#)
+      default: return (500, "{}")
+      }
+    }
+    let result = try await RekognitionEnroller(config: config, transport: transport)
+      .enroll(personID: "p1", photos: [Data([1])])
+    XCTAssertEqual(result, .init(faceIDs: ["new"], photosWithoutFace: []))
+  }
+
   func testReEnrollingReplacesThePreviousFaces() async throws {
     let transport = ScriptedTransport { operation, _ in
       switch operation {

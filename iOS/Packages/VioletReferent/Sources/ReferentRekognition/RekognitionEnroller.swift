@@ -75,7 +75,10 @@ public struct RekognitionEnroller: Sendable {
     let faceIDs = try await faceIDs(of: personID)
     do {
       _ = try await client.call("DeleteUser", ["CollectionId": config.collectionID, "UserId": personID])
-    } catch RekognitionError.service(let type, _, _) where type == "ResourceNotFoundException" {}
+    } catch RekognitionError.service(let type, _, _)
+      // Live Rekognition answers DeleteUser for an unknown UserId with InvalidParameterException,
+      // not ResourceNotFoundException, so a first enrollment would otherwise always fail.
+      where type == "ResourceNotFoundException" || type == "InvalidParameterException" {}
     if !faceIDs.isEmpty {
       _ = try await client.call("DeleteFaces", ["CollectionId": config.collectionID, "FaceIds": faceIDs])
     }
