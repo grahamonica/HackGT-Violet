@@ -38,6 +38,7 @@ final class GlassesManager {
   private(set) var state: State = .needsSetup
   private(set) var lastTranscript = ""
   private(set) var errorMessage: String?
+  private(set) var isSetupComplete = false
   var onVioletCapture: ((Date, Data?, Int) -> Void)?
 
   @ObservationIgnored private let wearables: WearablesInterface
@@ -71,6 +72,9 @@ final class GlassesManager {
     self.wearables = wearables
     self.deviceSelector = AutoDeviceSelector(wearables: wearables)
     self.frameSelector = frameSelector
+    if case .registered = wearables.registrationState {
+      isSetupComplete = true
+    }
   }
 
   isolated deinit {
@@ -135,6 +139,7 @@ final class GlassesManager {
   private func handleRegistrationState(_ registration: RegistrationState) async {
     switch registration {
     case .registered:
+      isSetupComplete = true
       if userRequestedSetup {
         await requestPermissionsAndStart()
       } else {

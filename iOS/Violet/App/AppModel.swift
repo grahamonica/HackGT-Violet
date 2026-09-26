@@ -11,6 +11,10 @@ final class AppModel {
   private(set) var lastAnnouncement: String?
   private(set) var notice: String?
 
+  var canAddPerson: Bool {
+    people.count < AppLimits.maximumPeople
+  }
+
   let glasses: GlassesManager
 
   @ObservationIgnored private let environment: AppEnvironment
@@ -64,18 +68,54 @@ final class AppModel {
     await glasses.handleCallbackURL(url)
   }
 
-  func addPerson(_ draft: RelationshipDraft) async {
+  func prepareToAddPerson() async -> Bool {
+    if environment.mongoIsConfigured {
+      do {
+        let batch = try await remoteAPI.fetchRelationshipChanges(since: nil, etag: nil)
+        if !batch.notModified {
+          let cache = try await store.replaceRemoteSnapshot(
+            batch.people,
+            syncedAt: .now,
+            etag: batch.etag
+          )
+          people = cache.people
+        }
+      } catch {
+        guard canAddPerson else {
+          notice = "Violet could not refresh the people list. Check the connection and try again."
+          return false
+        }
+      }
+    }
+
+    guard canAddPerson else {
+      notice = peopleLimitNotice
+      return false
+    }
+    return true
+  }
+
+  @discardableResult
+  func addPerson(_ draft: RelationshipDraft) async -> Bool {
+    guard canAddPerson else {
+      notice = peopleLimitNotice
+      return false
+    }
+
     let person = draft.makePerson()
     do {
       let cache = try await store.upsert(person)
       people = cache.people
       notice = "\(person.name) was added."
+    } catch LocalStoreError.peopleLimitReached {
+      notice = peopleLimitNotice
+      return false
     } catch {
       notice = "\(person.name) could not be saved on this phone."
-      return
+      return false
     }
 
-    guard environment.mongoIsConfigured else { return }
+    guard environment.mongoIsConfigured else { return true }
     do {
       let saved = try await remoteAPI.upload(person)
       let cache = try await store.markPersonUploaded(
@@ -87,6 +127,7 @@ final class AppModel {
     } catch {
       notice = "\(person.name) is saved on this phone and will sync when the connection returns."
     }
+    return true
   }
 
   func readBio(for person: FamiliarPerson) async {
@@ -153,6 +194,10 @@ final class AppModel {
         try? await Task.sleep(for: .seconds(60))
       }
     }
+  }
+
+  private var peopleLimitNotice: String {
+    "You can add up to \(AppLimits.maximumPeople) people. Delete someone from MongoDB to add another."
   }
 
   private func processCapture(timestamp: Date, image: Data?) async {

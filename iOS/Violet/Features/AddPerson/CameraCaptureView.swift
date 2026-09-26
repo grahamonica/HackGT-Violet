@@ -4,6 +4,7 @@ import UIKit
 struct CameraCaptureView: UIViewControllerRepresentable {
   @Environment(\.dismiss) private var dismiss
   let title: String
+  let sourceType: UIImagePickerController.SourceType
   let onCapture: (UIImage) -> Void
 
   func makeCoordinator() -> Coordinator {
@@ -14,7 +15,7 @@ struct CameraCaptureView: UIViewControllerRepresentable {
     let picker = UIImagePickerController()
     picker.delegate = context.coordinator
     picker.allowsEditing = false
-    picker.sourceType = UIImagePickerController.isSourceTypeAvailable(.camera) ? .camera : .photoLibrary
+    picker.sourceType = sourceType
     if picker.sourceType == .camera { picker.cameraCaptureMode = .photo }
     return picker
   }

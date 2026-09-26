@@ -1,5 +1,9 @@
 import Foundation
 
+enum LocalStoreError: Error {
+  case peopleLimitReached
+}
+
 actor LocalStore {
   private let fileURL: URL
   private var cache: LocalCache?
@@ -29,9 +33,30 @@ actor LocalStore {
     if let index = value.people.firstIndex(where: { $0.id == person.id }) {
       value.people[index] = person
     } else {
+      guard value.people.count < AppLimits.maximumPeople else {
+        throw LocalStoreError.peopleLimitReached
+      }
       value.people.append(person)
     }
     value.people.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    try save(value)
+    return value
+  }
+
+  @discardableResult
+  func replaceRemoteSnapshot(
+    _ people: [FamiliarPerson],
+    syncedAt: Date,
+    etag: String?
+  ) throws -> LocalCache {
+    var value = load()
+    let pendingPeople = value.people.filter(\.needsUpload)
+    let pendingIDs = Set(pendingPeople.map(\.id))
+
+    value.people = people.filter { !pendingIDs.contains($0.id) } + pendingPeople
+    value.people.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+    value.lastRelationshipSync = syncedAt
+    if let etag { value.relationshipETag = etag }
     try save(value)
     return value
   }

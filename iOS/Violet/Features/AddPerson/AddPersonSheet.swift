@@ -10,6 +10,17 @@ struct AddPersonSheet: View {
     var id: String { rawValue }
   }
 
+  private enum PhotoSource: String {
+    case camera
+    case photoLibrary
+  }
+
+  private struct PhotoSelection: Identifiable {
+    let id = UUID()
+    let slot: PhotoSlot
+    let source: PhotoSource
+  }
+
   @Environment(\.dismiss) private var dismiss
   @State private var name = ""
   @State private var relation = ""
@@ -18,17 +29,19 @@ struct AddPersonSheet: View {
   @State private var frontPhoto: Data?
   @State private var leftPhoto: Data?
   @State private var rightPhoto: Data?
-  @State private var activePhotoSlot: PhotoSlot?
+  @State private var pendingPhotoSlot: PhotoSlot?
+  @State private var activePhotoSelection: PhotoSelection?
+  @State private var showsPhotoSourceOptions = false
   @State private var validationMessage: String?
   @State private var isSaving = false
 
-  let onSave: (RelationshipDraft) async -> Void
+  let onSave: (RelationshipDraft) async -> Bool
 
   var body: some View {
     NavigationStack {
       ScrollView {
         VStack(alignment: .leading, spacing: 22) {
-          Text("Take three clear photos")
+          Text("Add three clear photos")
             .font(VioletDesign.heading(19))
             .foregroundStyle(VioletDesign.ink)
 
@@ -95,10 +108,29 @@ struct AddPersonSheet: View {
           .accessibilityLabel("Close")
         }
       }
-      .fullScreenCover(item: $activePhotoSlot) { slot in
-        CameraCaptureView(title: "\(slot.rawValue) photo") { image in
+      .confirmationDialog(
+        photoSourceTitle,
+        isPresented: $showsPhotoSourceOptions,
+        titleVisibility: .visible
+      ) {
+        Button("Take Photo") {
+          beginPhotoSelection(from: .camera)
+        }
+        .disabled(!UIImagePickerController.isSourceTypeAvailable(.camera))
+
+        Button("Choose from Photo Library") {
+          beginPhotoSelection(from: .photoLibrary)
+        }
+
+        Button("Cancel", role: .cancel) {}
+      }
+      .fullScreenCover(item: $activePhotoSelection) { selection in
+        CameraCaptureView(
+          title: "\(selection.slot.rawValue) photo",
+          sourceType: selection.source == .camera ? .camera : .photoLibrary
+        ) { image in
           guard let data = image.jpegData(compressionQuality: 0.86) else { return }
-          switch slot {
+          switch selection.slot {
           case .front: frontPhoto = data
           case .left: leftPhoto = data
           case .right: rightPhoto = data
@@ -118,7 +150,8 @@ struct AddPersonSheet: View {
 
   private func photoButton(_ slot: PhotoSlot, data: Data?) -> some View {
     Button {
-      activePhotoSlot = slot
+      pendingPhotoSlot = slot
+      showsPhotoSourceOptions = true
     } label: {
       VStack(spacing: 8) {
         Group {
@@ -144,7 +177,18 @@ struct AddPersonSheet: View {
       .frame(maxWidth: .infinity)
     }
     .buttonStyle(.plain)
-    .accessibilityLabel("Take \(slot.rawValue.lowercased()) photo")
+    .accessibilityLabel("Add \(slot.rawValue.lowercased()) photo")
+  }
+
+  private var photoSourceTitle: String {
+    guard let pendingPhotoSlot else { return "Add photo" }
+    return "Add \(pendingPhotoSlot.rawValue.lowercased()) photo"
+  }
+
+  private func beginPhotoSelection(from source: PhotoSource) {
+    guard let pendingPhotoSlot else { return }
+    activePhotoSelection = PhotoSelection(slot: pendingPhotoSlot, source: source)
+    self.pendingPhotoSlot = nil
   }
 
   private func save() {
@@ -171,9 +215,12 @@ struct AddPersonSheet: View {
       yearMet: year
     )
     Task {
-      await onSave(draft)
-      dismiss()
+      if await onSave(draft) {
+        dismiss()
+      } else {
+        isSaving = false
+        validationMessage = "You can add up to \(AppLimits.maximumPeople) people."
+      }
     }
   }
 }
-

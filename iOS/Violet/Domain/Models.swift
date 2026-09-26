@@ -1,5 +1,9 @@
 import Foundation
 
+enum AppLimits {
+  static let maximumPeople = 10
+}
+
 struct FamiliarPerson: Codable, Identifiable, Hashable, Sendable {
   var id: String
   var name: String
@@ -101,4 +105,3 @@ struct LocalCache: Codable, Sendable {
     relationshipETag: nil
   )
 }
-

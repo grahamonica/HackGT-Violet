@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 46;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -41,19 +41,19 @@
 		0342B76D208B9D6B637A572C /* AppModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppModel.swift; path = App/AppModel.swift; sourceTree = "<group>"; };
 		09DD5DE92EB7956AC72E097B /* LocalStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LocalStore.swift; path = Data/LocalStore.swift; sourceTree = "<group>"; };
 		11CF1511FAF0A474CFFDDC86 /* DesignSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DesignSystem.swift; path = Design/DesignSystem.swift; sourceTree = "<group>"; };
-		6A28F07BEC80096F1FE110E6 /* MuktaMalar-Light.ttf */ = {isa = PBXFileReference; includeInIndex = 1; name = "MuktaMalar-Light.ttf"; path = "Resources/MuktaMalar-Light.ttf"; sourceTree = "<group>"; };
+		6A28F07BEC80096F1FE110E6 /* MuktaMalar-Light.ttf */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; name = "MuktaMalar-Light.ttf"; path = "Resources/MuktaMalar-Light.ttf"; sourceTree = "<group>"; };
 		833C5563711F3EBEB2AB9570 /* Models.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Models.swift; path = Domain/Models.swift; sourceTree = "<group>"; };
 		84A048C38A36074C6FEA592E /* AddPersonSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AddPersonSheet.swift; path = Features/AddPerson/AddPersonSheet.swift; sourceTree = "<group>"; };
 		877104F3162E7609D7263562 /* FrameSelector.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = FrameSelector.swift; path = Services/FrameSelector.swift; sourceTree = "<group>"; };
 		89B8EB596368F9C23C952A05 /* VioletApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VioletApp.swift; path = App/VioletApp.swift; sourceTree = "<group>"; };
-		90B27D4AD72AAD5E13426F57 /* Sansation-Bold.ttf */ = {isa = PBXFileReference; includeInIndex = 1; name = "Sansation-Bold.ttf"; path = "Resources/Sansation-Bold.ttf"; sourceTree = "<group>"; };
+		90B27D4AD72AAD5E13426F57 /* Sansation-Bold.ttf */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; name = "Sansation-Bold.ttf"; path = "Resources/Sansation-Bold.ttf"; sourceTree = "<group>"; };
 		966F3BC06482288660275EAB /* Violet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Violet.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9E0EED79880687D5C0985ED3 /* OpenAIRecognitionService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OpenAIRecognitionService.swift; path = Services/OpenAIRecognitionService.swift; sourceTree = "<group>"; };
 		9FFAB61395684170598040E0 /* AppEnvironment.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppEnvironment.swift; path = Configuration/AppEnvironment.swift; sourceTree = "<group>"; };
 		A9B8B31EEB54CFC27DF62641 /* WakeWordDetector.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WakeWordDetector.swift; path = Services/WakeWordDetector.swift; sourceTree = "<group>"; };
 		ADBA43E6D7E8482352D237B6 /* FrameSelectorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FrameSelectorTests.swift; sourceTree = "<group>"; };
 		B342E4612800028FFCB936EB /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS14.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
-		C03B37329D6886547354F56C /* Sansation-Regular.ttf */ = {isa = PBXFileReference; includeInIndex = 1; name = "Sansation-Regular.ttf"; path = "Resources/Sansation-Regular.ttf"; sourceTree = "<group>"; };
+		C03B37329D6886547354F56C /* Sansation-Regular.ttf */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; name = "Sansation-Regular.ttf"; path = "Resources/Sansation-Regular.ttf"; sourceTree = "<group>"; };
 		C2A601BA8F532336F1B8D9E8 /* VioletTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VioletTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		C98E057A440B3B3622CCF1A8 /* CameraCaptureView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CameraCaptureView.swift; path = Features/AddPerson/CameraCaptureView.swift; sourceTree = "<group>"; };
 		CA46892617E3049CF8B100AD /* GlassesManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = GlassesManager.swift; path = Services/GlassesManager.swift; sourceTree = "<group>"; };
@@ -101,7 +101,6 @@
 				ADBA43E6D7E8482352D237B6 /* FrameSelectorTests.swift */,
 				D6EE2B19745F5A4DD7E23191 /* WakeWordDetectorTests.swift */,
 			);
-			name = VioletTests;
 			path = VioletTests;
 			sourceTree = "<group>";
 		};
@@ -146,7 +145,6 @@
 				90B27D4AD72AAD5E13426F57 /* Sansation-Bold.ttf */,
 				C03B37329D6886547354F56C /* Sansation-Regular.ttf */,
 			);
-			name = Violet;
 			path = Violet;
 			sourceTree = "<group>";
 		};
@@ -220,7 +218,6 @@
 				Base,
 			);
 			mainGroup = 35E5CBEB1194C1399F5CD138;
-			minimizedProjectReferenceProxies = 0;
 			packageReferences = (
 				BD079B8704335AF6568DDD12 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */,
 			);
@@ -325,12 +322,15 @@
 				CODE_SIGN_ENTITLEMENTS = Violet/Violet.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 4SDD363WP4;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Violet/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				MARKETING_VERSION = 1.0;
 				META_APP_ID = 0;
 				META_CLIENT_TOKEN = "";
@@ -353,12 +353,15 @@
 				CODE_SIGN_ENTITLEMENTS = Violet/Violet.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
+				DEVELOPMENT_TEAM = 4SDD363WP4;
 				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Violet/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
 				MARKETING_VERSION = 1.0;
 				META_APP_ID = 0;
 				META_CLIENT_TOKEN = "";

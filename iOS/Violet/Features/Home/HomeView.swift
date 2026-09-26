@@ -3,70 +3,85 @@ import SwiftUI
 struct HomeView: View {
   @Bindable var model: AppModel
   @State private var showsAddPerson = false
+  @State private var showsPeopleLimit = false
+  @State private var isCheckingPeopleLimit = false
 
   private let columns = [
     GridItem(.adaptive(minimum: 138, maximum: 190), spacing: 24, alignment: .top)
   ]
 
   var body: some View {
-    NavigationStack {
-      ScrollView {
-        VStack(alignment: .leading, spacing: 24) {
-          glassesStatus
+    ScrollView {
+      VStack(alignment: .leading, spacing: 24) {
+        HStack {
+          Spacer()
 
-          if model.isLoading {
-            ProgressView()
-              .tint(VioletDesign.accent)
-              .frame(maxWidth: .infinity, minHeight: 220)
-          } else if model.people.isEmpty {
-            emptyState
-          } else {
-            LazyVGrid(columns: columns, spacing: 28) {
-              ForEach(model.people) { person in
-                PersonBubble(person: person) {
-                  Task { await model.readBio(for: person) }
-                }
+          Button {
+            openAddPersonFlow()
+          } label: {
+            Group {
+              if isCheckingPeopleLimit {
+                ProgressView()
+                  .tint(VioletDesign.deepAccent)
+              } else {
+                Image(systemName: "plus")
+                  .font(.system(size: 24, weight: .medium))
+                  .foregroundStyle(VioletDesign.deepAccent)
               }
             }
-            .padding(.top, 4)
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
           }
-        }
-        .padding(.horizontal, 22)
-        .padding(.bottom, 36)
-      }
-      .background(Color.white)
-      .toolbar {
-        ToolbarItem(placement: .topBarLeading) {
-          HStack(spacing: 10) {
-            Image("VioletLogo")
-              .resizable()
-              .scaledToFit()
-              .frame(width: 38, height: 38)
-              .accessibilityHidden(true)
-            Text("Violet")
-              .font(VioletDesign.heading(30, bold: true))
-              .foregroundStyle(VioletDesign.ink)
-          }
-        }
-        ToolbarItem(placement: .topBarTrailing) {
-          Button {
-            showsAddPerson = true
-          } label: {
-            Image(systemName: "plus")
-              .font(.system(size: 17, weight: .semibold))
-              .foregroundStyle(.white)
-              .frame(width: 34, height: 34)
-              .background(VioletDesign.deepAccent)
-              .clipShape(RoundedRectangle(cornerRadius: VioletDesign.cornerRadius))
-          }
+          .buttonStyle(.plain)
+          .disabled(isCheckingPeopleLimit)
           .accessibilityLabel("Add a familiar person")
         }
-      }
-      .toolbarBackground(.white, for: .navigationBar)
-      .sheet(isPresented: $showsAddPerson) {
-        AddPersonSheet { draft in
-          await model.addPerson(draft)
+
+        glassesStatus
+
+        if model.isLoading {
+          ProgressView()
+            .tint(VioletDesign.accent)
+            .frame(maxWidth: .infinity, minHeight: 220)
+        } else if model.people.isEmpty {
+          emptyState
+        } else {
+          LazyVGrid(columns: columns, spacing: 28) {
+            ForEach(model.people) { person in
+              PersonBubble(person: person) {
+                Task { await model.readBio(for: person) }
+              }
+            }
+          }
+          .padding(.top, 4)
         }
+      }
+      .padding(.horizontal, 22)
+      .padding(.bottom, 36)
+    }
+    .background(Color.white)
+    .sheet(isPresented: $showsAddPerson) {
+      AddPersonSheet { draft in
+        await model.addPerson(draft)
+      }
+    }
+    .alert("10-person limit reached", isPresented: $showsPeopleLimit) {
+      Button("OK", role: .cancel) {}
+    } message: {
+      Text("Delete someone from MongoDB, then tap the plus button again.")
+    }
+  }
+
+  private func openAddPersonFlow() {
+    Task {
+      isCheckingPeopleLimit = true
+      let canAddPerson = await model.prepareToAddPerson()
+      isCheckingPeopleLimit = false
+
+      if canAddPerson {
+        showsAddPerson = true
+      } else {
+        showsPeopleLimit = true
       }
     }
   }
@@ -108,9 +123,10 @@ struct HomeView: View {
   }
 
   private var needsSetupAction: Bool {
+    guard !model.glasses.isSetupComplete else { return false }
     switch model.glasses.state {
-    case .needsSetup, .unavailable: true
-    default: false
+    case .needsSetup, .unavailable: return true
+    default: return false
     }
   }
 
@@ -181,4 +197,3 @@ private struct PersonBubble: View {
     .accessibilityHint("Reads their biography aloud")
   }
 }
-
