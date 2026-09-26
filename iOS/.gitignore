@@ -1,7 +1,37 @@
+# macOS
 .DS_Store
+
+# Xcode build products and test output
 DerivedData/
 build/
-*.xcuserstate
+*.app
+*.ipa
+*.dSYM
+*.dSYM.zip
+*.xcarchive
+*.xcresult
+
+# Per-developer Xcode state
 xcuserdata/
+*.xcuserstate
+*.xccheckout
+*.xcscmblueprint
+*.moved-aside
+
+# Swift Package Manager local state
+.build/
+.swiftpm/
+
+# Local secrets. Keep examples checked in.
+.env
+.env.*
+!.env.example
+Config/Secrets.json
 Violet/Resources/Secrets.json
 
+# Editor and temporary files
+.idea/
+.vscode/
+*.log
+*.swp
+*~

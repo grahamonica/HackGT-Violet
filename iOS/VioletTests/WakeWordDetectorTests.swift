@@ -1,5 +1,4 @@
 import XCTest
-@testable import Violet
 
 final class WakeWordDetectorTests: XCTestCase {
   func testFindsWholeWakeWordIgnoringCaseAndPunctuation() {
@@ -15,4 +14,3 @@ final class WakeWordDetectorTests: XCTestCase {
     XCTAssertTrue(detector.consume("Violet", at: start.addingTimeInterval(9)))
   }
 }
-

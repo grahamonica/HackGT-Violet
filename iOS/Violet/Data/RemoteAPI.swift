@@ -40,7 +40,7 @@ actor RemoteAPI {
     if let since {
       var components = URLComponents(url: request.url!, resolvingAgainstBaseURL: false)
       components?.queryItems = [
-        URLQueryItem(name: "updatedAfter", value: Self.dateFormatter.string(from: since))
+        URLQueryItem(name: "updatedAfter", value: Self.dateString(since))
       ]
       request.url = components?.url
     }
@@ -122,7 +122,7 @@ actor RemoteAPI {
     let encoder = JSONEncoder()
     encoder.dateEncodingStrategy = .custom { date, encoder in
       var container = encoder.singleValueContainer()
-      try container.encode(dateFormatter.string(from: date))
+      try container.encode(dateString(date))
     }
     return encoder
   }()
@@ -132,7 +132,7 @@ actor RemoteAPI {
     decoder.dateDecodingStrategy = .custom { decoder in
       let container = try decoder.singleValueContainer()
       let value = try container.decode(String.self)
-      if let date = dateFormatter.date(from: value) ?? ISO8601DateFormatter().date(from: value) {
+      if let date = parseDate(value) {
         return date
       }
       throw DecodingError.dataCorruptedError(
@@ -143,11 +143,17 @@ actor RemoteAPI {
     return decoder
   }()
 
-  private static let dateFormatter: ISO8601DateFormatter = {
+  private static func dateString(_ date: Date) -> String {
     let formatter = ISO8601DateFormatter()
     formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-    return formatter
-  }()
+    return formatter.string(from: date)
+  }
+
+  private static func parseDate(_ value: String) -> Date? {
+    let fractional = ISO8601DateFormatter()
+    fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    return fractional.date(from: value) ?? ISO8601DateFormatter().date(from: value)
+  }
 }
 
 private struct RelationshipEnvelope: Decodable {
@@ -183,15 +189,21 @@ private struct RemotePerson: Codable {
   let updatedAt: Date?
 
   enum CodingKeys: String, CodingKey {
-    case id = "_id"
+    case id
+    case mongoID = "_id"
     case name
-    case frontPhoto
-    case leftPhoto
-    case rightPhoto
+    case frontPhoto = "front_photo"
+    case frontPhotoLegacy = "frontPhoto"
+    case leftPhoto = "left_photo"
+    case leftPhotoLegacy = "leftPhoto"
+    case rightPhoto = "right_photo"
+    case rightPhotoLegacy = "rightPhoto"
     case relation
     case bio
-    case yearMet
-    case updatedAt
+    case yearMet = "year_met"
+    case yearMetLegacy = "yearMet"
+    case updatedAt = "updated_at"
+    case updatedAtLegacy = "updatedAt"
   }
 
   init(person: FamiliarPerson) {
@@ -204,6 +216,36 @@ private struct RemotePerson: Codable {
     bio = person.bio
     yearMet = person.yearMet
     updatedAt = person.updatedAt
+  }
+
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    id = try container.decodeIfPresent(String.self, forKey: .id)
+      ?? container.decodeIfPresent(String.self, forKey: .mongoID)
+    name = try container.decode(String.self, forKey: .name)
+    frontPhoto = try container.decodeIfPresent(String.self, forKey: .frontPhoto)
+      ?? container.decode(String.self, forKey: .frontPhotoLegacy)
+    leftPhoto = try container.decodeIfPresent(String.self, forKey: .leftPhoto)
+      ?? container.decode(String.self, forKey: .leftPhotoLegacy)
+    rightPhoto = try container.decodeIfPresent(String.self, forKey: .rightPhoto)
+      ?? container.decode(String.self, forKey: .rightPhotoLegacy)
+    relation = try container.decode(String.self, forKey: .relation)
+    bio = try container.decodeIfPresent(String.self, forKey: .bio) ?? ""
+    yearMet = try container.decodeIfPresent(Int.self, forKey: .yearMet)
+      ?? container.decode(Int.self, forKey: .yearMetLegacy)
+    updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt)
+      ?? container.decodeIfPresent(Date.self, forKey: .updatedAtLegacy)
+  }
+
+  func encode(to encoder: Encoder) throws {
+    var container = encoder.container(keyedBy: CodingKeys.self)
+    try container.encode(name, forKey: .name)
+    try container.encode(frontPhoto, forKey: .frontPhoto)
+    try container.encode(leftPhoto, forKey: .leftPhoto)
+    try container.encode(rightPhoto, forKey: .rightPhoto)
+    try container.encode(relation, forKey: .relation)
+    try container.encode(bio, forKey: .bio)
+    try container.encode(yearMet, forKey: .yearMet)
   }
 
   func person(using session: URLSession) async throws -> FamiliarPerson {
@@ -241,16 +283,20 @@ private struct RemoteSaveResponse: Decodable {
   let updatedAt: Date?
 
   enum CodingKeys: String, CodingKey {
-    case id = "_id"
+    case id
+    case mongoID = "_id"
     case insertedID = "insertedId"
-    case updatedAt
+    case updatedAt = "updated_at"
+    case updatedAtLegacy = "updatedAt"
   }
 
   init(from decoder: Decoder) throws {
     let container = try decoder.container(keyedBy: CodingKeys.self)
     id = try container.decodeIfPresent(String.self, forKey: .id)
+      ?? container.decodeIfPresent(String.self, forKey: .mongoID)
       ?? container.decodeIfPresent(String.self, forKey: .insertedID)
     updatedAt = try container.decodeIfPresent(Date.self, forKey: .updatedAt)
+      ?? container.decodeIfPresent(Date.self, forKey: .updatedAtLegacy)
   }
 }
 
@@ -261,5 +307,10 @@ private struct RemoteLog: Encodable {
   init(log: RecognitionLog) {
     timestamp = log.timestamp
     identifiedPerson = log.identifiedPerson
+  }
+
+  enum CodingKeys: String, CodingKey {
+    case timestamp
+    case identifiedPerson = "identified_person"
   }
 }

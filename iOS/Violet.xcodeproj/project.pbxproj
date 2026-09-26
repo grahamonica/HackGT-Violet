@@ -7,177 +7,169 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		0BA6C4EB59C015AFB8F99BB0 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E23D6E32D766D81A8374640 /* AppModel.swift */; };
-		156492E052E99661C374FC27 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4361BA7AAA8F13AA5BA7FCA5 /* DesignSystem.swift */; };
-		364CE62873A77EAF8EC15391 /* GlassesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2F9005BCEB0489F3707B69B /* GlassesManager.swift */; };
-		3DDC765D1B19E5E52F672DD6 /* MWDATCore in Frameworks */ = {isa = PBXBuildFile; productRef = 70059B7E5469B8B74B17BD73 /* MWDATCore */; };
-		4208514C1B5B01D2373B8521 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 43189359E21EB74083144F0E /* Foundation.framework */; };
-		5ABB350F29884C355AEBDE1A /* WakeWordDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39F733AA8BE00D2C80BA5E70 /* WakeWordDetector.swift */; };
-		5C42D17D6D9309D801522414 /* MuktaMalar-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BBEDA8F8702F33E975AAF0EC /* MuktaMalar-Light.ttf */; };
-		5F74D4E8D153D1608F964D7D /* MWDATCamera in Frameworks */ = {isa = PBXBuildFile; productRef = 4847A734EC5363DF60626F21 /* MWDATCamera */; };
-		61335D4B22E342FEB4F5C052 /* RemoteAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CC7834E8E9C83986E669E45 /* RemoteAPI.swift */; };
-		67D3D58CF45F16EAC133224A /* FrameSelectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0C6CC98272AA9F46F08C11 /* FrameSelectorTests.swift */; };
-		7A7F605575D439F548A44AA1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C09A0DCC51E3C39826A9D7F5 /* Assets.xcassets */; };
-		832EC623E54FE8716DB4D26C /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAAA258905921114CB9ECE0A /* Models.swift */; };
-		87FEE79207656D5DEB1FED25 /* FrameSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C96EE5BD31EC2FC164BD93 /* FrameSelector.swift */; };
-		8BB3B2B86C42B7352E11EA14 /* ElevenLabsSpeaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F7E4016424675E1365D30AB /* ElevenLabsSpeaker.swift */; };
-		A0A7A98F108D8FDB32C95CA5 /* AddPersonSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCE92B117309B3E3D59D81C0 /* AddPersonSheet.swift */; };
-		AB305FD6F12154A8DAA77D61 /* WakeWordDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF87DD9774D34CCBDFE6805 /* WakeWordDetectorTests.swift */; };
-		B1F4EA8DA003934EFCF26CCC /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 43189359E21EB74083144F0E /* Foundation.framework */; };
-		B306255AD85DC19E11D54967 /* VioletApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5F2C5E5B607302E876A0D08 /* VioletApp.swift */; };
-		B878355A52E2E4281E4CA5FF /* CameraCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38B488D82E4CD3028D5B596 /* CameraCaptureView.swift */; };
-		B8C27C247033E1D293080468 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF805EF42C119BAD338C0F17 /* AppEnvironment.swift */; };
-		DFDAA21243CDF7CBFBD48BAD /* Sansation-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5DC348DEB17ECC330E3811BC /* Sansation-Bold.ttf */; };
-		E5B0E046CAF55DC7FF0412E5 /* MWDATSpeech in Frameworks */ = {isa = PBXBuildFile; productRef = 232C31F6E1F0F129872B8605 /* MWDATSpeech */; };
-		E60FC2D4F39037C55CE09D2A /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 729119E43CCE407898C2D866 /* HomeView.swift */; };
-		F3071A081F99177005D683C1 /* LocalStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C64FC1584D1D6F5E38001DD2 /* LocalStore.swift */; };
-		F579F0952233537C4D99E01A /* OpenAIRecognitionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C570DE3A69255A5B86394282 /* OpenAIRecognitionService.swift */; };
-		FF202AF37C4E841CC77B5FB5 /* Sansation-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1BCE984CCE7E22FDBF73BF55 /* Sansation-Regular.ttf */; };
+		056296BA5123D679A4DE0ACF /* MWDATCamera in Frameworks */ = {isa = PBXBuildFile; productRef = CDCA28262A52E14A872D9AA8 /* MWDATCamera */; };
+		1EA637BAEF24088A61C6D42A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B342E4612800028FFCB936EB /* Foundation.framework */; };
+		2DB57E78681EB969E48AEBDA /* CameraCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C98E057A440B3B3622CCF1A8 /* CameraCaptureView.swift */; };
+		4ADD74DAB3CE07008600B809 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B342E4612800028FFCB936EB /* Foundation.framework */; };
+		55A25B4CA51CC1A9D627B100 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11CF1511FAF0A474CFFDDC86 /* DesignSystem.swift */; };
+		5BDC97243A0B770C62555D52 /* VioletApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89B8EB596368F9C23C952A05 /* VioletApp.swift */; };
+		601581029110C9669DBF39C4 /* MWDATSpeech in Frameworks */ = {isa = PBXBuildFile; productRef = B69ECAF5952BEE01A6DFBAA6 /* MWDATSpeech */; };
+		6424BC6A5CA7D917EDC1D1AE /* WakeWordDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B8B31EEB54CFC27DF62641 /* WakeWordDetector.swift */; };
+		6BDFCD551D00DAD171733ED7 /* MuktaMalar-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6A28F07BEC80096F1FE110E6 /* MuktaMalar-Light.ttf */; };
+		6EAF340F3AD68FDE5F358D5D /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0342B76D208B9D6B637A572C /* AppModel.swift */; };
+		77B796C5609DB737635B2558 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CED2411FD052F7EAD928B47D /* Assets.xcassets */; };
+		7AC3488AEB34B141428E1188 /* LocalStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09DD5DE92EB7956AC72E097B /* LocalStore.swift */; };
+		81A612A99A6D2B7EC5C34919 /* FrameSelectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADBA43E6D7E8482352D237B6 /* FrameSelectorTests.swift */; };
+		85392729460FCE547C2CE8CF /* Sansation-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C03B37329D6886547354F56C /* Sansation-Regular.ttf */; };
+		87CAA134A416688F53D28F89 /* FrameSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 877104F3162E7609D7263562 /* FrameSelector.swift */; };
+		87E5C2A0B4D9E7A9DE683906 /* OpenAIRecognitionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E0EED79880687D5C0985ED3 /* OpenAIRecognitionService.swift */; };
+		8D4E1F1EDC8B6DD890C7ABB0 /* Sansation-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 90B27D4AD72AAD5E13426F57 /* Sansation-Bold.ttf */; };
+		94D2324C4740EC0F612E4945 /* GlassesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA46892617E3049CF8B100AD /* GlassesManager.swift */; };
+		AC6644AC20CD2479A9920E68 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFAB61395684170598040E0 /* AppEnvironment.swift */; };
+		AFF2769A58D1C5F7BFBD4FC6 /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = 833C5563711F3EBEB2AB9570 /* Models.swift */; };
+		B5FC3F51408DCF5E5CF29C3C /* WakeWordDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B8B31EEB54CFC27DF62641 /* WakeWordDetector.swift */; };
+		B7D74592049A2F0EA72B62DF /* MWDATCore in Frameworks */ = {isa = PBXBuildFile; productRef = A0EAA09D58A0AF5B40B7FCB3 /* MWDATCore */; };
+		C673138A466EACEBAF564012 /* AddPersonSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A048C38A36074C6FEA592E /* AddPersonSheet.swift */; };
+		CB5FAC5DA74BAD11240EE307 /* RemoteAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = EED63F6C35A37A4C27F38ECC /* RemoteAPI.swift */; };
+		D1A56D5E733DA77606A821FE /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3BC6F278216236E351B7C91 /* HomeView.swift */; };
+		DFE6AF9A17073688BD411587 /* FrameSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 877104F3162E7609D7263562 /* FrameSelector.swift */; };
+		EC0B864A8B3B6A05A30DF683 /* WakeWordDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6EE2B19745F5A4DD7E23191 /* WakeWordDetectorTests.swift */; };
+		F265F54EF1073CC31A6140FF /* ElevenLabsSpeaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7877A2761C7F03D35DD3A2 /* ElevenLabsSpeaker.swift */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-		BC5BC41067FE6659F5763E38 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 6E067FDF9CA40113F3F711E3 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 34A7AD98AD9D2FA5CF743439;
-			remoteInfo = Violet;
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXFileReference section */
-		0CC7834E8E9C83986E669E45 /* RemoteAPI.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RemoteAPI.swift; path = Data/RemoteAPI.swift; sourceTree = "<group>"; };
-		1BCE984CCE7E22FDBF73BF55 /* Sansation-Regular.ttf */ = {isa = PBXFileReference; includeInIndex = 1; name = "Sansation-Regular.ttf"; path = "Resources/Sansation-Regular.ttf"; sourceTree = "<group>"; };
-		285F660E5C7C02F8168F558B /* VioletTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VioletTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		2F7E4016424675E1365D30AB /* ElevenLabsSpeaker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ElevenLabsSpeaker.swift; path = Services/ElevenLabsSpeaker.swift; sourceTree = "<group>"; };
-		39F733AA8BE00D2C80BA5E70 /* WakeWordDetector.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WakeWordDetector.swift; path = Services/WakeWordDetector.swift; sourceTree = "<group>"; };
-		3E23D6E32D766D81A8374640 /* AppModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppModel.swift; path = App/AppModel.swift; sourceTree = "<group>"; };
-		43189359E21EB74083144F0E /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS14.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
-		4361BA7AAA8F13AA5BA7FCA5 /* DesignSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DesignSystem.swift; path = Design/DesignSystem.swift; sourceTree = "<group>"; };
-		5DC348DEB17ECC330E3811BC /* Sansation-Bold.ttf */ = {isa = PBXFileReference; includeInIndex = 1; name = "Sansation-Bold.ttf"; path = "Resources/Sansation-Bold.ttf"; sourceTree = "<group>"; };
-		729119E43CCE407898C2D866 /* HomeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HomeView.swift; path = Features/Home/HomeView.swift; sourceTree = "<group>"; };
-		A5F2C5E5B607302E876A0D08 /* VioletApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VioletApp.swift; path = App/VioletApp.swift; sourceTree = "<group>"; };
-		B38B488D82E4CD3028D5B596 /* CameraCaptureView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CameraCaptureView.swift; path = Features/AddPerson/CameraCaptureView.swift; sourceTree = "<group>"; };
-		BBEDA8F8702F33E975AAF0EC /* MuktaMalar-Light.ttf */ = {isa = PBXFileReference; includeInIndex = 1; name = "MuktaMalar-Light.ttf"; path = "Resources/MuktaMalar-Light.ttf"; sourceTree = "<group>"; };
-		C09A0DCC51E3C39826A9D7F5 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		C2F9005BCEB0489F3707B69B /* GlassesManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = GlassesManager.swift; path = Services/GlassesManager.swift; sourceTree = "<group>"; };
-		C570DE3A69255A5B86394282 /* OpenAIRecognitionService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OpenAIRecognitionService.swift; path = Services/OpenAIRecognitionService.swift; sourceTree = "<group>"; };
-		C64FC1584D1D6F5E38001DD2 /* LocalStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LocalStore.swift; path = Data/LocalStore.swift; sourceTree = "<group>"; };
-		C8AC81A68D93891D2FBCC428 /* Violet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Violet.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		C9C96EE5BD31EC2FC164BD93 /* FrameSelector.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = FrameSelector.swift; path = Services/FrameSelector.swift; sourceTree = "<group>"; };
-		DCE92B117309B3E3D59D81C0 /* AddPersonSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AddPersonSheet.swift; path = Features/AddPerson/AddPersonSheet.swift; sourceTree = "<group>"; };
-		DD0C6CC98272AA9F46F08C11 /* FrameSelectorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FrameSelectorTests.swift; sourceTree = "<group>"; };
-		EF805EF42C119BAD338C0F17 /* AppEnvironment.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppEnvironment.swift; path = Configuration/AppEnvironment.swift; sourceTree = "<group>"; };
-		FAAA258905921114CB9ECE0A /* Models.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Models.swift; path = Domain/Models.swift; sourceTree = "<group>"; };
-		FFF87DD9774D34CCBDFE6805 /* WakeWordDetectorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WakeWordDetectorTests.swift; sourceTree = "<group>"; };
+		0342B76D208B9D6B637A572C /* AppModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppModel.swift; path = App/AppModel.swift; sourceTree = "<group>"; };
+		09DD5DE92EB7956AC72E097B /* LocalStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LocalStore.swift; path = Data/LocalStore.swift; sourceTree = "<group>"; };
+		11CF1511FAF0A474CFFDDC86 /* DesignSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DesignSystem.swift; path = Design/DesignSystem.swift; sourceTree = "<group>"; };
+		6A28F07BEC80096F1FE110E6 /* MuktaMalar-Light.ttf */ = {isa = PBXFileReference; includeInIndex = 1; name = "MuktaMalar-Light.ttf"; path = "Resources/MuktaMalar-Light.ttf"; sourceTree = "<group>"; };
+		833C5563711F3EBEB2AB9570 /* Models.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Models.swift; path = Domain/Models.swift; sourceTree = "<group>"; };
+		84A048C38A36074C6FEA592E /* AddPersonSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AddPersonSheet.swift; path = Features/AddPerson/AddPersonSheet.swift; sourceTree = "<group>"; };
+		877104F3162E7609D7263562 /* FrameSelector.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = FrameSelector.swift; path = Services/FrameSelector.swift; sourceTree = "<group>"; };
+		89B8EB596368F9C23C952A05 /* VioletApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VioletApp.swift; path = App/VioletApp.swift; sourceTree = "<group>"; };
+		90B27D4AD72AAD5E13426F57 /* Sansation-Bold.ttf */ = {isa = PBXFileReference; includeInIndex = 1; name = "Sansation-Bold.ttf"; path = "Resources/Sansation-Bold.ttf"; sourceTree = "<group>"; };
+		966F3BC06482288660275EAB /* Violet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Violet.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9E0EED79880687D5C0985ED3 /* OpenAIRecognitionService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OpenAIRecognitionService.swift; path = Services/OpenAIRecognitionService.swift; sourceTree = "<group>"; };
+		9FFAB61395684170598040E0 /* AppEnvironment.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppEnvironment.swift; path = Configuration/AppEnvironment.swift; sourceTree = "<group>"; };
+		A9B8B31EEB54CFC27DF62641 /* WakeWordDetector.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WakeWordDetector.swift; path = Services/WakeWordDetector.swift; sourceTree = "<group>"; };
+		ADBA43E6D7E8482352D237B6 /* FrameSelectorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FrameSelectorTests.swift; sourceTree = "<group>"; };
+		B342E4612800028FFCB936EB /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS14.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		C03B37329D6886547354F56C /* Sansation-Regular.ttf */ = {isa = PBXFileReference; includeInIndex = 1; name = "Sansation-Regular.ttf"; path = "Resources/Sansation-Regular.ttf"; sourceTree = "<group>"; };
+		C2A601BA8F532336F1B8D9E8 /* VioletTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VioletTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		C98E057A440B3B3622CCF1A8 /* CameraCaptureView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CameraCaptureView.swift; path = Features/AddPerson/CameraCaptureView.swift; sourceTree = "<group>"; };
+		CA46892617E3049CF8B100AD /* GlassesManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = GlassesManager.swift; path = Services/GlassesManager.swift; sourceTree = "<group>"; };
+		CED2411FD052F7EAD928B47D /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		D6EE2B19745F5A4DD7E23191 /* WakeWordDetectorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WakeWordDetectorTests.swift; sourceTree = "<group>"; };
+		EED63F6C35A37A4C27F38ECC /* RemoteAPI.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RemoteAPI.swift; path = Data/RemoteAPI.swift; sourceTree = "<group>"; };
+		F3BC6F278216236E351B7C91 /* HomeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HomeView.swift; path = Features/Home/HomeView.swift; sourceTree = "<group>"; };
+		FF7877A2761C7F03D35DD3A2 /* ElevenLabsSpeaker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ElevenLabsSpeaker.swift; path = Services/ElevenLabsSpeaker.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		0AE832BC7B3A11FEEDB23E8A /* Frameworks */ = {
+		4CCD4A6BBBE0B2AA3196ACBC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				B1F4EA8DA003934EFCF26CCC /* Foundation.framework in Frameworks */,
+				4ADD74DAB3CE07008600B809 /* Foundation.framework in Frameworks */,
+				B7D74592049A2F0EA72B62DF /* MWDATCore in Frameworks */,
+				056296BA5123D679A4DE0ACF /* MWDATCamera in Frameworks */,
+				601581029110C9669DBF39C4 /* MWDATSpeech in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A4E077F75A10D31E09BD562A /* Frameworks */ = {
+		9B3849562FC3BC9CE9FEA91C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4208514C1B5B01D2373B8521 /* Foundation.framework in Frameworks */,
-				3DDC765D1B19E5E52F672DD6 /* MWDATCore in Frameworks */,
-				5F74D4E8D153D1608F964D7D /* MWDATCamera in Frameworks */,
-				E5B0E046CAF55DC7FF0412E5 /* MWDATSpeech in Frameworks */,
+				1EA637BAEF24088A61C6D42A /* Foundation.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		3E1038FD81F0E459DA8F75DA /* Violet */ = {
+		189E369B8C9CF3A1F261F6EE /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				3E23D6E32D766D81A8374640 /* AppModel.swift */,
-				A5F2C5E5B607302E876A0D08 /* VioletApp.swift */,
-				EF805EF42C119BAD338C0F17 /* AppEnvironment.swift */,
-				C64FC1584D1D6F5E38001DD2 /* LocalStore.swift */,
-				0CC7834E8E9C83986E669E45 /* RemoteAPI.swift */,
-				4361BA7AAA8F13AA5BA7FCA5 /* DesignSystem.swift */,
-				FAAA258905921114CB9ECE0A /* Models.swift */,
-				DCE92B117309B3E3D59D81C0 /* AddPersonSheet.swift */,
-				B38B488D82E4CD3028D5B596 /* CameraCaptureView.swift */,
-				729119E43CCE407898C2D866 /* HomeView.swift */,
-				2F7E4016424675E1365D30AB /* ElevenLabsSpeaker.swift */,
-				C9C96EE5BD31EC2FC164BD93 /* FrameSelector.swift */,
-				C2F9005BCEB0489F3707B69B /* GlassesManager.swift */,
-				C570DE3A69255A5B86394282 /* OpenAIRecognitionService.swift */,
-				39F733AA8BE00D2C80BA5E70 /* WakeWordDetector.swift */,
-				C09A0DCC51E3C39826A9D7F5 /* Assets.xcassets */,
-				BBEDA8F8702F33E975AAF0EC /* MuktaMalar-Light.ttf */,
-				5DC348DEB17ECC330E3811BC /* Sansation-Bold.ttf */,
-				1BCE984CCE7E22FDBF73BF55 /* Sansation-Regular.ttf */,
-			);
-			name = Violet;
-			path = Violet;
-			sourceTree = "<group>";
-		};
-		707F6BB6EC83A0E3626E96E8 = {
-			isa = PBXGroup;
-			children = (
-				900F1494C06833CD5FB0215D /* Products */,
-				80F936C1144221337A54DDDA /* Frameworks */,
-				3E1038FD81F0E459DA8F75DA /* Violet */,
-				AC1321256972FDF7DDE58EF6 /* VioletTests */,
-			);
-			sourceTree = "<group>";
-		};
-		80F936C1144221337A54DDDA /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				8E633FD1C6E231177A0AC415 /* iOS */,
+				8D082F630661400ADFA63DD5 /* iOS */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		8E633FD1C6E231177A0AC415 /* iOS */ = {
+		33C0D5BCF6487C6ED510BAC6 /* VioletTests */ = {
 			isa = PBXGroup;
 			children = (
-				43189359E21EB74083144F0E /* Foundation.framework */,
-			);
-			name = iOS;
-			sourceTree = "<group>";
-		};
-		900F1494C06833CD5FB0215D /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				C8AC81A68D93891D2FBCC428 /* Violet.app */,
-				285F660E5C7C02F8168F558B /* VioletTests.xctest */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
-		AC1321256972FDF7DDE58EF6 /* VioletTests */ = {
-			isa = PBXGroup;
-			children = (
-				DD0C6CC98272AA9F46F08C11 /* FrameSelectorTests.swift */,
-				FFF87DD9774D34CCBDFE6805 /* WakeWordDetectorTests.swift */,
+				ADBA43E6D7E8482352D237B6 /* FrameSelectorTests.swift */,
+				D6EE2B19745F5A4DD7E23191 /* WakeWordDetectorTests.swift */,
 			);
 			name = VioletTests;
 			path = VioletTests;
 			sourceTree = "<group>";
 		};
+		35E5CBEB1194C1399F5CD138 = {
+			isa = PBXGroup;
+			children = (
+				F63B70D0B309D1356C583CFF /* Products */,
+				189E369B8C9CF3A1F261F6EE /* Frameworks */,
+				BCDFECE4BCDF5BADA2FFC03D /* Violet */,
+				33C0D5BCF6487C6ED510BAC6 /* VioletTests */,
+			);
+			sourceTree = "<group>";
+		};
+		8D082F630661400ADFA63DD5 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				B342E4612800028FFCB936EB /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		BCDFECE4BCDF5BADA2FFC03D /* Violet */ = {
+			isa = PBXGroup;
+			children = (
+				0342B76D208B9D6B637A572C /* AppModel.swift */,
+				89B8EB596368F9C23C952A05 /* VioletApp.swift */,
+				9FFAB61395684170598040E0 /* AppEnvironment.swift */,
+				09DD5DE92EB7956AC72E097B /* LocalStore.swift */,
+				EED63F6C35A37A4C27F38ECC /* RemoteAPI.swift */,
+				11CF1511FAF0A474CFFDDC86 /* DesignSystem.swift */,
+				833C5563711F3EBEB2AB9570 /* Models.swift */,
+				84A048C38A36074C6FEA592E /* AddPersonSheet.swift */,
+				C98E057A440B3B3622CCF1A8 /* CameraCaptureView.swift */,
+				F3BC6F278216236E351B7C91 /* HomeView.swift */,
+				FF7877A2761C7F03D35DD3A2 /* ElevenLabsSpeaker.swift */,
+				877104F3162E7609D7263562 /* FrameSelector.swift */,
+				CA46892617E3049CF8B100AD /* GlassesManager.swift */,
+				9E0EED79880687D5C0985ED3 /* OpenAIRecognitionService.swift */,
+				A9B8B31EEB54CFC27DF62641 /* WakeWordDetector.swift */,
+				CED2411FD052F7EAD928B47D /* Assets.xcassets */,
+				6A28F07BEC80096F1FE110E6 /* MuktaMalar-Light.ttf */,
+				90B27D4AD72AAD5E13426F57 /* Sansation-Bold.ttf */,
+				C03B37329D6886547354F56C /* Sansation-Regular.ttf */,
+			);
+			name = Violet;
+			path = Violet;
+			sourceTree = "<group>";
+		};
+		F63B70D0B309D1356C583CFF /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				966F3BC06482288660275EAB /* Violet.app */,
+				C2A601BA8F532336F1B8D9E8 /* VioletTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		34A7AD98AD9D2FA5CF743439 /* Violet */ = {
+		A7B98C4A6AF3B7907E25400D /* Violet */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 9FF9C13F26C435CBA065B108 /* Build configuration list for PBXNativeTarget "Violet" */;
+			buildConfigurationList = 885103FE249AF8A1007B0A4E /* Build configuration list for PBXNativeTarget "Violet" */;
 			buildPhases = (
-				E41860EF7CE8B7B5BD33C567 /* Sources */,
-				A4E077F75A10D31E09BD562A /* Frameworks */,
-				707BC98B001B06806A8247A6 /* Resources */,
-				66CB9AAD9AAA2021A8B9CA4B /* Generate prototype secrets */,
+				EC6D314EF9CD5FD05D75BE0D /* Sources */,
+				4CCD4A6BBBE0B2AA3196ACBC /* Frameworks */,
+				505B71063C345D21EA2762D1 /* Resources */,
+				6F2B1CE79A8FC20E899C926A /* Generate prototype secrets */,
 			);
 			buildRules = (
 			);
@@ -185,42 +177,41 @@
 			);
 			name = Violet;
 			packageProductDependencies = (
-				70059B7E5469B8B74B17BD73 /* MWDATCore */,
-				4847A734EC5363DF60626F21 /* MWDATCamera */,
-				232C31F6E1F0F129872B8605 /* MWDATSpeech */,
+				A0EAA09D58A0AF5B40B7FCB3 /* MWDATCore */,
+				CDCA28262A52E14A872D9AA8 /* MWDATCamera */,
+				B69ECAF5952BEE01A6DFBAA6 /* MWDATSpeech */,
 			);
 			productName = Violet;
-			productReference = C8AC81A68D93891D2FBCC428 /* Violet.app */;
+			productReference = 966F3BC06482288660275EAB /* Violet.app */;
 			productType = "com.apple.product-type.application";
 		};
-		639EDFEA522D6E4DB942DEFB /* VioletTests */ = {
+		FBFBA95792D2B7440FAC960A /* VioletTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 22CAA86AFD9E0FCA99D5A96A /* Build configuration list for PBXNativeTarget "VioletTests" */;
+			buildConfigurationList = 3ADA300D1169AA58F16AE0C6 /* Build configuration list for PBXNativeTarget "VioletTests" */;
 			buildPhases = (
-				C330CFECB97814BB5043BBB2 /* Sources */,
-				0AE832BC7B3A11FEEDB23E8A /* Frameworks */,
-				9A9C3DC3D62AADF745B09202 /* Resources */,
+				2CB48A6137CFE9F331546278 /* Sources */,
+				9B3849562FC3BC9CE9FEA91C /* Frameworks */,
+				9654533B13AACE89409EA293 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				3C8141764AE86A7A868854B9 /* PBXTargetDependency */,
 			);
 			name = VioletTests;
 			productName = VioletTests;
-			productReference = 285F660E5C7C02F8168F558B /* VioletTests.xctest */;
+			productReference = C2A601BA8F532336F1B8D9E8 /* VioletTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
-		6E067FDF9CA40113F3F711E3 /* Project object */ = {
+		05B375393C2BC6675A4BB2C1 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 2660;
 				LastUpgradeCheck = 2660;
 			};
-			buildConfigurationList = A343CA289DD90254A2BF0E31 /* Build configuration list for PBXProject "Violet" */;
+			buildConfigurationList = F8A5C61F3367E8F337255228 /* Build configuration list for PBXProject "Violet" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -228,34 +219,34 @@
 				en,
 				Base,
 			);
-			mainGroup = 707F6BB6EC83A0E3626E96E8;
+			mainGroup = 35E5CBEB1194C1399F5CD138;
 			minimizedProjectReferenceProxies = 0;
 			packageReferences = (
-				4CFB011AE899C382F5BD8941 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */,
+				BD079B8704335AF6568DDD12 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */,
 			);
-			productRefGroup = 900F1494C06833CD5FB0215D /* Products */;
+			productRefGroup = F63B70D0B309D1356C583CFF /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				34A7AD98AD9D2FA5CF743439 /* Violet */,
-				639EDFEA522D6E4DB942DEFB /* VioletTests */,
+				A7B98C4A6AF3B7907E25400D /* Violet */,
+				FBFBA95792D2B7440FAC960A /* VioletTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		707BC98B001B06806A8247A6 /* Resources */ = {
+		505B71063C345D21EA2762D1 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				7A7F605575D439F548A44AA1 /* Assets.xcassets in Resources */,
-				5C42D17D6D9309D801522414 /* MuktaMalar-Light.ttf in Resources */,
-				DFDAA21243CDF7CBFBD48BAD /* Sansation-Bold.ttf in Resources */,
-				FF202AF37C4E841CC77B5FB5 /* Sansation-Regular.ttf in Resources */,
+				77B796C5609DB737635B2558 /* Assets.xcassets in Resources */,
+				6BDFCD551D00DAD171733ED7 /* MuktaMalar-Light.ttf in Resources */,
+				8D4E1F1EDC8B6DD890C7ABB0 /* Sansation-Bold.ttf in Resources */,
+				85392729460FCE547C2CE8CF /* Sansation-Regular.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		9A9C3DC3D62AADF745B09202 /* Resources */ = {
+		9654533B13AACE89409EA293 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -265,7 +256,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		66CB9AAD9AAA2021A8B9CA4B /* Generate prototype secrets */ = {
+		6F2B1CE79A8FC20E899C926A /* Generate prototype secrets */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -283,55 +274,118 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -eu\noutput_dir=\"$DERIVED_FILE_DIR/violet-secrets\"\noutput_file=\"$output_dir/Secrets.json\"\nmkdir -p \"$output_dir\" \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH\"\n/usr/bin/ruby \"$SRCROOT/scripts/generate_secrets.rb\" \"$SRCROOT/../.env\" \"$output_file\"\n/bin/cp \"$output_file\" \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Secrets.json\"\n";
+			shellScript = "set -eu\noutput_dir=\"$DERIVED_FILE_DIR/violet-secrets\"\noutput_file=\"$output_dir/Secrets.json\"\nmkdir -p \"$output_dir\" \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH\"\n/usr/bin/ruby \"$SRCROOT/scripts/generate_secrets.rb\" \"$SRCROOT/../.env\" \"$output_file\"\n/bin/cp \"$output_file\" \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Secrets.json\"\n/usr/bin/xattr -cr \"$TARGET_BUILD_DIR/$WRAPPER_NAME\" || true\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		C330CFECB97814BB5043BBB2 /* Sources */ = {
+		2CB48A6137CFE9F331546278 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				67D3D58CF45F16EAC133224A /* FrameSelectorTests.swift in Sources */,
-				AB305FD6F12154A8DAA77D61 /* WakeWordDetectorTests.swift in Sources */,
+				81A612A99A6D2B7EC5C34919 /* FrameSelectorTests.swift in Sources */,
+				EC0B864A8B3B6A05A30DF683 /* WakeWordDetectorTests.swift in Sources */,
+				DFE6AF9A17073688BD411587 /* FrameSelector.swift in Sources */,
+				6424BC6A5CA7D917EDC1D1AE /* WakeWordDetector.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		E41860EF7CE8B7B5BD33C567 /* Sources */ = {
+		EC6D314EF9CD5FD05D75BE0D /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				0BA6C4EB59C015AFB8F99BB0 /* AppModel.swift in Sources */,
-				B306255AD85DC19E11D54967 /* VioletApp.swift in Sources */,
-				B8C27C247033E1D293080468 /* AppEnvironment.swift in Sources */,
-				F3071A081F99177005D683C1 /* LocalStore.swift in Sources */,
-				61335D4B22E342FEB4F5C052 /* RemoteAPI.swift in Sources */,
-				156492E052E99661C374FC27 /* DesignSystem.swift in Sources */,
-				832EC623E54FE8716DB4D26C /* Models.swift in Sources */,
-				A0A7A98F108D8FDB32C95CA5 /* AddPersonSheet.swift in Sources */,
-				B878355A52E2E4281E4CA5FF /* CameraCaptureView.swift in Sources */,
-				E60FC2D4F39037C55CE09D2A /* HomeView.swift in Sources */,
-				8BB3B2B86C42B7352E11EA14 /* ElevenLabsSpeaker.swift in Sources */,
-				87FEE79207656D5DEB1FED25 /* FrameSelector.swift in Sources */,
-				364CE62873A77EAF8EC15391 /* GlassesManager.swift in Sources */,
-				F579F0952233537C4D99E01A /* OpenAIRecognitionService.swift in Sources */,
-				5ABB350F29884C355AEBDE1A /* WakeWordDetector.swift in Sources */,
+				6EAF340F3AD68FDE5F358D5D /* AppModel.swift in Sources */,
+				5BDC97243A0B770C62555D52 /* VioletApp.swift in Sources */,
+				AC6644AC20CD2479A9920E68 /* AppEnvironment.swift in Sources */,
+				7AC3488AEB34B141428E1188 /* LocalStore.swift in Sources */,
+				CB5FAC5DA74BAD11240EE307 /* RemoteAPI.swift in Sources */,
+				55A25B4CA51CC1A9D627B100 /* DesignSystem.swift in Sources */,
+				AFF2769A58D1C5F7BFBD4FC6 /* Models.swift in Sources */,
+				C673138A466EACEBAF564012 /* AddPersonSheet.swift in Sources */,
+				2DB57E78681EB969E48AEBDA /* CameraCaptureView.swift in Sources */,
+				D1A56D5E733DA77606A821FE /* HomeView.swift in Sources */,
+				F265F54EF1073CC31A6140FF /* ElevenLabsSpeaker.swift in Sources */,
+				87CAA134A416688F53D28F89 /* FrameSelector.swift in Sources */,
+				94D2324C4740EC0F612E4945 /* GlassesManager.swift in Sources */,
+				87E5C2A0B4D9E7A9DE683906 /* OpenAIRecognitionService.swift in Sources */,
+				B5FC3F51408DCF5E5CF29C3C /* WakeWordDetector.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
 
-/* Begin PBXTargetDependency section */
-		3C8141764AE86A7A868854B9 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = Violet;
-			target = 34A7AD98AD9D2FA5CF743439 /* Violet */;
-			targetProxy = BC5BC41067FE6659F5763E38 /* PBXContainerItemProxy */;
-		};
-/* End PBXTargetDependency section */
-
 /* Begin XCBuildConfiguration section */
-		8901377C7508E51473D4D46A /* Release */ = {
+		28A413212CB8C17A8F10A8E8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = Violet/Violet.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Violet/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 1.0;
+				META_APP_ID = 0;
+				META_CLIENT_TOKEN = "";
+				PRODUCT_BUNDLE_IDENTIFIER = com.violet.patient;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		598085E3507D14BC2AD9808A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = Violet/Violet.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Violet/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 1.0;
+				META_APP_ID = 0;
+				META_CLIENT_TOKEN = "";
+				PRODUCT_BUNDLE_IDENTIFIER = com.violet.patient;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		A99D79268A08A4A709103441 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.violet.patient.tests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		ACB237FBD01D6263A1FFD1D3 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -386,7 +440,7 @@
 			};
 			name = Release;
 		};
-		8B22268D8442D7F6E58AF61A /* Debug */ = {
+		C6415D1C6ED452E50E0D6444 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
@@ -448,37 +502,9 @@
 			};
 			name = Debug;
 		};
-		9FCD1C8CC3784944B59A6205 /* Debug */ = {
+		F869EC8A95A2CE1A468F53D3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGN_ENTITLEMENTS = Violet/Violet.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = Violet/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 1.0;
-				META_APP_ID = 0;
-				META_CLIENT_TOKEN = "";
-				PRODUCT_BUNDLE_IDENTIFIER = com.violet.patient;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_STRICT_CONCURRENCY = targeted;
-				TARGETED_DEVICE_FAMILY = 1;
-			};
-			name = Debug;
-		};
-		BEB9768431159A4A3E1026C4 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
 				CLANG_ENABLE_OBJC_WEAK = NO;
 				CODE_SIGN_STYLE = Automatic;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -487,81 +513,35 @@
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 6.0;
 				TARGETED_DEVICE_FAMILY = 1;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Violet.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Violet";
 			};
 			name = Debug;
-		};
-		C6F65172689D79529A4613EC /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGN_ENTITLEMENTS = Violet/Violet.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = "";
-				ENABLE_USER_SCRIPT_SANDBOXING = NO;
-				GENERATE_INFOPLIST_FILE = NO;
-				INFOPLIST_FILE = Violet/Info.plist;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				MARKETING_VERSION = 1.0;
-				META_APP_ID = 0;
-				META_CLIENT_TOKEN = "";
-				PRODUCT_BUNDLE_IDENTIFIER = com.violet.patient;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_STRICT_CONCURRENCY = targeted;
-				TARGETED_DEVICE_FAMILY = 1;
-				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
-		D7BACBEDE4B6F8B31A0B7059 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGN_STYLE = Automatic;
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
-				PRODUCT_BUNDLE_IDENTIFIER = com.violet.patient.tests;
-				SDKROOT = iphoneos;
-				SWIFT_VERSION = 6.0;
-				TARGETED_DEVICE_FAMILY = 1;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Violet.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Violet";
-				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		22CAA86AFD9E0FCA99D5A96A /* Build configuration list for PBXNativeTarget "VioletTests" */ = {
+		3ADA300D1169AA58F16AE0C6 /* Build configuration list for PBXNativeTarget "VioletTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				D7BACBEDE4B6F8B31A0B7059 /* Release */,
-				BEB9768431159A4A3E1026C4 /* Debug */,
+				A99D79268A08A4A709103441 /* Release */,
+				F869EC8A95A2CE1A468F53D3 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		9FF9C13F26C435CBA065B108 /* Build configuration list for PBXNativeTarget "Violet" */ = {
+		885103FE249AF8A1007B0A4E /* Build configuration list for PBXNativeTarget "Violet" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				C6F65172689D79529A4613EC /* Release */,
-				9FCD1C8CC3784944B59A6205 /* Debug */,
+				28A413212CB8C17A8F10A8E8 /* Release */,
+				598085E3507D14BC2AD9808A /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		A343CA289DD90254A2BF0E31 /* Build configuration list for PBXProject "Violet" */ = {
+		F8A5C61F3367E8F337255228 /* Build configuration list for PBXProject "Violet" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				8B22268D8442D7F6E58AF61A /* Debug */,
-				8901377C7508E51473D4D46A /* Release */,
+				C6415D1C6ED452E50E0D6444 /* Debug */,
+				ACB237FBD01D6263A1FFD1D3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -569,7 +549,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		4CFB011AE899C382F5BD8941 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */ = {
+		BD079B8704335AF6568DDD12 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/facebook/meta-wearables-dat-ios";
 			requirement = {
@@ -580,22 +560,22 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		232C31F6E1F0F129872B8605 /* MWDATSpeech */ = {
+		A0EAA09D58A0AF5B40B7FCB3 /* MWDATCore */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 4CFB011AE899C382F5BD8941 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */;
+			package = BD079B8704335AF6568DDD12 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */;
+			productName = MWDATCore;
+		};
+		B69ECAF5952BEE01A6DFBAA6 /* MWDATSpeech */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BD079B8704335AF6568DDD12 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */;
 			productName = MWDATSpeech;
 		};
-		4847A734EC5363DF60626F21 /* MWDATCamera */ = {
+		CDCA28262A52E14A872D9AA8 /* MWDATCamera */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 4CFB011AE899C382F5BD8941 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */;
+			package = BD079B8704335AF6568DDD12 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */;
 			productName = MWDATCamera;
-		};
-		70059B7E5469B8B74B17BD73 /* MWDATCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 4CFB011AE899C382F5BD8941 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */;
-			productName = MWDATCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
-	rootObject = 6E067FDF9CA40113F3F711E3 /* Project object */;
+	rootObject = 05B375393C2BC6675A4BB2C1 /* Project object */;
 }

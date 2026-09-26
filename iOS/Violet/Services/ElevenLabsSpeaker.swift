@@ -16,7 +16,7 @@ enum SpeechServiceError: LocalizedError {
 }
 
 @MainActor
-final class ElevenLabsSpeaker: NSObject, AVAudioPlayerDelegate {
+final class ElevenLabsSpeaker: NSObject {
   private let environment: AppEnvironment
   private let session: URLSession
   private var player: AVAudioPlayer?
@@ -59,13 +59,8 @@ final class ElevenLabsSpeaker: NSObject, AVAudioPlayerDelegate {
     try audioSession.setCategory(.playback, mode: .spokenAudio, options: [.allowBluetoothA2DP])
     try audioSession.setActive(true)
     let newPlayer = try AVAudioPlayer(data: data)
-    newPlayer.delegate = self
     newPlayer.prepareToPlay()
     guard newPlayer.play() else { throw SpeechServiceError.invalidResponse }
     player = newPlayer
-  }
-
-  func audioPlayerDidFinishPlaying(_ player: AVAudioPlayer, successfully flag: Bool) {
-    self.player = nil
   }
 }

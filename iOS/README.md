@@ -17,7 +17,7 @@ Violet is the patient-facing iOS companion for Meta AI glasses. While the app is
 1. Open `Violet.xcodeproj` in Xcode 26.4 or newer.
 2. Select your development team and a physical iPhone running iOS 17.2 or newer.
 3. Enable Developer Mode for the glasses in the Meta AI app.
-4. Keep the repository-root `.env` populated. The build phase reads it and writes a temporary `Secrets.json` into the built app; it never copies the file into source control.
+4. Keep the repository-root `.env` populated and downloaded locally. If Finder shows a cloud icon, choose **Download Now** first. The build phase reads it and writes a temporary `Secrets.json` into the built app; it never copies the file into source control.
 5. Build and run, then tap **Set up glasses** once to complete registration and grant camera/microphone access.
 
 Supported `.env` keys:
@@ -31,11 +31,11 @@ MONGO_DB_ENDPOINT=
 MONGO_DB_API_KEY=
 MONGO_RELATIONSHIPS_PATH=relationships
 MONGO_LOGS_PATH=logs
-META_APP_ID=
-META_CLIENT_TOKEN=
 ```
 
 The two Mongo paths are optional and default to `relationships` and `logs`. The relationship endpoint should support `GET ?updatedAfter=<ISO-8601>` and `POST`; the log endpoint should support `POST`. `GET` may return either an array or `{ "items": [...], "nextCursor": "..." }`.
+
+Developer Mode intentionally uses `META_APP_ID = 0` and no client token, as supported by the SDK. For a production channel, set the `META_APP_ID` and `META_CLIENT_TOKEN` Xcode build settings from the app registered in Wearables Developer Center.
 
 ## Important prototype boundaries
 
@@ -51,14 +51,13 @@ Relationship payloads use the seven requested domain fields:
 ```json
 {
   "name": "Jordan Lee",
-  "frontPhoto": "<base64 JPEG or HTTPS URL>",
-  "leftPhoto": "<base64 JPEG or HTTPS URL>",
-  "rightPhoto": "<base64 JPEG or HTTPS URL>",
+  "front_photo": "<base64 JPEG or HTTPS URL>",
+  "left_photo": "<base64 JPEG or HTTPS URL>",
+  "right_photo": "<base64 JPEG or HTTPS URL>",
   "relation": "daughter",
   "bio": "Jordan loves gardening and calls every Sunday.",
-  "yearMet": 1998
+  "year_met": 1998
 }
 ```
 
-`_id` and `updatedAt` are treated as server metadata for incremental sync. Recognition logs use `{ "timestamp": "<ISO-8601>", "identifiedPerson": "<name or Unknown>" }`.
-
+`id`/`_id` and `updated_at`/`updatedAt` are treated as server metadata for incremental sync. The app sends snake_case to match `MONGO_DB.sql`, while accepting snake_case or legacy camelCase responses. Recognition logs use `{ "timestamp": "<ISO-8601>", "identified_person": "<name or Unknown>" }`.

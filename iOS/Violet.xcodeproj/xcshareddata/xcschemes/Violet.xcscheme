@@ -14,7 +14,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "34A7AD98AD9D2FA5CF743439"
+               BlueprintIdentifier = "A7B98C4A6AF3B7907E25400D"
                BuildableName = "Violet.app"
                BlueprintName = "Violet"
                ReferencedContainer = "container:Violet.xcodeproj">
@@ -30,7 +30,7 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "34A7AD98AD9D2FA5CF743439"
+            BlueprintIdentifier = "A7B98C4A6AF3B7907E25400D"
             BuildableName = "Violet.app"
             BlueprintName = "Violet"
             ReferencedContainer = "container:Violet.xcodeproj">
@@ -41,7 +41,7 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "639EDFEA522D6E4DB942DEFB"
+               BlueprintIdentifier = "FBFBA95792D2B7440FAC960A"
                BuildableName = "VioletTests.xctest"
                BlueprintName = "VioletTests"
                ReferencedContainer = "container:Violet.xcodeproj">
@@ -63,7 +63,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "34A7AD98AD9D2FA5CF743439"
+            BlueprintIdentifier = "A7B98C4A6AF3B7907E25400D"
             BuildableName = "Violet.app"
             BlueprintName = "Violet"
             ReferencedContainer = "container:Violet.xcodeproj">
@@ -80,7 +80,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "34A7AD98AD9D2FA5CF743439"
+            BlueprintIdentifier = "A7B98C4A6AF3B7907E25400D"
             BuildableName = "Violet.app"
             BlueprintName = "Violet"
             ReferencedContainer = "container:Violet.xcodeproj">

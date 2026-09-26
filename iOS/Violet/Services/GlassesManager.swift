@@ -255,7 +255,14 @@ final class GlassesManager {
   }
 
   private func beginVioletCapture(at triggeredAt: Date) {
-    guard camera == nil, let session, session.state == .started else { return }
+    guard camera == nil else {
+      onVioletCapture?(triggeredAt, nil, 0)
+      return
+    }
+    guard let session, session.state == .started else {
+      onVioletCapture?(triggeredAt, nil, 0)
+      return
+    }
     frameSelector.reset()
     isCaptureTimerRunning = false
     let configuration = StreamConfiguration(

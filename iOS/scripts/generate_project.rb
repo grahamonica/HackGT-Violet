@@ -14,7 +14,6 @@ project.root_object.attributes["LastUpgradeCheck"] = "2660"
 
 app_target = project.new_target(:application, "Violet", :ios, "17.2")
 test_target = project.new_target(:unit_test_bundle, "VioletTests", :ios, "17.2")
-test_target.add_dependency(app_target)
 
 app_group = project.main_group.new_group("Violet", "Violet")
 test_group = project.main_group.new_group("VioletTests", "VioletTests")
@@ -42,6 +41,10 @@ test_refs = test_files.map do |path|
   test_group.new_file(relative)
 end
 test_target.add_file_references(test_refs)
+logic_refs = source_refs.select do |reference|
+  %w[FrameSelector.swift WakeWordDetector.swift].include?(File.basename(reference.path))
+end
+test_target.add_file_references(logic_refs)
 
 package_ref = project.new(Xcodeproj::Project::Object::XCRemoteSwiftPackageReference)
 package_ref.repositoryURL = "https://github.com/facebook/meta-wearables-dat-ios"
@@ -85,13 +88,11 @@ end
 
 test_target.build_configurations.each do |configuration|
   settings = configuration.build_settings
-  settings["BUNDLE_LOADER"] = "$(TEST_HOST)"
   settings["CODE_SIGN_STYLE"] = "Automatic"
   settings["GENERATE_INFOPLIST_FILE"] = "YES"
   settings["PRODUCT_BUNDLE_IDENTIFIER"] = "com.violet.patient.tests"
   settings["SWIFT_VERSION"] = "6.0"
   settings["TARGETED_DEVICE_FAMILY"] = "1"
-  settings["TEST_HOST"] = "$(BUILT_PRODUCTS_DIR)/Violet.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Violet"
 end
 
 secrets_phase = app_target.new_shell_script_build_phase("Generate prototype secrets")
@@ -103,6 +104,7 @@ secrets_phase.shell_script = <<~SH
   mkdir -p "$output_dir" "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH"
   /usr/bin/ruby "$SRCROOT/scripts/generate_secrets.rb" "$SRCROOT/../.env" "$output_file"
   /bin/cp "$output_file" "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Secrets.json"
+  /usr/bin/xattr -cr "$TARGET_BUILD_DIR/$WRAPPER_NAME" || true
 SH
 secrets_phase.input_paths = ["$(SRCROOT)/scripts/generate_secrets.rb"]
 secrets_phase.output_paths = ["$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Secrets.json"]

@@ -20,6 +20,7 @@ final class AppModel {
   @ObservationIgnored private let speaker: ElevenLabsSpeaker
   @ObservationIgnored private var syncTask: Task<Void, Never>?
   @ObservationIgnored private var hasStarted = false
+  @ObservationIgnored private var recognitionCount = 0
 
   init(environment: AppEnvironment = .load()) {
     self.environment = environment
@@ -155,9 +156,12 @@ final class AppModel {
   }
 
   private func processCapture(timestamp: Date, image: Data?) async {
-    guard !isRecognizing else { return }
+    recognitionCount += 1
     isRecognizing = true
-    defer { isRecognizing = false }
+    defer {
+      recognitionCount -= 1
+      isRecognizing = recognitionCount > 0
+    }
 
     let matchedPerson: FamiliarPerson?
     if let image {
@@ -199,4 +203,3 @@ final class AppModel {
     }
   }
 }
-

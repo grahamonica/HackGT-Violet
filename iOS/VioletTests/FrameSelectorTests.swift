@@ -1,5 +1,4 @@
 import XCTest
-@testable import Violet
 
 final class FrameSelectorTests: XCTestCase {
   func testFirstFrameWinsAndCountTracksAllFrames() {
