@@ -1,6 +1,6 @@
 # Demo diagrams
 
-Presentation visuals for Violet, generated from code so they stay in step with the repository.
+Presentation visuals for Violet, generated from code so they are easy to edit and regenearate programmatically"
 
 | file | what it shows |
 |---|---|
