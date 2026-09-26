@@ -5,7 +5,7 @@ import type { PatientProfile } from "@/lib/types";
 import { readStored, writeStored } from "./storage";
 
 const CACHE_KEY = "patient-profile-v1";
-const EMPTY: PatientProfile = { name: "", dateOfBirth: "", diagnosis: "", assessmentTool: "", assessmentScore: "", assessmentDate: "", providerNotes: "" };
+const EMPTY: PatientProfile = { name: "", gender: "Male", dateOfBirth: "1950-01-05", mocaScore: "", mocaDate: "", caregiverName: "", caregiverPhone: "" };
 
 export function usePatientProfile() {
   const [profile, setProfile] = useState(EMPTY);
@@ -16,7 +16,15 @@ export function usePatientProfile() {
     let cancelled = false;
     void readStored<Partial<PatientProfile>>(CACHE_KEY, EMPTY).then((partial) => {
       if (cancelled) return;
-      const stored = { ...EMPTY, ...partial };
+      const stored: PatientProfile = {
+        name: partial.name ?? "",
+        gender: partial.gender || EMPTY.gender,
+        dateOfBirth: partial.dateOfBirth || EMPTY.dateOfBirth,
+        mocaScore: partial.mocaScore ?? "",
+        mocaDate: partial.mocaDate ?? "",
+        caregiverName: partial.caregiverName ?? "",
+        caregiverPhone: partial.caregiverPhone ?? "",
+      };
       profileRef.current = stored;
       setProfile(stored);
       setHydrated(true);

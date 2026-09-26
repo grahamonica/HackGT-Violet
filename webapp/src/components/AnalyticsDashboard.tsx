@@ -122,28 +122,34 @@ function WeeklyChart({ points, loading, weeks, onWeeksChange }: { points: WeekPo
 }
 
 function HourlyChart({ points, loading }: { points: HourPoint[]; loading: boolean }) {
+  const [hovered, setHovered] = useState<number | null>(null);
   const width = 720;
   const height = 220;
-  const margin = { top: 12, right: 8, bottom: 28, left: 28 };
+  const margin = { top: 22, right: 8, bottom: 28, left: 28 };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
+  const baseline = margin.top + plotHeight;
   const max = Math.max(1, ...points.flatMap((point) => [point.violetUses, point.visitors]));
   const group = plotWidth / points.length;
   const barWidth = Math.max(2, group / 2 - 3);
   const barHeight = (value: number) => (value / max) * plotHeight;
   const hasData = points.some((point) => point.violetUses || point.visitors);
   return (
-    <svg className="hour-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Violet uses and visitors by waking hour">
-      <line className="chart-gridline" x1={margin.left} x2={width - margin.right} y1={margin.top + plotHeight} y2={margin.top + plotHeight} />
+    <svg className="hour-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Violet uses and visitors by waking hour" data-hover={hovered != null || undefined} onPointerLeave={() => setHovered(null)}>
+      <line className="chart-gridline" x1={margin.left} x2={width - margin.right} y1={baseline} y2={baseline} />
       {points.map((point, index) => {
         const center = margin.left + group * index + group / 2;
         const violetHeight = barHeight(point.violetUses);
         const visitHeight = barHeight(point.visitors);
+        const active = hovered === index;
         return (
-          <g key={point.hour}>
-            <rect className="hour-violet" x={center - barWidth - 1} y={margin.top + plotHeight - violetHeight} width={barWidth} height={violetHeight}><title>{`${format.hour(point.hour)}: ${point.violetUses} Violet uses`}</title></rect>
-            <rect className="hour-visit" x={center + 1} y={margin.top + plotHeight - visitHeight} width={barWidth} height={visitHeight}><title>{`${format.hour(point.hour)}: ${point.visitors} visitors`}</title></rect>
-            {index % 2 === 0 && <text className="axis-label" x={center} y={height - 8} textAnchor="middle">{format.hour(point.hour)}</text>}
+          <g key={point.hour} className={active ? "hour-group is-hovered" : "hour-group"} onPointerEnter={() => setHovered(index)}>
+            <rect className="hour-hit" x={margin.left + group * index} y={0} width={group} height={height} />
+            <rect className="hour-violet" x={center - barWidth - 1} y={baseline - violetHeight} width={barWidth} height={violetHeight} />
+            <rect className="hour-visit" x={center + 1} y={baseline - visitHeight} width={barWidth} height={visitHeight} />
+            {active && <text className="hour-value" x={center - barWidth / 2 - 1} y={baseline - violetHeight - 5} textAnchor="middle">{point.violetUses}</text>}
+            {active && <text className="hour-value" x={center + barWidth / 2 + 1} y={baseline - visitHeight - 5} textAnchor="middle">{point.visitors}</text>}
+            {(index % 2 === 0 || active) && <text className={active ? "axis-label is-hovered" : "axis-label"} x={center} y={height - 8} textAnchor="middle">{format.hour(point.hour)}</text>}
           </g>
         );
       })}

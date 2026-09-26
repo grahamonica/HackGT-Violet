@@ -27,6 +27,7 @@ const time = new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-di
 
 const longDateTime = new Intl.DateTimeFormat(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
 const monthDayYear = new Intl.DateTimeFormat(undefined, { month: "short", day: "numeric", year: "numeric" });
+const numericDate = new Intl.DateTimeFormat("en-US", { month: "2-digit", day: "2-digit", year: "numeric" });
 
 export function parseDateOnly(value: string): Date | null {
   const [year, month, day] = value.split("-").map(Number);
@@ -45,6 +46,7 @@ export function relativeDay(date: Date, now: Date): string {
 export const format = {
   dateTime: (date: Date) => longDateTime.format(date),
   monthDayYear: (date: Date) => monthDayYear.format(date),
+  numericDate: (date: Date) => numericDate.format(date),
   shortDate: (date: Date) => shortDate.format(date),
   longDate: (date: Date) => longDate.format(date),
   fullDate: (date: Date) => fullDate.format(date),

@@ -1,5 +1,5 @@
 import { MongoClient, ObjectId, type Document, type Filter } from "mongodb";
-import type { Person, PersonDraft, RecognitionLog, RecognitionLogDraft } from "@/lib/types";
+import type { Person, PersonDraft, ProviderNote, ProviderNoteDraft, RecognitionLog, RecognitionLogDraft } from "@/lib/types";
 import { serverEnv } from "./env";
 
 declare global {
@@ -140,4 +140,55 @@ export async function updateRelationship(id: string, draft: PersonDraft): Promis
   );
   if (!result.matchedCount) throw new Error("Familiar person not found.");
   return { ...draft, id, updatedAt: now.toISOString() };
+}
+
+function note(document: Document): ProviderNote {
+  const createdAt = dateValue(document.createdAt, new Date(0)).toISOString();
+  return {
+    id: document._id?.toString() ?? crypto.randomUUID(),
+    title: text(document.title),
+    body: text(document.body),
+    createdAt,
+    updatedAt: dateValue(document.updatedAt, new Date(createdAt)).toISOString(),
+    ...(document.deletedAt ? { deleted: true } : {}),
+  };
+}
+
+export async function fetchNotes(updatedAfter?: string): Promise<ProviderNote[]> {
+  const db = await database();
+  const after = updatedAfter ? new Date(updatedAfter) : null;
+  // A first load skips deleted notes; an incremental sync includes them so clients can drop them.
+  const filter: Filter<Document> = after && !Number.isNaN(after.getTime()) ? { updatedAt: { $gt: after } } : { deletedAt: { $exists: false } };
+  const documents = await db.collection(serverEnv.notesPath).find(filter).sort({ createdAt: -1 }).toArray();
+  return documents.map(note);
+}
+
+export async function createNote(draft: ProviderNoteDraft, createdAt = new Date()): Promise<ProviderNote> {
+  const db = await database();
+  const document = { title: draft.title, body: draft.body, createdAt, updatedAt: createdAt };
+  const result = await db.collection(serverEnv.notesPath).insertOne(document);
+  return note({ ...document, _id: result.insertedId });
+}
+
+export async function updateNote(id: string, draft: ProviderNoteDraft): Promise<ProviderNote> {
+  if (!ObjectId.isValid(id)) throw new Error("Invalid note ID.");
+  const db = await database();
+  const document = await db.collection(serverEnv.notesPath).findOneAndUpdate(
+    { _id: new ObjectId(id), deletedAt: { $exists: false } },
+    { $set: { title: draft.title, body: draft.body, updatedAt: new Date() } },
+    { returnDocument: "after" },
+  );
+  if (!document) throw new Error("Note not found.");
+  return note(document);
+}
+
+export async function deleteNote(id: string): Promise<void> {
+  if (!ObjectId.isValid(id)) throw new Error("Invalid note ID.");
+  const db = await database();
+  const now = new Date();
+  const result = await db.collection(serverEnv.notesPath).updateOne(
+    { _id: new ObjectId(id) },
+    { $set: { deletedAt: now, updatedAt: now, title: "", body: "" } },
+  );
+  if (!result.matchedCount) throw new Error("Note not found.");
 }
