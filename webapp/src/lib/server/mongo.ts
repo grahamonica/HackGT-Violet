@@ -1,5 +1,5 @@
 import { MongoClient, ObjectId, type Document, type Filter } from "mongodb";
-import type { Person, PersonDraft, RecognitionLog } from "@/lib/types";
+import type { Person, PersonDraft, RecognitionLog, RecognitionLogDraft } from "@/lib/types";
 import { serverEnv } from "./env";
 
 declare global {
@@ -77,6 +77,21 @@ export async function fetchLogs(after?: string): Promise<RecognitionLog[]> {
   const db = await database();
   const documents = await db.collection(serverEnv.logsPath).find(changeFilter(after)).toArray();
   return documents.map(log);
+}
+
+export async function createRecognitionLog(draft: RecognitionLogDraft): Promise<RecognitionLog> {
+  const db = await database();
+  const timestamp = new Date(draft.timestamp);
+  const document = {
+    timestamp,
+    identifiedPerson: draft.identifiedPerson,
+  };
+  const result = await db.collection(serverEnv.logsPath).insertOne(document);
+  return {
+    id: result.insertedId.toString(),
+    timestamp: timestamp.toISOString(),
+    identifiedPerson: draft.identifiedPerson,
+  };
 }
 
 export async function createRelationship(draft: PersonDraft): Promise<Person> {

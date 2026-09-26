@@ -18,6 +18,8 @@ export type RecognitionLog = {
   identifiedPerson: string;
 };
 
+export type RecognitionLogDraft = Omit<RecognitionLog, "id">;
+
 export type CalendarEvent = {
   id: string;
   title: string;
