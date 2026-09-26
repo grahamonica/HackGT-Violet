@@ -63,6 +63,7 @@ final class GlassesManager {
   @ObservationIgnored private var isCapturing = false
   @ObservationIgnored private var isCameraStopping = false
   @ObservationIgnored private var pendingTrigger: Date?
+  @ObservationIgnored private var captureTriggeredAt: Date?
   @ObservationIgnored private var teardownTask: Task<Void, Never>?
 
   init(
@@ -137,6 +138,7 @@ final class GlassesManager {
   }
 
   private func handleRegistrationState(_ registration: RegistrationState) async {
+    violetTrace("registration: \(registration)")
     switch registration {
     case .registered:
       isSetupComplete = true
@@ -153,6 +155,7 @@ final class GlassesManager {
   }
 
   private func handleActiveDevice(_ identifier: DeviceIdentifier?) async {
+    violetTrace("active device: \(identifier.map { "\($0)" } ?? "none")")
     activeDevice = identifier
     guard let identifier else {
       if session == nil, case .registered = wearables.registrationState {
@@ -191,6 +194,7 @@ final class GlassesManager {
       guard try await wearables.checkPermissionStatus(.microphone) == .granted,
         try await wearables.checkPermissionStatus(.camera) == .granted
       else {
+        violetTrace("glasses permissions not granted; waiting for setup")
         state = .needsSetup
         return
       }
@@ -291,6 +295,7 @@ final class GlassesManager {
     frameSelector.reset()
     isCaptureTimerRunning = false
     isCapturing = true
+    captureTriggeredAt = triggeredAt
     let configuration = StreamConfiguration(
       videoCodec: .raw,
       resolution: .medium,
@@ -347,6 +352,14 @@ final class GlassesManager {
     default:
       break
     }
+  }
+
+  /// Ends the current capture before the five seconds are up, e.g. once the
+  /// frame selector already has its answer.
+  func finishCaptureEarly() {
+    guard isCapturing, let captureTriggeredAt else { return }
+    violetTrace("finishing capture early")
+    completeCapture(triggeredAt: captureTriggeredAt, error: nil)
   }
 
   private func completeCapture(triggeredAt: Date, error: String?) {

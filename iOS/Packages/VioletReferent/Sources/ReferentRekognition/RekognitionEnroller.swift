@@ -75,10 +75,30 @@ public struct RekognitionEnroller: Sendable {
     let faceIDs = try await faceIDs(of: personID)
     do {
       _ = try await client.call("DeleteUser", ["CollectionId": config.collectionID, "UserId": personID])
-    } catch RekognitionError.service(let type, _, _) where type == "ResourceNotFoundException" {}
+    } catch RekognitionError.service(let type, _, _)
+      where type == "ResourceNotFoundException" || type == "InvalidParameterException" {
+      // Rekognition answers DeleteUser for a missing user with InvalidParameterException
+      // ("Request has invalid parameters"); the ID itself was validated above.
+    }
     if !faceIDs.isEmpty {
       _ = try await client.call("DeleteFaces", ["CollectionId": config.collectionID, "FaceIds": faceIDs])
     }
+  }
+
+  /// IDs of everyone currently enrolled in the collection.
+  public func enrolledPersonIDs() async throws -> Set<String> {
+    var ids: Set<String> = []
+    var token: String?
+    repeat {
+      var parameters: [String: Any] = ["CollectionId": config.collectionID, "MaxResults": 500]
+      if let token { parameters["NextToken"] = token }
+      let response = try await client.call("ListUsers", parameters)
+      for user in response["Users"] as? [[String: Any]] ?? [] {
+        if let id = user["UserId"] as? String { ids.insert(id) }
+      }
+      token = response["NextToken"] as? String
+    } while token != nil
+    return ids
   }
 
   private func faceIDs(of personID: String) async throws -> [String] {

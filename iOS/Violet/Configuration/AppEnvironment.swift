@@ -1,4 +1,5 @@
 import Foundation
+import ReferentRekognition
 
 struct AppEnvironment: Sendable {
   let openAIKey: String
@@ -9,6 +10,8 @@ struct AppEnvironment: Sendable {
   let mongoDatabase: String
   let relationshipsPath: String
   let logsPath: String
+  /// Nil unless all four `AWS_REKOGNITION_*` keys are set.
+  let rekognition: RekognitionConfig?
 
   static func load(bundle: Bundle = .main) -> AppEnvironment {
     let values: [String: String]
@@ -29,7 +32,8 @@ struct AppEnvironment: Sendable {
       mongoURI: values["MONGO_URI", default: ""].trimmingCharacters(in: .whitespacesAndNewlines),
       mongoDatabase: values["MONGO_DB_NAME"].nonEmpty ?? "violet",
       relationshipsPath: values["MONGO_RELATIONSHIPS_PATH"].nonEmpty ?? "relationships",
-      logsPath: values["MONGO_LOGS_PATH"].nonEmpty ?? "logs"
+      logsPath: values["MONGO_LOGS_PATH"].nonEmpty ?? "logs",
+      rekognition: RekognitionConfig(values: values)
     )
   }
 
@@ -38,6 +42,7 @@ struct AppEnvironment: Sendable {
   var mongoIsConfigured: Bool {
     mongoURI.hasPrefix("mongodb://") || mongoURI.hasPrefix("mongodb+srv://")
   }
+  var rekognitionIsConfigured: Bool { rekognition != nil }
 }
 
 private extension Optional where Wrapped == String {
@@ -48,4 +53,3 @@ private extension Optional where Wrapped == String {
     return self
   }
 }
-

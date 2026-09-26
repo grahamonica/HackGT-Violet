@@ -1,4 +1,5 @@
 import AVFoundation
+import CryptoKit
 import Foundation
 
 enum SpeechServiceError: LocalizedError {
@@ -15,18 +16,62 @@ enum SpeechServiceError: LocalizedError {
   }
 }
 
+/// Speaks through ElevenLabs. Audio is cached on disk by voice, model and text, so
+/// sentences prepared ahead with `prefetch` play without a network round trip.
 @MainActor
 final class ElevenLabsSpeaker: NSObject {
+  private static let modelID = "eleven_multilingual_v2"
+
   private let environment: AppEnvironment
   private let session: URLSession
+  private let cacheDirectory: URL
   private var player: AVAudioPlayer?
+  private var inFlight: [String: Task<Data, Error>] = [:]
 
   init(environment: AppEnvironment, session: URLSession = .shared) {
     self.environment = environment
     self.session = session
+    self.cacheDirectory = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+      .appendingPathComponent("violet-speech", isDirectory: true)
   }
 
   func speak(_ text: String) async throws {
+    let data = try await audio(for: text)
+    try play(data)
+  }
+
+  /// Generates and caches any of these sentences that aren't cached yet.
+  func prefetch(_ texts: [String]) async {
+    for text in Set(texts) {
+      do {
+        _ = try await audio(for: text)
+      } catch {
+        violetTrace("speech prefetch failed for \"\(text)\": \(error)")
+      }
+    }
+  }
+
+  private func audio(for text: String) async throws -> Data {
+    let file = cacheURL(for: text)
+    if let cached = try? Data(contentsOf: file) { return cached }
+    if let pending = inFlight[text] { return try await pending.value }
+
+    let task = Task { try await self.synthesize(text) }
+    inFlight[text] = task
+    defer { inFlight[text] = nil }
+    let data = try await task.value
+    try? FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+    try? data.write(to: file, options: .atomic)
+    return data
+  }
+
+  private func cacheURL(for text: String) -> URL {
+    let key = "\(environment.elevenLabsVoiceID)|\(Self.modelID)|\(text)"
+    let digest = SHA256.hash(data: Data(key.utf8)).map { String(format: "%02x", $0) }.joined()
+    return cacheDirectory.appendingPathComponent("\(digest).mp3")
+  }
+
+  private func synthesize(_ text: String) async throws -> Data {
     guard environment.elevenLabsIsConfigured else { throw SpeechServiceError.notConfigured }
     let escapedVoiceID = environment.elevenLabsVoiceID.addingPercentEncoding(
       withAllowedCharacters: .urlPathAllowed
@@ -46,7 +91,7 @@ final class ElevenLabsSpeaker: NSObject {
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     request.httpBody = try JSONSerialization.data(withJSONObject: [
       "text": text,
-      "model_id": "eleven_multilingual_v2"
+      "model_id": Self.modelID
     ])
 
     let (data, response) = try await session.data(for: request)
@@ -54,7 +99,10 @@ final class ElevenLabsSpeaker: NSObject {
     guard (200..<300).contains(http.statusCode) else {
       throw SpeechServiceError.requestFailed(http.statusCode)
     }
+    return data
+  }
 
+  private func play(_ data: Data) throws {
     let audioSession = AVAudioSession.sharedInstance()
     // .playback already routes to A2DP outputs such as the glasses; passing
     // .allowBluetoothA2DP here is invalid for this category and throws -50.
