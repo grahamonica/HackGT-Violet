@@ -140,7 +140,7 @@ final class AppModel {
   }
 
   func readBio(for person: FamiliarPerson) async {
-    let text = "\(person.name). \(person.bio)"
+    let text = Announcement.bio(person)
     lastAnnouncement = text
     do {
       try await speaker.speak(text)
@@ -316,9 +316,12 @@ final class AppModel {
   }
 
   private func preparePeople() {
-    // Prepare every sentence Violet can say now, so answers play without waiting on ElevenLabs.
-    let sentences = people.map(Announcement.identified) + Announcement.fixed
-    Task { @MainActor [weak self] in await self?.speaker.prefetch(sentences) }
+    // Prepare every sentence Violet can say now, so answers and bios play without waiting on
+    // ElevenLabs. Runs after each sync, so a bio or relation edited on the portal is
+    // regenerated within a minute and the old audio is dropped.
+    let sentences = people.flatMap { [Announcement.identified($0), Announcement.bio($0)] }
+      + Announcement.fixed
+    Task { @MainActor [weak self] in await self?.speaker.prepare(sentences) }
 
     guard let enrollment else { return }
     let snapshot = people
@@ -339,5 +342,9 @@ enum Announcement {
 
   static func identified(_ person: FamiliarPerson) -> String {
     "This is \(person.name), your \(person.relation)."
+  }
+
+  static func bio(_ person: FamiliarPerson) -> String {
+    "\(person.name). \(person.bio)"
   }
 }

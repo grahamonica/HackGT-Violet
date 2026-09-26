@@ -17,7 +17,7 @@ enum SpeechServiceError: LocalizedError {
 }
 
 /// Speaks through ElevenLabs. Audio is cached on disk by voice, model and text, so
-/// sentences prepared ahead with `prefetch` play without a network round trip.
+/// sentences prepared ahead with `prepare` play without a network round trip.
 @MainActor
 final class ElevenLabsSpeaker: NSObject {
   private static let modelID = "eleven_multilingual_v2"
@@ -40,14 +40,28 @@ final class ElevenLabsSpeaker: NSObject {
     try play(data)
   }
 
-  /// Generates and caches any of these sentences that aren't cached yet.
-  func prefetch(_ texts: [String]) async {
-    for text in Set(texts) {
+  /// Makes the cache hold exactly these sentences: audio for text that is no longer
+  /// used (e.g. an old bio) is deleted, and anything missing is generated.
+  func prepare(_ texts: [String]) async {
+    let wanted = Set(texts)
+    removeCachedAudio(except: Set(wanted.map { cacheURL(for: $0).lastPathComponent }))
+    for text in wanted {
       do {
         _ = try await audio(for: text)
       } catch {
-        violetTrace("speech prefetch failed for \"\(text)\": \(error)")
+        violetTrace("speech prepare failed for \"\(text)\": \(error)")
       }
+    }
+  }
+
+  private func removeCachedAudio(except keep: Set<String>) {
+    let files = (try? FileManager.default.contentsOfDirectory(
+      at: cacheDirectory,
+      includingPropertiesForKeys: nil
+    )) ?? []
+    for file in files where !keep.contains(file.lastPathComponent) {
+      try? FileManager.default.removeItem(at: file)
+      violetTrace("removed unused voice audio \(file.lastPathComponent.prefix(12))")
     }
   }
 
@@ -56,6 +70,7 @@ final class ElevenLabsSpeaker: NSObject {
     if let cached = try? Data(contentsOf: file) { return cached }
     if let pending = inFlight[text] { return try await pending.value }
 
+    violetTrace("generating voice: \(text.prefix(60))")
     let task = Task { try await self.synthesize(text) }
     inFlight[text] = task
     defer { inFlight[text] = nil }
