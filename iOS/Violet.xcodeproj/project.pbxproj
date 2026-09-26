@@ -265,6 +265,7 @@
 			);
 			inputPaths = (
 				"$(SRCROOT)/scripts/generate_secrets.rb",
+				"$(SRCROOT)/../.env",
 			);
 			name = "Generate prototype secrets";
 			outputFileListPaths = (

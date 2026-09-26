@@ -169,6 +169,7 @@ final class AppModel {
         let decision = try await recognizer.recognize(candidate: image, among: people)
         matchedPerson = decision.personID.flatMap { id in people.first(where: { $0.id == id }) }
       } catch {
+        violetTrace("recognition failed: \(error)")
         matchedPerson = nil
         notice = "I could not complete the comparison, so I did not guess."
       }
@@ -196,9 +197,11 @@ final class AppModel {
       speech = "This is not one of your family members."
     }
     lastAnnouncement = speech
+    violetTrace("speaking: \(speech)")
     do {
       try await speaker.speak(speech)
     } catch {
+      violetTrace("speech failed: \(error)")
       notice = error.localizedDescription
     }
   }

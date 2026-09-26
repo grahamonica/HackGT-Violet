@@ -5,6 +5,13 @@ import MWDATSpeech
 import Observation
 import UIKit
 
+// TEMP DEBUG: capture-path tracing; remove once the dropout is diagnosed.
+func violetTrace(_ message: String) {
+  #if DEBUG
+  print("[VioletTrace] \(Date().formatted(.iso8601.time(includingFractionalSeconds: true))) \(message)")
+  #endif
+}
+
 @Observable
 @MainActor
 final class GlassesManager {
@@ -52,6 +59,10 @@ final class GlassesManager {
   @ObservationIgnored private var userRequestedSetup = false
   @ObservationIgnored private var isMonitoring = false
   @ObservationIgnored private var isCaptureTimerRunning = false
+  @ObservationIgnored private var isCapturing = false
+  @ObservationIgnored private var isCameraStopping = false
+  @ObservationIgnored private var pendingTrigger: Date?
+  @ObservationIgnored private var teardownTask: Task<Void, Never>?
 
   init(
     wearables: WearablesInterface = Wearables.shared,
@@ -66,6 +77,7 @@ final class GlassesManager {
     registrationTask?.cancel()
     deviceTask?.cancel()
     captureTask?.cancel()
+    teardownTask?.cancel()
     session?.stop()
     voiceInvocations?.stop()
   }
@@ -198,6 +210,7 @@ final class GlassesManager {
   }
 
   private func handleSessionState(_ sessionState: DeviceSessionState) {
+    violetTrace("session state: \(sessionState)")
     switch sessionState {
     case .started:
       attachSpeechIfNeeded()
@@ -237,6 +250,7 @@ final class GlassesManager {
   }
 
   private func handleSpeechState(started: Bool, stopped: Bool) {
+    violetTrace("speech started=\(started) stopped=\(stopped)")
     if started {
       if camera == nil { state = .listening }
     } else if stopped {
@@ -250,13 +264,19 @@ final class GlassesManager {
 
   private func receiveTranscript(_ transcript: String) {
     lastTranscript = transcript
+    violetTrace("transcript: \(transcript)")
     guard wakeWordDetector.consume(transcript) else { return }
     beginVioletCapture(at: .now)
   }
 
   private func beginVioletCapture(at triggeredAt: Date) {
-    guard camera == nil else {
-      onVioletCapture?(triggeredAt, nil, 0)
+    violetTrace("begin capture; camera=\(camera != nil) session=\(String(describing: session?.state))")
+    // A capture already in progress answers this trigger too.
+    guard !isCapturing else { return }
+    // The glasses reject a new stream until the previous one has fully stopped,
+    // so hold the trigger and start it once teardown finishes.
+    guard !isCameraStopping else {
+      pendingTrigger = triggeredAt
       return
     }
     guard let session, session.state == .started else {
@@ -265,6 +285,7 @@ final class GlassesManager {
     }
     frameSelector.reset()
     isCaptureTimerRunning = false
+    isCapturing = true
     let configuration = StreamConfiguration(
       videoCodec: .raw,
       resolution: .medium,
@@ -304,6 +325,7 @@ final class GlassesManager {
   }
 
   private func handleStreamState(_ streamState: StreamState, triggeredAt: Date) {
+    violetTrace("stream state: \(streamState)")
     switch streamState {
     case .streaming:
       guard !isCaptureTimerRunning else { return }
@@ -314,27 +336,58 @@ final class GlassesManager {
         self?.completeCapture(triggeredAt: triggeredAt, error: nil)
       }
     case .stopped:
-      streamTokens.clear()
-      camera = nil
-      isCaptureTimerRunning = false
-      if speech?.state == .started { state = .listening }
+      // The stream can stop on its own before the five seconds are up.
+      if isCapturing { completeCapture(triggeredAt: triggeredAt, error: nil) }
+      finishCameraTeardown()
     default:
       break
     }
   }
 
   private func completeCapture(triggeredAt: Date, error: String?) {
+    // Stream errors and the five-second timer can both land; deliver once.
+    guard isCapturing else { return }
+    isCapturing = false
+    violetTrace("complete capture; frames=\(frameSelector.frameCount) error=\(error ?? "none")")
     captureTask?.cancel()
     captureTask = nil
     let selection = frameSelector.selection()
     let count = frameSelector.frameCount
-    camera?.stop()
-    camera = nil
-    streamTokens.clear()
-    isCaptureTimerRunning = false
+    beginCameraTeardown()
     state = speech?.state == .started ? .listening : .connecting
     if let error { errorMessage = error }
     onVioletCapture?(triggeredAt, selection, count)
+  }
+
+  /// Stopping the camera is asynchronous. Keep the stream listeners until it reports
+  /// `.stopped`, falling back to a timeout in case that state never arrives.
+  private func beginCameraTeardown() {
+    guard let camera, !isCameraStopping else {
+      if self.camera == nil { finishCameraTeardown() }
+      return
+    }
+    isCameraStopping = true
+    camera.stop()
+    teardownTask = Task { @MainActor [weak self] in
+      try? await Task.sleep(for: .seconds(3))
+      guard !Task.isCancelled, let self, self.isCameraStopping else { return }
+      violetTrace("camera teardown timed out; forcing cleanup")
+      self.finishCameraTeardown()
+    }
+  }
+
+  private func finishCameraTeardown() {
+    teardownTask?.cancel()
+    teardownTask = nil
+    streamTokens.clear()
+    camera = nil
+    isCameraStopping = false
+    isCaptureTimerRunning = false
+    if speech?.state == .started { state = .listening }
+    if let pending = pendingTrigger {
+      pendingTrigger = nil
+      beginVioletCapture(at: pending)
+    }
   }
 
   private func startVoiceInvocations(on identifier: DeviceIdentifier) {
@@ -350,7 +403,10 @@ final class GlassesManager {
           }
         }.store(in: voiceTokens)
         stream.errorPublisher.listen { [weak self] error in
-          Task { @MainActor in self?.errorMessage = error.localizedDescription }
+          Task { @MainActor in
+            violetTrace("voice invocation error: \(error.localizedDescription)")
+            self?.errorMessage = error.localizedDescription
+          }
         }.store(in: voiceTokens)
       }
       try voiceInvocations?.start(deviceIdentifier: identifier)
@@ -363,6 +419,11 @@ final class GlassesManager {
   private func cleanupSession() {
     captureTask?.cancel()
     captureTask = nil
+    teardownTask?.cancel()
+    teardownTask = nil
+    isCapturing = false
+    isCameraStopping = false
+    pendingTrigger = nil
     streamTokens.clear()
     speechTokens.clear()
     sessionTokens.clear()
@@ -373,6 +434,7 @@ final class GlassesManager {
   }
 
   private func show(_ message: String) {
+    violetTrace("show error: \(message)")
     errorMessage = message
     state = .unavailable(message)
   }
