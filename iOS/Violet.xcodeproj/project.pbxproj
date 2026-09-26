@@ -18,11 +18,13 @@
 		55A25B4CA51CC1A9D627B100 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11CF1511FAF0A474CFFDDC86 /* DesignSystem.swift */; };
 		56E0CFF36E0A36F1CD48AA69 /* ReferentRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8A7BBB637482466B6A78A79 /* ReferentRecognizer.swift */; };
 		5BDC97243A0B770C62555D52 /* VioletApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89B8EB596368F9C23C952A05 /* VioletApp.swift */; };
+		5EE42200E25AB32425F3CF44 /* WakeChime.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 070980DFDC6B1EC53F8B3757 /* WakeChime.mp3 */; };
 		601581029110C9669DBF39C4 /* MWDATSpeech in Frameworks */ = {isa = PBXBuildFile; productRef = B69ECAF5952BEE01A6DFBAA6 /* MWDATSpeech */; };
 		6424BC6A5CA7D917EDC1D1AE /* WakeWordDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B8B31EEB54CFC27DF62641 /* WakeWordDetector.swift */; };
 		6BDFCD551D00DAD171733ED7 /* MuktaMalar-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6A28F07BEC80096F1FE110E6 /* MuktaMalar-Light.ttf */; };
 		6EAF340F3AD68FDE5F358D5D /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0342B76D208B9D6B637A572C /* AppModel.swift */; };
 		77B796C5609DB737635B2558 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CED2411FD052F7EAD928B47D /* Assets.xcassets */; };
+		786BE3B2CC4EF8DBC84FB6E4 /* WakeChime.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BC6AB89438E6F451B1BCF57 /* WakeChime.swift */; };
 		7AC3488AEB34B141428E1188 /* LocalStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09DD5DE92EB7956AC72E097B /* LocalStore.swift */; };
 		81A612A99A6D2B7EC5C34919 /* FrameSelectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ADBA43E6D7E8482352D237B6 /* FrameSelectorTests.swift */; };
 		85392729460FCE547C2CE8CF /* Sansation-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = C03B37329D6886547354F56C /* Sansation-Regular.ttf */; };
@@ -38,14 +40,17 @@
 		CB5FAC5DA74BAD11240EE307 /* RemoteAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = EED63F6C35A37A4C27F38ECC /* RemoteAPI.swift */; };
 		D1A56D5E733DA77606A821FE /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3BC6F278216236E351B7C91 /* HomeView.swift */; };
 		DFE6AF9A17073688BD411587 /* FrameSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 877104F3162E7609D7263562 /* FrameSelector.swift */; };
+		EB4730636473EEBA0A4E2D62 /* MWDATInputs in Frameworks */ = {isa = PBXBuildFile; productRef = 23DE4EDE9FB82A4C7996DA1C /* MWDATInputs */; };
 		EC0B864A8B3B6A05A30DF683 /* WakeWordDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6EE2B19745F5A4DD7E23191 /* WakeWordDetectorTests.swift */; };
 		F265F54EF1073CC31A6140FF /* ElevenLabsSpeaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF7877A2761C7F03D35DD3A2 /* ElevenLabsSpeaker.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		0342B76D208B9D6B637A572C /* AppModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppModel.swift; path = App/AppModel.swift; sourceTree = "<group>"; };
+		070980DFDC6B1EC53F8B3757 /* WakeChime.mp3 */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = audio.mp3; name = WakeChime.mp3; path = Resources/WakeChime.mp3; sourceTree = "<group>"; };
 		09DD5DE92EB7956AC72E097B /* LocalStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LocalStore.swift; path = Data/LocalStore.swift; sourceTree = "<group>"; };
 		11CF1511FAF0A474CFFDDC86 /* DesignSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DesignSystem.swift; path = Design/DesignSystem.swift; sourceTree = "<group>"; };
+		4BC6AB89438E6F451B1BCF57 /* WakeChime.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WakeChime.swift; path = Services/WakeChime.swift; sourceTree = "<group>"; };
 		6A28F07BEC80096F1FE110E6 /* MuktaMalar-Light.ttf */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = file; name = "MuktaMalar-Light.ttf"; path = "Resources/MuktaMalar-Light.ttf"; sourceTree = "<group>"; };
 		833C5563711F3EBEB2AB9570 /* Models.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Models.swift; path = Domain/Models.swift; sourceTree = "<group>"; };
 		84A048C38A36074C6FEA592E /* AddPersonSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AddPersonSheet.swift; path = Features/AddPerson/AddPersonSheet.swift; sourceTree = "<group>"; };
@@ -83,6 +88,7 @@
 				4C21477A33D38C69A72D5F85 /* ReferentCore in Frameworks */,
 				13326A92F9E9C74CB880E75B /* ReferentApple in Frameworks */,
 				18913F5E3B2630E0BAA12586 /* ReferentRekognition in Frameworks */,
+				EB4730636473EEBA0A4E2D62 /* MWDATInputs in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -155,6 +161,8 @@
 				90B27D4AD72AAD5E13426F57 /* Sansation-Bold.ttf */,
 				C03B37329D6886547354F56C /* Sansation-Regular.ttf */,
 				B8A7BBB637482466B6A78A79 /* ReferentRecognizer.swift */,
+				4BC6AB89438E6F451B1BCF57 /* WakeChime.swift */,
+				070980DFDC6B1EC53F8B3757 /* WakeChime.mp3 */,
 			);
 			path = Violet;
 			sourceTree = "<group>";
@@ -193,6 +201,7 @@
 				A25EF29BDCE74EEED0B2DF20 /* ReferentCore */,
 				B017894614FE52F80FFAAA5C /* ReferentApple */,
 				9EAECDB1B41A3DF8F039F26B /* ReferentRekognition */,
+				23DE4EDE9FB82A4C7996DA1C /* MWDATInputs */,
 			);
 			productName = Violet;
 			productReference = 966F3BC06482288660275EAB /* Violet.app */;
@@ -258,6 +267,7 @@
 				6BDFCD551D00DAD171733ED7 /* MuktaMalar-Light.ttf in Resources */,
 				8D4E1F1EDC8B6DD890C7ABB0 /* Sansation-Bold.ttf in Resources */,
 				85392729460FCE547C2CE8CF /* Sansation-Regular.ttf in Resources */,
+				5EE42200E25AB32425F3CF44 /* WakeChime.mp3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -326,6 +336,7 @@
 				87E5C2A0B4D9E7A9DE683906 /* OpenAIRecognitionService.swift in Sources */,
 				B5FC3F51408DCF5E5CF29C3C /* WakeWordDetector.swift in Sources */,
 				56E0CFF36E0A36F1CD48AA69 /* ReferentRecognizer.swift in Sources */,
+				786BE3B2CC4EF8DBC84FB6E4 /* WakeChime.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -606,6 +617,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		23DE4EDE9FB82A4C7996DA1C /* MWDATInputs */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = BD079B8704335AF6568DDD12 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */;
+			productName = MWDATInputs;
+		};
 		9EAECDB1B41A3DF8F039F26B /* ReferentRekognition */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 8FA3060B1758CD384D36FDA3 /* XCLocalSwiftPackageReference "VioletReferent" */;

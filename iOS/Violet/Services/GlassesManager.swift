@@ -1,6 +1,7 @@
 import Foundation
 import MWDATCamera
 import MWDATCore
+import MWDATInputs
 import MWDATSpeech
 import Observation
 import UIKit
@@ -40,16 +41,22 @@ final class GlassesManager {
   private(set) var errorMessage: String?
   private(set) var isSetupComplete = false
   var onVioletCapture: ((Date, Data?, Int) -> Void)?
+  /// True while the app is still working on the previous answer (after the camera
+  /// has stopped); capture-button presses are ignored until it is done.
+  var isRecognitionRunning: (() -> Bool)?
 
   @ObservationIgnored private let wearables: WearablesInterface
   @ObservationIgnored private let deviceSelector: AutoDeviceSelector
   @ObservationIgnored private let frameSelector: FrameSelecting
   @ObservationIgnored private var session: DeviceSession?
   @ObservationIgnored private var speech: Speech?
+  @ObservationIgnored private var inputs: Inputs?
+  @ObservationIgnored private var inputsTask: Task<Void, Never>?
   @ObservationIgnored private var camera: MWDATCamera.Camera?
   @ObservationIgnored private var voiceInvocations: VoiceInvocationsStream?
   @ObservationIgnored private let sessionTokens = ListenerTokenBag()
   @ObservationIgnored private let speechTokens = ListenerTokenBag()
+  @ObservationIgnored private let inputTokens = ListenerTokenBag()
   @ObservationIgnored private let streamTokens = ListenerTokenBag()
   @ObservationIgnored private let voiceTokens = ListenerTokenBag()
   @ObservationIgnored private var registrationTask: Task<Void, Never>?
@@ -57,6 +64,7 @@ final class GlassesManager {
   @ObservationIgnored private var captureTask: Task<Void, Never>?
   @ObservationIgnored private var activeDevice: DeviceIdentifier?
   @ObservationIgnored private var wakeWordDetector = WakeWordDetector()
+  @ObservationIgnored private let wakeChime = WakeChime()
   @ObservationIgnored private var userRequestedSetup = false
   @ObservationIgnored private var isMonitoring = false
   @ObservationIgnored private var isCaptureTimerRunning = false
@@ -83,6 +91,7 @@ final class GlassesManager {
     deviceTask?.cancel()
     captureTask?.cancel()
     teardownTask?.cancel()
+    inputsTask?.cancel()
     session?.stop()
     voiceInvocations?.stop()
   }
@@ -223,6 +232,7 @@ final class GlassesManager {
     switch sessionState {
     case .started:
       attachSpeechIfNeeded()
+      attachCaptureButtonIfNeeded()
     case .paused:
       state = .connecting
     case .stopped:
@@ -275,7 +285,62 @@ final class GlassesManager {
     lastTranscript = transcript
     violetTrace("transcript: \(transcript)")
     guard wakeWordDetector.consume(transcript) else { return }
+    triggerViolet()
+  }
+
+  /// The one entry point for a request: "Violet", "Hey Meta, start Violet", and the
+  /// glasses capture button all come through here.
+  private func triggerViolet() {
+    acknowledgeWakeWord()
     beginVioletCapture(at: .now)
+  }
+
+  /// Listens for the glasses capture button for as long as the device session runs.
+  /// Only the capture button is subscribed: single-finger temple taps are reserved by
+  /// the glasses for pausing and stopping the session.
+  private func attachCaptureButtonIfNeeded() {
+    guard inputs == nil, let session, session.state == .started else { return }
+    do {
+      let configuration = InputsConfiguration(sources: [.captureButton], consumeBack: false)
+      guard let attached = try session.addInputs(configuration: configuration) else {
+        violetTrace("capture button input unavailable on these glasses")
+        return
+      }
+      inputs = attached
+      attached.statePublisher.listen { state in
+        violetTrace("capture button input: \(state)")
+      }.store(in: inputTokens)
+      attached.errorPublisher.listen { error in
+        // Optional path: the wake word keeps working, so don't surface this in the UI.
+        violetTrace("capture button input error: \(error)")
+      }.store(in: inputTokens)
+      inputsTask = Task { [weak self] in
+        for await event in attached.events {
+          guard case .capture(let press, _, _) = event else { continue }
+          self?.handleCaptureButton(press)
+        }
+      }
+    } catch {
+      violetTrace("capture button input failed: \(error)")
+    }
+  }
+
+  private func handleCaptureButton(_ press: CapturePressType) {
+    violetTrace("capture button: \(press)")
+    guard press == .shortPress else { return }
+    let busy = isCapturing || isCameraStopping || pendingTrigger != nil
+      || (isRecognitionRunning?() ?? false)
+    guard !busy else {
+      violetTrace("capture button ignored: a recognition is already running")
+      return
+    }
+    triggerViolet()
+  }
+
+  /// Dings once per request; saying "Violet" again during a capture is not a new one.
+  private func acknowledgeWakeWord() {
+    guard !isCapturing, pendingTrigger == nil else { return }
+    wakeChime.play()
   }
 
   private func beginVioletCapture(at triggeredAt: Date) {
@@ -417,7 +482,7 @@ final class GlassesManager {
           guard let launch = invocation as? LaunchApp else { return }
           Task {
             _ = await launch.responseHandle.sendSuccess(actionOutput: nil)
-            await MainActor.run { self?.beginVioletCapture(at: .now) }
+            await MainActor.run { self?.triggerViolet() }
           }
         }.store(in: voiceTokens)
         stream.errorPublisher.listen { [weak self] error in
@@ -444,9 +509,13 @@ final class GlassesManager {
     pendingTrigger = nil
     streamTokens.clear()
     speechTokens.clear()
+    inputsTask?.cancel()
+    inputsTask = nil
+    inputTokens.clear()
     sessionTokens.clear()
     camera = nil
     speech = nil
+    inputs = nil
     session = nil
     isCaptureTimerRunning = false
   }

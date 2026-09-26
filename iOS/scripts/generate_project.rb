@@ -27,7 +27,7 @@ app_target.add_file_references(source_refs)
 
 resource_paths = [
   File.join(ROOT, "Violet", "Assets.xcassets"),
-  *Dir.glob(File.join(ROOT, "Violet", "Resources", "*.ttf")).sort
+  *Dir.glob(File.join(ROOT, "Violet", "Resources", "*.{ttf,mp3}")).sort
 ]
 resource_refs = resource_paths.select { |path| File.exist?(path) }.map do |path|
   relative = path.delete_prefix(File.join(ROOT, "Violet") + "/")
@@ -47,7 +47,7 @@ end
 test_target.add_file_references(logic_refs)
 
 {
-  "https://github.com/facebook/meta-wearables-dat-ios" => ["1.0.0", %w[MWDATCore MWDATCamera MWDATSpeech]],
+  "https://github.com/facebook/meta-wearables-dat-ios" => ["1.0.0", %w[MWDATCore MWDATCamera MWDATSpeech MWDATInputs]],
   "https://github.com/orlandos-nl/MongoKitten" => ["7.16.3", %w[MongoKitten]],
   # MongoKitten supports iOS 13, but DNSClient 2.6.1+ requires iOS 16; pin the last compatible release.
   "https://github.com/orlandos-nl/DNSClient" => ["2.6.0", []]

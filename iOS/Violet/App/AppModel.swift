@@ -53,6 +53,7 @@ final class AppModel {
     referent?.onResult = { [weak self] in
       Task { @MainActor in self?.glasses.finishCaptureEarly() }
     }
+    glasses.isRecognitionRunning = { [weak self] in self?.isRecognizing ?? false }
     glasses.onVioletCapture = { [weak self] timestamp, image, frameCount in
       Task { @MainActor in
         await self?.processCapture(timestamp: timestamp, image: image, frameCount: frameCount)
