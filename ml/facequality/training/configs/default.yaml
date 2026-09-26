@@ -1,0 +1,70 @@
+# Violet face-quality models: training configuration.
+#
+# Paths are relative to ml/facequality/training/ unless absolute, and each can be
+# overridden with an env var (useful on PACE, e.g. to point at scratch space).
+# Any value can be overridden per run with `--set section.key=value`.
+
+paths:
+  data_dir: ../dataset/data   # VIOLET_FIQA_DATA_DIR (the dataset's DATA_ROOT)
+  weights_dir: weights        # VIOLET_FIQA_WEIGHTS_DIR (prepare_weights.py output)
+  runs_dir: runs              # VIOLET_FIQA_RUNS_DIR
+  cache_dir: cache            # VIOLET_FIQA_CACHE_DIR (frozen features)
+
+seed: 0
+device: auto                  # auto | cuda | cuda:1 | cpu
+
+data:
+  statuses: [ok, no_face]     # error/pending rows have no label
+  require_landmarks_in_crop: true
+  # nines:        clip(log10(100 / (100 - true_sim)), 0, nines_cap) / nines_cap
+  # similarity:   true_sim / 100
+  # correct_only: top1_sim / 100 if top-1 is correct else 0
+  # All three are 0 when the true identity is not returned or no face was found.
+  target: nines
+  nines_cap: 6.0
+  num_workers: 4
+
+align:
+  size: 112                   # ArcFace template size; all three backbones expect 112
+  # Training-only augmentation (fine-tuning; frozen mode uses cached clean features).
+  hflip: true
+  jitter:
+    enabled: true
+    shift_px: 2.0             # in aligned 112px space
+    scale: 0.05
+    rot_deg: 4.0
+
+model:
+  head_hidden: 128
+  head_dropout: 0.2
+  side_features: true        # log interocular distance (face resolution)
+
+train:
+  loss: bce                   # bce (soft targets) | huber
+  huber_delta: 0.1
+  optimizer: adamw
+  lr: 1.0e-3                  # head LR
+  backbone_lr_mult: 0.1       # backbone LR = lr * this (fine-tuning only)
+  weight_decay: 1.0e-4
+  warmup_epochs: 1
+  epochs: 50
+  patience: 8                 # early stopping on val Spearman
+  batch_size: 256
+  unfreeze_stages: 0          # last N backbone stages trained (0 = frozen)
+  amp: true                   # mixed precision on CUDA only
+
+modes:
+  frozen:
+    train:
+      unfreeze_stages: 0
+      epochs: 200
+      patience: 20
+      batch_size: 256
+      lr: 1.0e-3
+  finetune:
+    train:
+      unfreeze_stages: 1
+      epochs: 25
+      patience: 5
+      batch_size: 64
+      lr: 3.0e-4

@@ -30,3 +30,9 @@ dependencies:
       - --extra-index-url https://pypi.org/simple
       - torch==2.14.0+cu126
       - torchvision==0.29.0+cu126
+      # Face-quality models: EdgeFace-S is built on timm's EdgeNeXt (pinned so
+      # checkpoint keys keep matching). onnx/onnxruntime are only used once, by
+      # models/prepare_weights.py, to convert the insightface ONNX releases.
+      - timm==1.0.30
+      - onnx
+      - onnxruntime

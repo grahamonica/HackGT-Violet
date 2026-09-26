@@ -1,0 +1,23 @@
+# Hyperparameter sweep. Every combination of each mode's grid is run for every
+# backbone and seed. Keys are dotted config paths (see default.yaml); values
+# override the mode's defaults.
+#
+#   python -m ml.facequality.training.sweep --list
+#   python -m ml.facequality.training.sweep --all --mode frozen          # local, fast
+#   python -m ml.facequality.training.sweep --index 0 1 2               # any subset, e.g. per GPU/job
+
+name: sweep1                  # runs go to <runs_dir>/<name>/...
+base_config: default.yaml     # relative to this file
+backbones: [mbf, edgeface_s, r50]
+seeds: [0]
+
+modes:
+  frozen:                     # seconds per run on cached features
+    train.lr: [3.0e-4, 1.0e-3, 3.0e-3]
+    train.weight_decay: [1.0e-4, 1.0e-2]
+    model.head_hidden: [64, 256]
+    model.head_dropout: [0.0, 0.3]
+    train.loss: [bce, huber]
+  finetune:                   # GPU minutes per run; LR matters most
+    train.lr: [1.0e-4, 3.0e-4, 1.0e-3]
+    train.unfreeze_stages: [1, 2]
