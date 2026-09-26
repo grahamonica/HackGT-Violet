@@ -18,29 +18,39 @@ import ReferentCore
 
 let pipeline = ReferentPipeline(config: ReferentConfig(), analyzer: analyzer, identifier: identifier)
 
-// As frames arrive (earliest frame = the "Hey Violet" reference):
+await pipeline.begin()                                    // on "Hey Violet"
+// As frames arrive (the first one is the reference frame):
 await pipeline.consider(ReferentFrame(jpegData: jpeg, timestamp: seconds))
 
-// When capture ends:
-let result = await pipeline.resolve()   // resets the pipeline for the next capture
+// Answer as soon as it's confident (not before 2 s), and never after 5 s:
+let result = await pipeline.resolve(earliest: .seconds(2), deadline: .seconds(5))
 switch result.outcome {
 case .identified(let person):   // person.userID = Rekognition UserId
 case .ambiguous(let people):    // several people equally plausible, best first
 case .notRecognized:            // good crops, no enrolled person matched
 case .poorQuality:              // faces seen, none clear enough; no AWS calls made
 case .noFace:                   // no faces in any frame
-case .failed(let error):        // every identification call failed (e.g. offline)
+case .failed(let error):        // no identification succeeded: network errors or timeout
 }
 ```
 
 The caller decides what to say for each case. `result.diagnostics` has counts
-(frames, faces, tracks, calls, failures) and every accepted identity with its
-evidence, for logging and threshold tuning.
+(frames, faces, tracks, calls, failures), `secondsToAnswer`, `answeredEarly`,
+and every accepted identity with its evidence, for logging and tuning.
 
+- **Capture:** runs from `begin()` until `resolve` answers. Frames outside a
+  capture are ignored, so the camera can keep streaming after an early answer.
+- **`resolve(earliest:deadline:)`** (both measured from `begin()`): identification
+  starts during capture as new people appear. From `earliest` on it returns
+  as soon as the outcome is `.identified` and no open request could still change
+  it; otherwise it keeps capturing. `deadline` is a hard limit, network included:
+  in-flight calls are cancelled and the answer uses the results received so far
+  (`.failed(ReferentError.identificationTimedOut)` if none arrived).
+- **`resolve()`** ends the capture now and answers from the frames so far.
 - `ReferentFrame.timestamp`: seconds on any monotonic clock. Only differences matter.
 - `consider` returns immediately; frames are analyzed one at a time in the
-  background during capture, and only detected faces are kept.
-- Frames considered while `resolve()` is identifying belong to the next capture.
+  background, and only detected faces are kept.
+- One resolution at a time; `begin()`/`reset()` cancel a running one.
 
 ### Plug-in points
 
@@ -58,9 +68,11 @@ identifier can later move behind a backend without changing anything else.
    by box overlap into tracks, so a person seen in 40 frames is one candidate,
    not 40.
 2. **Quality gate.** Crops scoring below `minQuality` are never sent. Each track
-   sends its best crop(s) (`cropsPerTrack`), up to `maxIdentificationCalls` in
-   total. Every track gets one crop before any gets a second, and the tracks
-   most likely to be the referent go first, so a cap never drops them.
+   sends its best crop(s) (`cropsPerTrack`); a track already identified is only
+   re-sent if a new crop is clearly sharper (`requalityMargin`). Every track gets
+   one crop before any gets a second, tracks most likely to be the referent
+   first, and `maxIdentificationCalls` bounds the whole capture, so repeated
+   checks never multiply calls.
 3. **Referent score** per track: best over its sightings of
    `temporal weight × geometry`.
    - Temporal: 1 at the first frame, falling linearly to `temporalFloor` at the
@@ -83,6 +95,11 @@ identifier can later move behind a backend without changing anything else.
 | `minQuality` | 0.15 | local quality gate (on data: rejects ~2% of crops Rekognition gets right, ~59% of those it gets wrong) |
 | `maxIdentificationCalls` | 6 | cap on Rekognition calls per capture |
 | `cropsPerTrack` | 1 | crops sent per face track |
+| `requalityMargin` | 0.15 | quality gain needed to re-send an identified track |
+| `maxIdentificationsPerSecond` | 45 | rate limit: calls started in any one-second window, across captures; extra calls wait for a slot. Rekognition's default quota for `SearchUsersByImage` is 50/s per account in us-east-1 (5 in most other regions) |
+| `maxConcurrentIdentifications` | 6 | calls in flight at once (separate from the rate limit) |
+| `identificationTimeout` | 3 s | a single call taking longer counts as failed |
+| `pollInterval` | 100 ms | how often `resolve(earliest:deadline:)` re-checks |
 | `trackMinIoU`, `trackMaxGap` | 0.3, 0.5 s | linking faces across frames |
 | `temporalFloor` | 0.3 | temporal weight of the last frame |
 | `centralitySigma` | 0.35 | centrality falloff (fraction of the half-diagonal) |
@@ -138,5 +155,6 @@ swift test                         # on a Mac, from this directory
 On Linux/WSL, keep build output out of the repo:
 `swift test --scratch-path ~/.cache/violet-referent-build`.
 
-Status: `ReferentCore` implemented and tested (26 tests). `ReferentApple` and
-the Core ML export of the quality model are next.
+Status: `ReferentCore` implemented and tested (43 tests). `ReferentApple` and
+the Core ML export of the quality model are next; the Rekognition identifier
+adds retry with backoff on throttling on top of the concurrency cap.

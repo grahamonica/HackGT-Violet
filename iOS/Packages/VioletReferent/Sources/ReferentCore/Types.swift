@@ -103,8 +103,18 @@ public enum ReferentOutcome: Sendable {
   case poorQuality
   /// No face was detected in any frame.
   case noFace
-  /// Every identification request failed (e.g. no network). Distinct from `notRecognized`.
+  /// No identification succeeded: every request failed (e.g. no network) or
+  /// timed out (`ReferentError`). Distinct from `notRecognized`.
   case failed(any Error)
+}
+
+public enum ReferentError: Error, Sendable {
+  /// No identification result arrived before the deadline or per-call timeout.
+  case identificationTimedOut
+  /// Faces passed the quality gate but no request was made (e.g. a call budget of 0).
+  case noIdentificationAttempted
+  /// `begin()` or `reset()` was called while this resolution was running.
+  case cancelled
 }
 
 /// Counts for logging and threshold tuning.
@@ -116,6 +126,10 @@ public struct ReferentDiagnostics: Sendable {
   public var facesPassingQuality = 0
   public var identificationCalls = 0
   public var identificationFailures = 0
+  /// Seconds from `begin()` (or the `resolve()` call) to the answer.
+  public var secondsToAnswer = 0.0
+  /// True if a confident answer ended the capture before its deadline.
+  public var answeredEarly = false
   /// Every accepted identity, best first (the outcome may be a subset).
   public var identities: [Identification] = []
 

@@ -133,6 +133,34 @@ final class ReferentResolverTests: XCTestCase {
     XCTAssertEqual(identifiedID(outcome), "sarah")
   }
 
+  func testAlreadySentTracksAreNotSentAgain() {
+    let obs = [face(0, cx: 0.5, quality: 0.6, id: "sarah"), face(1, cx: 0.5, quality: 0.65, id: "sarah")]
+    let first = resolver.plan(observations: obs, start: 0, end: 1)
+    XCTAssertEqual(first.candidates, [1])
+    let second = resolver.plan(observations: obs, start: 0, end: 1, sent: [1: .succeeded])
+    XCTAssertTrue(second.candidates.isEmpty)
+  }
+
+  func testClearlySharperLaterCropIsSentAgain() {
+    let obs = [face(0, cx: 0.5, quality: 0.3, id: "sarah"), face(1, cx: 0.5, quality: 0.9, id: "sarah")]
+    let plan = resolver.plan(observations: obs, start: 0, end: 1, sent: [0: .succeeded])
+    XCTAssertEqual(plan.candidates, [1])
+  }
+
+  func testFailedRequestLetsTheTrackTryAnotherCrop() {
+    let obs = [face(0, cx: 0.5, quality: 0.8, id: "sarah"), face(1, cx: 0.5, quality: 0.7, id: "sarah")]
+    let plan = resolver.plan(observations: obs, start: 0, end: 1, sent: [0: .failed])
+    XCTAssertEqual(plan.candidates, [1])
+  }
+
+  func testCallBudgetCountsEarlierRequests() {
+    var config = ReferentConfig()
+    config.maxIdentificationCalls = 2
+    let obs = [face(0, cx: 0.2, id: "a"), face(0, cx: 0.5, id: "b"), face(0, cx: 0.8, id: "c")]
+    let plan = ReferentResolver(config: config).plan(observations: obs, start: 0, end: 1, sent: [0: .succeeded])
+    XCTAssertEqual(plan.candidates.count, 1)
+  }
+
   func testEveryTrackGetsOneCropBeforeAnyGetsASecond() {
     var config = ReferentConfig()
     config.cropsPerTrack = 2
