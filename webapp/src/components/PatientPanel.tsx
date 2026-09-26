@@ -1,7 +1,6 @@
 "use client";
 
 import type { PatientProfile, ProviderNote } from "@/lib/types";
-import { MOCA_MAX } from "@/lib/types";
 import { format, parseDateOnly } from "@/lib/date";
 import { ProviderNotes } from "./ProviderNotes";
 
@@ -20,8 +19,6 @@ type Props = {
   onRemoveNote: (id: string) => Promise<void>;
 };
 
-const NOT_SET = "Not set";
-
 function ageOf(born: Date, now: Date): number {
   let age = now.getFullYear() - born.getFullYear();
   const beforeBirthday = now.getMonth() < born.getMonth() || (now.getMonth() === born.getMonth() && now.getDate() < born.getDate());
@@ -36,26 +33,6 @@ function subtitle(profile: PatientProfile, now: Date): string {
   return parts.join(", ");
 }
 
-function latestMoca(profile: PatientProfile): string {
-  if (!profile.mocaScore) return NOT_SET;
-  const date = parseDateOnly(profile.mocaDate);
-  return `${profile.mocaScore} of ${MOCA_MAX}${date ? `, ${format.monthDayYear(date)}` : ""}`;
-}
-
-// Formats US numbers as (205) 555-0123, with a leading 1 as +1. Anything else is shown as typed.
-function formatPhone(value: string): string {
-  const digits = value.replace(/\D/g, "");
-  const local = digits.length === 11 && digits.startsWith("1") ? digits.slice(1) : digits;
-  if (local.length !== 10) return value.trim();
-  const formatted = `(${local.slice(0, 3)}) ${local.slice(3, 6)}-${local.slice(6)}`;
-  return local === digits ? formatted : `+1 ${formatted}`;
-}
-
-function caregiver(profile: PatientProfile): string {
-  const parts = [profile.caregiverName, formatPhone(profile.caregiverPhone)].filter(Boolean);
-  return parts.length ? parts.join(", ") : NOT_SET;
-}
-
 export function PatientPanel({ profile, connected, connecting, error, now, notes, notesError, onConnect, onEdit, onAddNote, onUpdateNote, onRemoveNote }: Props) {
   const details = subtitle(profile, now);
   return (
@@ -63,9 +40,7 @@ export function PatientPanel({ profile, connected, connecting, error, now, notes
       <div className="section-header">
         <div className="patient-title">
           <h2 id="patient-title">{profile.name || "Patient"}</h2>
-          {connected ? (
-            <span className="calendar-status connected">Connected to Google Calendar</span>
-          ) : (
+          {!connected && (
             <button type="button" className="calendar-status" onClick={onConnect} disabled={connecting}>{connecting ? "Connecting" : "Calendar not connected, click to connect"}</button>
           )}
         </div>
@@ -75,10 +50,6 @@ export function PatientPanel({ profile, connected, connecting, error, now, notes
       {error && <p className="inline-error" role="status">{error}</p>}
 
       <div className="panel-body">
-        <dl className="patient-details">
-          <div><dt>Primary caregiver</dt><dd>{caregiver(profile)}</dd></div>
-          <div><dt>Latest MoCA</dt><dd>{latestMoca(profile)}</dd></div>
-        </dl>
         <ProviderNotes notes={notes} syncError={notesError} onAdd={onAddNote} onUpdate={onUpdateNote} onRemove={onRemoveNote} />
       </div>
     </section>

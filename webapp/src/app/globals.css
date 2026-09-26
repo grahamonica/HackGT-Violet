@@ -7,8 +7,7 @@
   --deep: #3b267a;
   --ink: #232324;
   --muted: #696671;
-  --line: #dedde2;
-  --soft: #f5f5f6;
+  --line: #e9e8ec;
   --white: #ffffff;
   --good: #57916d;
   --watch: #cb8138;
@@ -40,7 +39,7 @@ img { display: block; max-width: 100%; }
 }
 .primary-button, .connect-button { background: var(--accent); color: var(--white); }
 .primary-button:hover:not(:disabled), .connect-button:hover:not(:disabled) { background: var(--deep); }
-.secondary-button { background: var(--soft); color: var(--deep); }
+.secondary-button { background: var(--line); color: var(--deep); }
 
 .database-error { margin: 16px 0 0; }
 .inline-error { margin-top: 14px; }
@@ -53,10 +52,6 @@ img { display: block; max-width: 100%; }
 .section-header h2 { font-size: 20px; font-weight: 700; }
 .section-header > span, .connected-account { color: var(--muted); font-family: var(--heading); font-size: 14px; font-weight: 700; }
 
-.patient-details { display: grid; align-content: start; margin: 0; }
-.patient-details > div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 18px; align-items: center; min-height: 42px; border-top: 1px solid var(--line); }
-.patient-details dt { color: var(--muted); font-family: var(--heading); font-size: 14px; font-weight: 700; }
-.patient-details dd { margin: 0; font-family: var(--heading); font-size: 14px; }
 .patient-subtitle { margin-top: 2px; color: var(--muted); font-family: var(--heading); font-size: 14px; }
 .patient-form select { width: 100%; height: 42px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); padding: 0 10px; }
 .patient-title { display: flex; align-items: baseline; flex-wrap: wrap; gap: 12px; min-width: 0; }
@@ -65,7 +60,7 @@ img { display: block; max-width: 100%; }
 button.calendar-status { color: var(--deep); text-decoration: underline; text-underline-offset: 3px; }
 button.calendar-status:hover:not(:disabled) { color: var(--accent); }
 .empty-state { padding: 26px 0 8px; color: var(--muted); font-size: 14px; }
-.panel-body { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 0; min-height: 0; margin-top: 14px; }
+.panel-body { display: grid; grid-template-rows: minmax(0, 1fr); gap: 0; min-height: 0; margin-top: 14px; }
 .provider-notes { display: grid; grid-template-rows: auto auto minmax(0, 1fr); gap: 8px; min-height: 0; }
 .provider-notes h3 { font-size: 20px; font-weight: 700; }
 .note-composer { display: grid; border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); }
@@ -86,14 +81,15 @@ button.calendar-status:hover:not(:disabled) { color: var(--accent); }
 .note-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 4px 4px 2px; }
 .note-toolbar { display: flex; gap: 1px; margin-right: auto; }
 .note-toolbar button { min-width: 28px; height: 26px; border: 0; border-radius: var(--radius); background: transparent; color: var(--deep); padding: 0 6px; font-family: var(--heading); font-size: 13px; }
-.note-toolbar button:hover { background: var(--soft); }
+.note-toolbar button:hover { background: var(--line); }
 .note-toolbar button[aria-pressed="true"] { background: rgba(155, 130, 232, 0.16); color: var(--deep); }
 .note-toolbar .tool-bold { font-weight: 700; }
 .note-toolbar .tool-icon { display: inline-grid; place-items: center; }
 .note-toolbar .tool-italic { font-style: italic; }
 .note-toolbar .tool-underline { text-decoration: underline; text-underline-offset: 2px; }
 .note-actions { display: flex; align-items: center; gap: 8px; }
-.note-actions .primary-button { min-height: 28px; padding: 0 10px; font-size: 12px; }
+.note-actions .primary-button { min-height: 28px; padding: 0 10px; background: var(--deep); font-size: 12px; }
+.note-actions .primary-button:hover:not(:disabled) { background: var(--accent); }
 .note-list { display: grid; align-content: start; min-height: 0; margin: 0; padding: 0 4px 0 0; list-style: none; overflow-y: auto; }
 .note { display: grid; border-top: 1px solid var(--line); padding: 8px 0; }
 .note:first-child { border-top: 0; padding-top: 4px; }
@@ -107,7 +103,7 @@ button.calendar-status:hover:not(:disabled) { color: var(--accent); }
 .note-menu .text-button { font-size: 13px; }
 .note-menu .danger { color: var(--high); }
 .note-dots { width: 30px; height: 26px; border: 0; border-radius: var(--radius); background: transparent; color: var(--muted); padding: 0; font-family: var(--heading); font-size: 16px; font-weight: 700; line-height: 1; letter-spacing: 1px; }
-.note-dots:hover, .note-dots[aria-expanded="true"] { background: var(--soft); color: var(--deep); }
+.note-dots:hover, .note-dots[aria-expanded="true"] { background: var(--line); color: var(--deep); }
 .note-body-clip { display: grid; grid-template-rows: 0fr; visibility: hidden; transition: grid-template-rows 180ms ease-out, visibility 0s linear 180ms; }
 .note.open .note-body-clip { grid-template-rows: 1fr; visibility: visible; transition: grid-template-rows 220ms ease-out, visibility 0s; }
 .note-body-clip > div { min-height: 0; overflow: hidden; }
@@ -166,9 +162,9 @@ button.calendar-status:hover:not(:disabled) { color: var(--accent); }
 .health-bar i { display: block; height: 100%; }
 .health-bar i:first-child { border-radius: var(--radius) 0 0 var(--radius); }
 .health-bar i:nth-child(3) { border-radius: 0 var(--radius) var(--radius) 0; }
-.health-good { width: 30%; background: var(--good); }
-.health-watch { width: 40%; background: var(--watch); }
-.health-high { width: 30%; background: var(--high); }
+.health-good { width: 30%; background: #9b82e8; }
+.health-watch { width: 40%; background: #6b54b1; }
+.health-high { width: 30%; background: #3b267a; }
 .health-marker { position: absolute; top: -5px; bottom: -5px; width: 3px; border-radius: 2px; background: var(--ink); transform: translateX(-50%); }
 .health-scale { position: relative; height: 16px; margin-top: 6px; }
 .health-scale span { position: absolute; color: var(--muted); font-family: var(--heading); font-size: 12px; font-weight: 700; transform: translateX(-50%); font-variant-numeric: tabular-nums; }
@@ -185,7 +181,7 @@ button.calendar-status:hover:not(:disabled) { color: var(--accent); }
 .modal-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
 .modal-heading h2 { font-size: 21px; }
 .modal-heading .eyebrow { display: none; }
-.close-button { width: 34px; height: 34px; border: 0; border-radius: var(--radius); background: var(--soft); color: var(--deep); font-family: var(--heading); font-size: 20px; }
+.close-button { width: 34px; height: 34px; border: 0; border-radius: var(--radius); background: var(--line); color: var(--deep); font-family: var(--heading); font-size: 20px; }
 .patient-form, .person-form { display: grid; gap: 15px; margin-top: 20px; }
 .patient-form label, .person-form label { display: grid; gap: 5px; }
 .patient-form label > span, .person-form label > span, .person-form legend { color: var(--muted); font-family: var(--heading); font-size: 14px; font-weight: 700; }
@@ -208,7 +204,7 @@ button.calendar-status:hover:not(:disabled) { color: var(--accent); }
 .calendar-days-nav .text-button { font-size: 16px; line-height: 1; padding: 0 4px; }
 .calendar-days-nav .calendar-today-button { margin-left: auto; font-size: 12px; }
 .calendar-day-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
-.calendar-day { display: grid; grid-template-rows: auto 1fr; min-width: 0; border-radius: var(--radius); background: var(--soft); padding: 8px; }
+.calendar-day { display: grid; grid-template-rows: auto 1fr; min-width: 0; border-radius: var(--radius); background: var(--line); padding: 8px; }
 .calendar-day.today { background: rgba(155, 130, 232, 0.14); }
 .calendar-day-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
 .calendar-day-header > div { display: grid; }
@@ -223,7 +219,7 @@ button.calendar-status:hover:not(:disabled) { color: var(--accent); }
 .calendar-day-event > span { color: var(--muted); font-family: var(--heading); font-size: 11px; font-weight: 700; }
 .calendar-day-event > strong { overflow: hidden; font-family: var(--heading); font-size: 12px; font-weight: 400; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
 .calendar-day-event > small { overflow: hidden; color: var(--muted); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-.calendar-event-form { display: grid; gap: 12px; padding: 12px; border-radius: var(--radius); background: var(--soft); }
+.calendar-event-form { display: grid; gap: 12px; padding: 12px; border-radius: var(--radius); background: var(--line); }
 .calendar-event-form label { display: grid; gap: 5px; }
 .calendar-event-form label > span { color: var(--muted); font-family: var(--heading); font-size: 14px; font-weight: 700; }
 .calendar-event-form input { width: 100%; height: 40px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); padding: 8px 10px; }
@@ -239,7 +235,7 @@ button.calendar-status:hover:not(:disabled) { color: var(--accent); }
 .inline-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .text-button { border: 0; background: transparent; color: var(--deep); padding: 2px 0; font-family: var(--heading); font-size: 12px; }
 .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-top: 7px; }
-.photo-input { position: relative; display: grid !important; overflow: hidden; aspect-ratio: 4 / 3; place-items: center; border-radius: var(--radius); background: var(--soft); color: var(--deep); text-align: center; cursor: pointer; }
+.photo-input { position: relative; display: grid !important; overflow: hidden; aspect-ratio: 4 / 3; place-items: center; border-radius: var(--radius); background: var(--line); color: var(--deep); text-align: center; cursor: pointer; }
 .photo-input > span { display: grid; gap: 2px; color: var(--deep) !important; font-size: 12px !important; }
 .photo-input small { color: var(--muted); font-family: var(--body); font-size: 10px; }
 .photo-input img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -269,7 +265,6 @@ button.calendar-status:hover:not(:disabled) { color: var(--accent); }
   .weekly-controls { width: 100%; align-items: flex-start; justify-content: space-between; }
   .chart-legend { justify-content: flex-start; flex-wrap: wrap; }
   .field-pair, .photo-grid, .calendar-day-columns { grid-template-columns: 1fr; }
-  .patient-details > div { grid-template-columns: 110px minmax(0, 1fr); gap: 12px; }
   .calendar-day-events { max-height: none; }
   .photo-input { aspect-ratio: 16 / 7; }
 }
