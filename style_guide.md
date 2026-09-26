@@ -13,5 +13,5 @@
 
 mukta malar light 300  for body text
 
-Magisans for headings
+sansation for headings
 

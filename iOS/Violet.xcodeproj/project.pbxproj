@@ -1,0 +1,601 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0BA6C4EB59C015AFB8F99BB0 /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E23D6E32D766D81A8374640 /* AppModel.swift */; };
+		156492E052E99661C374FC27 /* DesignSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4361BA7AAA8F13AA5BA7FCA5 /* DesignSystem.swift */; };
+		364CE62873A77EAF8EC15391 /* GlassesManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2F9005BCEB0489F3707B69B /* GlassesManager.swift */; };
+		3DDC765D1B19E5E52F672DD6 /* MWDATCore in Frameworks */ = {isa = PBXBuildFile; productRef = 70059B7E5469B8B74B17BD73 /* MWDATCore */; };
+		4208514C1B5B01D2373B8521 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 43189359E21EB74083144F0E /* Foundation.framework */; };
+		5ABB350F29884C355AEBDE1A /* WakeWordDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39F733AA8BE00D2C80BA5E70 /* WakeWordDetector.swift */; };
+		5C42D17D6D9309D801522414 /* MuktaMalar-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BBEDA8F8702F33E975AAF0EC /* MuktaMalar-Light.ttf */; };
+		5F74D4E8D153D1608F964D7D /* MWDATCamera in Frameworks */ = {isa = PBXBuildFile; productRef = 4847A734EC5363DF60626F21 /* MWDATCamera */; };
+		61335D4B22E342FEB4F5C052 /* RemoteAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0CC7834E8E9C83986E669E45 /* RemoteAPI.swift */; };
+		67D3D58CF45F16EAC133224A /* FrameSelectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD0C6CC98272AA9F46F08C11 /* FrameSelectorTests.swift */; };
+		7A7F605575D439F548A44AA1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C09A0DCC51E3C39826A9D7F5 /* Assets.xcassets */; };
+		832EC623E54FE8716DB4D26C /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAAA258905921114CB9ECE0A /* Models.swift */; };
+		87FEE79207656D5DEB1FED25 /* FrameSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C96EE5BD31EC2FC164BD93 /* FrameSelector.swift */; };
+		8BB3B2B86C42B7352E11EA14 /* ElevenLabsSpeaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2F7E4016424675E1365D30AB /* ElevenLabsSpeaker.swift */; };
+		A0A7A98F108D8FDB32C95CA5 /* AddPersonSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCE92B117309B3E3D59D81C0 /* AddPersonSheet.swift */; };
+		AB305FD6F12154A8DAA77D61 /* WakeWordDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FFF87DD9774D34CCBDFE6805 /* WakeWordDetectorTests.swift */; };
+		B1F4EA8DA003934EFCF26CCC /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 43189359E21EB74083144F0E /* Foundation.framework */; };
+		B306255AD85DC19E11D54967 /* VioletApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5F2C5E5B607302E876A0D08 /* VioletApp.swift */; };
+		B878355A52E2E4281E4CA5FF /* CameraCaptureView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B38B488D82E4CD3028D5B596 /* CameraCaptureView.swift */; };
+		B8C27C247033E1D293080468 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF805EF42C119BAD338C0F17 /* AppEnvironment.swift */; };
+		DFDAA21243CDF7CBFBD48BAD /* Sansation-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 5DC348DEB17ECC330E3811BC /* Sansation-Bold.ttf */; };
+		E5B0E046CAF55DC7FF0412E5 /* MWDATSpeech in Frameworks */ = {isa = PBXBuildFile; productRef = 232C31F6E1F0F129872B8605 /* MWDATSpeech */; };
+		E60FC2D4F39037C55CE09D2A /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 729119E43CCE407898C2D866 /* HomeView.swift */; };
+		F3071A081F99177005D683C1 /* LocalStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C64FC1584D1D6F5E38001DD2 /* LocalStore.swift */; };
+		F579F0952233537C4D99E01A /* OpenAIRecognitionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = C570DE3A69255A5B86394282 /* OpenAIRecognitionService.swift */; };
+		FF202AF37C4E841CC77B5FB5 /* Sansation-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1BCE984CCE7E22FDBF73BF55 /* Sansation-Regular.ttf */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		BC5BC41067FE6659F5763E38 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 6E067FDF9CA40113F3F711E3 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 34A7AD98AD9D2FA5CF743439;
+			remoteInfo = Violet;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0CC7834E8E9C83986E669E45 /* RemoteAPI.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RemoteAPI.swift; path = Data/RemoteAPI.swift; sourceTree = "<group>"; };
+		1BCE984CCE7E22FDBF73BF55 /* Sansation-Regular.ttf */ = {isa = PBXFileReference; includeInIndex = 1; name = "Sansation-Regular.ttf"; path = "Resources/Sansation-Regular.ttf"; sourceTree = "<group>"; };
+		285F660E5C7C02F8168F558B /* VioletTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = VioletTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2F7E4016424675E1365D30AB /* ElevenLabsSpeaker.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ElevenLabsSpeaker.swift; path = Services/ElevenLabsSpeaker.swift; sourceTree = "<group>"; };
+		39F733AA8BE00D2C80BA5E70 /* WakeWordDetector.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WakeWordDetector.swift; path = Services/WakeWordDetector.swift; sourceTree = "<group>"; };
+		3E23D6E32D766D81A8374640 /* AppModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppModel.swift; path = App/AppModel.swift; sourceTree = "<group>"; };
+		43189359E21EB74083144F0E /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS14.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		4361BA7AAA8F13AA5BA7FCA5 /* DesignSystem.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = DesignSystem.swift; path = Design/DesignSystem.swift; sourceTree = "<group>"; };
+		5DC348DEB17ECC330E3811BC /* Sansation-Bold.ttf */ = {isa = PBXFileReference; includeInIndex = 1; name = "Sansation-Bold.ttf"; path = "Resources/Sansation-Bold.ttf"; sourceTree = "<group>"; };
+		729119E43CCE407898C2D866 /* HomeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HomeView.swift; path = Features/Home/HomeView.swift; sourceTree = "<group>"; };
+		A5F2C5E5B607302E876A0D08 /* VioletApp.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = VioletApp.swift; path = App/VioletApp.swift; sourceTree = "<group>"; };
+		B38B488D82E4CD3028D5B596 /* CameraCaptureView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CameraCaptureView.swift; path = Features/AddPerson/CameraCaptureView.swift; sourceTree = "<group>"; };
+		BBEDA8F8702F33E975AAF0EC /* MuktaMalar-Light.ttf */ = {isa = PBXFileReference; includeInIndex = 1; name = "MuktaMalar-Light.ttf"; path = "Resources/MuktaMalar-Light.ttf"; sourceTree = "<group>"; };
+		C09A0DCC51E3C39826A9D7F5 /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		C2F9005BCEB0489F3707B69B /* GlassesManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = GlassesManager.swift; path = Services/GlassesManager.swift; sourceTree = "<group>"; };
+		C570DE3A69255A5B86394282 /* OpenAIRecognitionService.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = OpenAIRecognitionService.swift; path = Services/OpenAIRecognitionService.swift; sourceTree = "<group>"; };
+		C64FC1584D1D6F5E38001DD2 /* LocalStore.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = LocalStore.swift; path = Data/LocalStore.swift; sourceTree = "<group>"; };
+		C8AC81A68D93891D2FBCC428 /* Violet.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Violet.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C9C96EE5BD31EC2FC164BD93 /* FrameSelector.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = FrameSelector.swift; path = Services/FrameSelector.swift; sourceTree = "<group>"; };
+		DCE92B117309B3E3D59D81C0 /* AddPersonSheet.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AddPersonSheet.swift; path = Features/AddPerson/AddPersonSheet.swift; sourceTree = "<group>"; };
+		DD0C6CC98272AA9F46F08C11 /* FrameSelectorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = FrameSelectorTests.swift; sourceTree = "<group>"; };
+		EF805EF42C119BAD338C0F17 /* AppEnvironment.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AppEnvironment.swift; path = Configuration/AppEnvironment.swift; sourceTree = "<group>"; };
+		FAAA258905921114CB9ECE0A /* Models.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = Models.swift; path = Domain/Models.swift; sourceTree = "<group>"; };
+		FFF87DD9774D34CCBDFE6805 /* WakeWordDetectorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WakeWordDetectorTests.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		0AE832BC7B3A11FEEDB23E8A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B1F4EA8DA003934EFCF26CCC /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A4E077F75A10D31E09BD562A /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4208514C1B5B01D2373B8521 /* Foundation.framework in Frameworks */,
+				3DDC765D1B19E5E52F672DD6 /* MWDATCore in Frameworks */,
+				5F74D4E8D153D1608F964D7D /* MWDATCamera in Frameworks */,
+				E5B0E046CAF55DC7FF0412E5 /* MWDATSpeech in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		3E1038FD81F0E459DA8F75DA /* Violet */ = {
+			isa = PBXGroup;
+			children = (
+				3E23D6E32D766D81A8374640 /* AppModel.swift */,
+				A5F2C5E5B607302E876A0D08 /* VioletApp.swift */,
+				EF805EF42C119BAD338C0F17 /* AppEnvironment.swift */,
+				C64FC1584D1D6F5E38001DD2 /* LocalStore.swift */,
+				0CC7834E8E9C83986E669E45 /* RemoteAPI.swift */,
+				4361BA7AAA8F13AA5BA7FCA5 /* DesignSystem.swift */,
+				FAAA258905921114CB9ECE0A /* Models.swift */,
+				DCE92B117309B3E3D59D81C0 /* AddPersonSheet.swift */,
+				B38B488D82E4CD3028D5B596 /* CameraCaptureView.swift */,
+				729119E43CCE407898C2D866 /* HomeView.swift */,
+				2F7E4016424675E1365D30AB /* ElevenLabsSpeaker.swift */,
+				C9C96EE5BD31EC2FC164BD93 /* FrameSelector.swift */,
+				C2F9005BCEB0489F3707B69B /* GlassesManager.swift */,
+				C570DE3A69255A5B86394282 /* OpenAIRecognitionService.swift */,
+				39F733AA8BE00D2C80BA5E70 /* WakeWordDetector.swift */,
+				C09A0DCC51E3C39826A9D7F5 /* Assets.xcassets */,
+				BBEDA8F8702F33E975AAF0EC /* MuktaMalar-Light.ttf */,
+				5DC348DEB17ECC330E3811BC /* Sansation-Bold.ttf */,
+				1BCE984CCE7E22FDBF73BF55 /* Sansation-Regular.ttf */,
+			);
+			name = Violet;
+			path = Violet;
+			sourceTree = "<group>";
+		};
+		707F6BB6EC83A0E3626E96E8 = {
+			isa = PBXGroup;
+			children = (
+				900F1494C06833CD5FB0215D /* Products */,
+				80F936C1144221337A54DDDA /* Frameworks */,
+				3E1038FD81F0E459DA8F75DA /* Violet */,
+				AC1321256972FDF7DDE58EF6 /* VioletTests */,
+			);
+			sourceTree = "<group>";
+		};
+		80F936C1144221337A54DDDA /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				8E633FD1C6E231177A0AC415 /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		8E633FD1C6E231177A0AC415 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				43189359E21EB74083144F0E /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		900F1494C06833CD5FB0215D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				C8AC81A68D93891D2FBCC428 /* Violet.app */,
+				285F660E5C7C02F8168F558B /* VioletTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AC1321256972FDF7DDE58EF6 /* VioletTests */ = {
+			isa = PBXGroup;
+			children = (
+				DD0C6CC98272AA9F46F08C11 /* FrameSelectorTests.swift */,
+				FFF87DD9774D34CCBDFE6805 /* WakeWordDetectorTests.swift */,
+			);
+			name = VioletTests;
+			path = VioletTests;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		34A7AD98AD9D2FA5CF743439 /* Violet */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9FF9C13F26C435CBA065B108 /* Build configuration list for PBXNativeTarget "Violet" */;
+			buildPhases = (
+				E41860EF7CE8B7B5BD33C567 /* Sources */,
+				A4E077F75A10D31E09BD562A /* Frameworks */,
+				707BC98B001B06806A8247A6 /* Resources */,
+				66CB9AAD9AAA2021A8B9CA4B /* Generate prototype secrets */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Violet;
+			packageProductDependencies = (
+				70059B7E5469B8B74B17BD73 /* MWDATCore */,
+				4847A734EC5363DF60626F21 /* MWDATCamera */,
+				232C31F6E1F0F129872B8605 /* MWDATSpeech */,
+			);
+			productName = Violet;
+			productReference = C8AC81A68D93891D2FBCC428 /* Violet.app */;
+			productType = "com.apple.product-type.application";
+		};
+		639EDFEA522D6E4DB942DEFB /* VioletTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 22CAA86AFD9E0FCA99D5A96A /* Build configuration list for PBXNativeTarget "VioletTests" */;
+			buildPhases = (
+				C330CFECB97814BB5043BBB2 /* Sources */,
+				0AE832BC7B3A11FEEDB23E8A /* Frameworks */,
+				9A9C3DC3D62AADF745B09202 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				3C8141764AE86A7A868854B9 /* PBXTargetDependency */,
+			);
+			name = VioletTests;
+			productName = VioletTests;
+			productReference = 285F660E5C7C02F8168F558B /* VioletTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		6E067FDF9CA40113F3F711E3 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 2660;
+				LastUpgradeCheck = 2660;
+			};
+			buildConfigurationList = A343CA289DD90254A2BF0E31 /* Build configuration list for PBXProject "Violet" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 707F6BB6EC83A0E3626E96E8;
+			minimizedProjectReferenceProxies = 0;
+			packageReferences = (
+				4CFB011AE899C382F5BD8941 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */,
+			);
+			productRefGroup = 900F1494C06833CD5FB0215D /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				34A7AD98AD9D2FA5CF743439 /* Violet */,
+				639EDFEA522D6E4DB942DEFB /* VioletTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		707BC98B001B06806A8247A6 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7A7F605575D439F548A44AA1 /* Assets.xcassets in Resources */,
+				5C42D17D6D9309D801522414 /* MuktaMalar-Light.ttf in Resources */,
+				DFDAA21243CDF7CBFBD48BAD /* Sansation-Bold.ttf in Resources */,
+				FF202AF37C4E841CC77B5FB5 /* Sansation-Regular.ttf in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		9A9C3DC3D62AADF745B09202 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		66CB9AAD9AAA2021A8B9CA4B /* Generate prototype secrets */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/scripts/generate_secrets.rb",
+			);
+			name = "Generate prototype secrets";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(TARGET_BUILD_DIR)/$(UNLOCALIZED_RESOURCES_FOLDER_PATH)/Secrets.json",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -eu\noutput_dir=\"$DERIVED_FILE_DIR/violet-secrets\"\noutput_file=\"$output_dir/Secrets.json\"\nmkdir -p \"$output_dir\" \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH\"\n/usr/bin/ruby \"$SRCROOT/scripts/generate_secrets.rb\" \"$SRCROOT/../.env\" \"$output_file\"\n/bin/cp \"$output_file\" \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Secrets.json\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		C330CFECB97814BB5043BBB2 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				67D3D58CF45F16EAC133224A /* FrameSelectorTests.swift in Sources */,
+				AB305FD6F12154A8DAA77D61 /* WakeWordDetectorTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E41860EF7CE8B7B5BD33C567 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				0BA6C4EB59C015AFB8F99BB0 /* AppModel.swift in Sources */,
+				B306255AD85DC19E11D54967 /* VioletApp.swift in Sources */,
+				B8C27C247033E1D293080468 /* AppEnvironment.swift in Sources */,
+				F3071A081F99177005D683C1 /* LocalStore.swift in Sources */,
+				61335D4B22E342FEB4F5C052 /* RemoteAPI.swift in Sources */,
+				156492E052E99661C374FC27 /* DesignSystem.swift in Sources */,
+				832EC623E54FE8716DB4D26C /* Models.swift in Sources */,
+				A0A7A98F108D8FDB32C95CA5 /* AddPersonSheet.swift in Sources */,
+				B878355A52E2E4281E4CA5FF /* CameraCaptureView.swift in Sources */,
+				E60FC2D4F39037C55CE09D2A /* HomeView.swift in Sources */,
+				8BB3B2B86C42B7352E11EA14 /* ElevenLabsSpeaker.swift in Sources */,
+				87FEE79207656D5DEB1FED25 /* FrameSelector.swift in Sources */,
+				364CE62873A77EAF8EC15391 /* GlassesManager.swift in Sources */,
+				F579F0952233537C4D99E01A /* OpenAIRecognitionService.swift in Sources */,
+				5ABB350F29884C355AEBDE1A /* WakeWordDetector.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		3C8141764AE86A7A868854B9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = Violet;
+			target = 34A7AD98AD9D2FA5CF743439 /* Violet */;
+			targetProxy = BC5BC41067FE6659F5763E38 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		8901377C7508E51473D4D46A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		8B22268D8442D7F6E58AF61A /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		9FCD1C8CC3784944B59A6205 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = Violet/Violet.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Violet/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 1.0;
+				META_APP_ID = 0;
+				META_CLIENT_TOKEN = "";
+				PRODUCT_BUNDLE_IDENTIFIER = com.violet.patient;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		BEB9768431159A4A3E1026C4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.violet.patient.tests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Violet.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Violet";
+			};
+			name = Debug;
+		};
+		C6F65172689D79529A4613EC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_ENTITLEMENTS = Violet/Violet.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Violet/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				MARKETING_VERSION = 1.0;
+				META_APP_ID = 0;
+				META_CLIENT_TOKEN = "";
+				PRODUCT_BUNDLE_IDENTIFIER = com.violet.patient;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = targeted;
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		D7BACBEDE4B6F8B31A0B7059 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.violet.patient.tests;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Violet.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Violet";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		22CAA86AFD9E0FCA99D5A96A /* Build configuration list for PBXNativeTarget "VioletTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D7BACBEDE4B6F8B31A0B7059 /* Release */,
+				BEB9768431159A4A3E1026C4 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		9FF9C13F26C435CBA065B108 /* Build configuration list for PBXNativeTarget "Violet" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C6F65172689D79529A4613EC /* Release */,
+				9FCD1C8CC3784944B59A6205 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A343CA289DD90254A2BF0E31 /* Build configuration list for PBXProject "Violet" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8B22268D8442D7F6E58AF61A /* Debug */,
+				8901377C7508E51473D4D46A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		4CFB011AE899C382F5BD8941 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/facebook/meta-wearables-dat-ios";
+			requirement = {
+				kind = exactVersion;
+				version = 1.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		232C31F6E1F0F129872B8605 /* MWDATSpeech */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4CFB011AE899C382F5BD8941 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */;
+			productName = MWDATSpeech;
+		};
+		4847A734EC5363DF60626F21 /* MWDATCamera */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4CFB011AE899C382F5BD8941 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */;
+			productName = MWDATCamera;
+		};
+		70059B7E5469B8B74B17BD73 /* MWDATCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 4CFB011AE899C382F5BD8941 /* XCRemoteSwiftPackageReference "meta-wearables-dat-ios" */;
+			productName = MWDATCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 6E067FDF9CA40113F3F711E3 /* Project object */;
+}
