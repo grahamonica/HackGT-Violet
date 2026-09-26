@@ -158,8 +158,8 @@ function HealthBar({ metric }: { metric: DashboardAnalytics["health"] }) {
   return (
     <div className="health-panel">
       <div className="health-readout">
-        <strong>{percent == null ? "—" : `${percent}%`}</strong>
-        <span>{label}</span>
+        <strong>{percent == null ? "No data" : `${percent}%`}</strong>
+        {percent != null && <span>{label}</span>}
       </div>
       <div className="health-bar" role="img" aria-label={percent == null ? "Recognition health unavailable" : `${percent}% mismatch rate, ${label.toLowerCase()}`}>
         <i className="health-good" />

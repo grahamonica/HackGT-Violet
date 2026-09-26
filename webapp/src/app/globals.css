@@ -53,8 +53,12 @@ img { display: block; max-width: 100%; }
 .section-header h2 { font-size: 20px; font-weight: 700; }
 .section-header > span, .connected-account { color: var(--muted); font-family: var(--heading); font-size: 14px; font-weight: 700; }
 
-.patient-details { display: grid; align-content: start; min-height: 0; margin: 14px 0 0; overflow-y: auto; }
-.patient-details > div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 18px; align-items: center; min-height: 51px; border-top: 1px solid var(--line); }
+.panel-body { display: grid; align-content: start; gap: 26px; min-height: 0; margin-top: 14px; padding-right: 4px; overflow-y: auto; }
+.patient-details { display: grid; align-content: start; margin: 0; }
+.patient-details > div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 18px; align-items: center; min-height: 42px; border-top: 1px solid var(--line); }
+.patient-details .identity-row { grid-template-columns: 130px minmax(0, 1fr) auto auto auto auto; column-gap: 10px; }
+.patient-details .identity-row dd { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.patient-details .identity-row dt:first-child { margin-right: 8px; }
 .patient-details dt { color: var(--muted); font-family: var(--heading); font-size: 14px; font-weight: 700; }
 .patient-details dd { margin: 0; font-family: var(--heading); font-size: 14px; }
 .patient-details .notes-detail { align-items: start; padding: 14px 0; }
@@ -64,6 +68,35 @@ img { display: block; max-width: 100%; }
 button.calendar-status { color: var(--deep); text-decoration: underline; text-underline-offset: 3px; }
 button.calendar-status:hover:not(:disabled) { color: var(--accent); }
 .empty-state { padding: 26px 0 8px; color: var(--muted); font-size: 14px; }
+.panel-block { display: grid; gap: 8px; }
+.panel-block h3 { font-size: 16px; font-weight: 700; }
+.block-header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.block-note { color: var(--muted); font-size: 14px; }
+.block-text { font-size: 15px; }
+.block-verdict { font-family: var(--heading); font-size: 14px; }
+.block-verdict.flagged { color: var(--deep); font-weight: 700; }
+.block-rows { display: grid; gap: 4px; margin: 0; }
+.block-rows > div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 18px; font-family: var(--heading); font-size: 14px; }
+.block-rows dt { color: var(--muted); font-weight: 700; }
+.block-rows dd { margin: 0; font-variant-numeric: tabular-nums; }
+.baseline-rows > div { grid-template-columns: 130px 90px minmax(0, 1fr); }
+.baseline-head dd { color: var(--muted); font-size: 12px; font-weight: 700; }
+.event-list { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.event-list li { display: grid; gap: 2px; }
+.event-list strong { font-family: var(--heading); font-size: 14px; font-weight: 400; }
+.event-list span { font-size: 14px; }
+.form-intro { font-size: 15px; line-height: 1.5; }
+.assessment-fields { display: grid; grid-template-columns: 1fr 0.7fr 1.1fr; gap: 12px; margin-top: 7px; }
+.patient-form select { width: 100%; height: 42px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); padding: 0 10px; }
+.checkin-date { max-width: 220px; }
+.checkin-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; counter-reset: ad8; }
+.checkin-list li { counter-increment: ad8; }
+.patient-form .checkin-item { display: grid; grid-template-columns: 24px 18px minmax(0, 1fr); align-items: start; gap: 10px; border-radius: var(--radius); padding: 8px 6px; cursor: pointer; }
+.patient-form .checkin-item:hover { background: var(--soft); }
+.patient-form .checkin-item::before { content: counter(ad8); color: var(--muted); font-family: var(--heading); font-size: 13px; font-weight: 700; line-height: 22px; font-variant-numeric: tabular-nums; }
+.patient-form .checkin-item input { width: 18px; height: 18px; margin: 2px 0 0; padding: 0; border: 0; accent-color: var(--accent); cursor: pointer; }
+.patient-form .checkin-item span { color: var(--ink); font-family: var(--body); font-size: 15px; font-weight: 300; line-height: 1.45; }
+.checkin-score { font-family: var(--heading); font-size: 14px; }
 
 
 .weekly-chart, .hour-chart, .memory-chart { display: block; flex: 1 1 auto; width: 100%; min-height: 0; height: auto; overflow: visible; }
@@ -175,7 +208,7 @@ button.calendar-status:hover:not(:disabled) { color: var(--accent); }
 .calendar-event-form input { width: 100%; height: 40px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); padding: 8px 10px; }
 .calendar-event-form .checkbox-field { display: flex; align-items: center; gap: 8px; }
 .calendar-event-form .checkbox-field input { width: 15px; height: 15px; }
-.modal, .edit-people-list, .calendar-day-events, .patient-details { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.modal, .edit-people-list, .calendar-day-events, .panel-body { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
 .modal:hover, .edit-people-list:hover, .calendar-day-events:hover { scrollbar-color: var(--accent) transparent; }
 .modal::-webkit-scrollbar, .edit-people-list::-webkit-scrollbar, .calendar-day-events::-webkit-scrollbar { width: 6px; }
 .modal::-webkit-scrollbar-track, .edit-people-list::-webkit-scrollbar-track, .calendar-day-events::-webkit-scrollbar-track { background: transparent; }
@@ -213,7 +246,10 @@ button.calendar-status:hover:not(:disabled) { color: var(--accent); }
   .section-header { align-items: flex-start; flex-direction: column; }
   .weekly-controls { width: 100%; align-items: flex-start; justify-content: space-between; }
   .chart-legend { justify-content: flex-start; flex-wrap: wrap; }
-  .field-pair, .photo-grid, .calendar-day-columns { grid-template-columns: 1fr; }
+  .field-pair, .photo-grid, .calendar-day-columns, .assessment-fields { grid-template-columns: 1fr; }
+  .patient-details > div, .block-rows > div { grid-template-columns: 110px minmax(0, 1fr); gap: 12px; }
+  .patient-details .identity-row { grid-template-columns: 110px minmax(0, 1fr); row-gap: 4px; padding: 8px 0; }
+  .baseline-rows > div { grid-template-columns: 110px 70px minmax(0, 1fr); }
   .calendar-day-events { max-height: none; }
   .photo-input { aspect-ratio: 16 / 7; }
 }

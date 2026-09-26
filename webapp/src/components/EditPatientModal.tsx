@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import type { CalendarEvent, CalendarEventDraft, PatientProfile, Person } from "@/lib/types";
+import { ASSESSMENT_TOOLS } from "@/lib/types";
 import { CalendarEditor } from "./CalendarEditor";
 
 type Props = {
@@ -28,7 +29,7 @@ export function EditPatientModal({ profile, people, onSave, onAddPerson, onEditP
 
   function submit(event: FormEvent) {
     event.preventDefault();
-    onSave({ ...draft, name: draft.name.trim(), providerNotes: draft.providerNotes.trim() });
+    onSave({ ...draft, name: draft.name.trim(), diagnosis: draft.diagnosis.trim(), assessmentScore: draft.assessmentScore.trim(), providerNotes: draft.providerNotes.trim() });
     onClose();
   }
 
@@ -39,6 +40,15 @@ export function EditPatientModal({ profile, people, onSave, onAddPerson, onEditP
         <form className="patient-form" onSubmit={submit}>
           <label><span>Name</span><input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} /></label>
           <label><span>Date of birth</span><input type="date" value={draft.dateOfBirth} onChange={(event) => setDraft({ ...draft, dateOfBirth: event.target.value })} /></label>
+          <label><span>Diagnosis</span><input value={draft.diagnosis} onChange={(event) => setDraft({ ...draft, diagnosis: event.target.value })} placeholder="Alzheimer's disease, mild" /></label>
+          <fieldset>
+            <legend>Last assessment</legend>
+            <div className="assessment-fields">
+              <label><span>Tool</span><select value={draft.assessmentTool} onChange={(event) => setDraft({ ...draft, assessmentTool: event.target.value })}><option value="">None</option>{ASSESSMENT_TOOLS.map((tool) => <option key={tool.name} value={tool.name}>{tool.name}</option>)}</select></label>
+              <label><span>Score</span><input value={draft.assessmentScore} onChange={(event) => setDraft({ ...draft, assessmentScore: event.target.value })} inputMode="decimal" placeholder="19" /></label>
+              <label><span>Date</span><input type="date" value={draft.assessmentDate} onChange={(event) => setDraft({ ...draft, assessmentDate: event.target.value })} /></label>
+            </div>
+          </fieldset>
           <label><span>Provider notes</span><textarea value={draft.providerNotes} onChange={(event) => setDraft({ ...draft, providerNotes: event.target.value })} /></label>
           <div className="edit-people-header"><h3>Familiar people ({people.length}/10)</h3><button type="button" className="text-button" onClick={onAddPerson} disabled={people.length >= 10}>Add person</button></div>
           <div className="edit-people-list">{people.map((person) => <div key={person.id}><div><strong>{person.name}</strong><span>{person.relation} · met {person.yearMet}</span></div><button type="button" className="text-button" onClick={() => onEditPerson(person)}>Edit</button></div>)}</div>

@@ -66,10 +66,16 @@ function eventOverlapsMoment(event: CalendarEvent, moment: Date): boolean {
   return moment >= new Date(event.start) && moment < new Date(event.end);
 }
 
-function logMatchesPerson(log: RecognitionLog, person: Person): boolean {
+export function logMatchesPerson(log: RecognitionLog, person: Person): boolean {
   const identified = normalized(log.identifiedPerson);
   if (!identified || identified === normalized(UNKNOWN_PERSON)) return false;
   return identified === normalized(person.name) || firstName(identified) === firstName(person.name);
+}
+
+export function scheduledPeopleAt(events: CalendarEvent[], people: Person[], moment: Date): Person[] {
+  return events
+    .filter((event) => eventOverlapsMoment(event, moment))
+    .flatMap((event) => peopleNamedInEvent(event, people));
 }
 
 function windowFor(weekCount: number, now: Date) {
@@ -137,10 +143,7 @@ export function healthMetric(
   let mismatches = 0;
   for (const log of logs) {
     if (!within(log.timestamp, start, end)) continue;
-    const moment = new Date(log.timestamp);
-    const scheduledPeople = events
-      .filter((event) => eventOverlapsMoment(event, moment))
-      .flatMap((event) => peopleNamedInEvent(event, people));
+    const scheduledPeople = scheduledPeopleAt(events, people, new Date(log.timestamp));
     if (!scheduledPeople.length) continue;
     comparableUses += 1;
     if (!scheduledPeople.some((person) => logMatchesPerson(log, person))) mismatches += 1;
