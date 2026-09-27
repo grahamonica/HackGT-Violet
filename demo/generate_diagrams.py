@@ -490,45 +490,76 @@ def architecture() -> Diagram:
 
 # ============================================================== patient flow
 def patient_flow() -> Diagram:
-    W, H = 1300, 1270
+    W, H = 1300, 1850
     d = Diagram(W, H, "Patient flow", "From a one-time setup to hearing who is in front of them.")
     MX, MW, SH = 480, 340, 64
     LX, RX, SW = 100, 950, 250
-    Y = [140, 236, 332, 428, 524, 620, 716, 812]
+    # Two-way splits sit either side of the main column.
+    BW, BL, BR = 300, 270, 730
 
-    d.node("setup", MX, Y[0], MW, SH, "Set up the glasses once", kind="muted")
-    d.node("people", MX, Y[1], MW, SH, "Add familiar people")
-    d.node("phoneadd", LX, Y[1], SW, SH, "On the phone", "three photos each")
-    d.node("portaladd", RX, Y[1], SW, SH, "Or in the provider portal")
-    d.node("wear", MX, Y[2], MW, SH, "Wear the glasses")
-    d.node("anytime", LX, Y[2], SW, SH, "Tap a person to hear their bio", "any time", kind="muted", title_size=15)
-    d.node("say", MX, Y[3], MW, SH, "Look at someone and say “Violet”")
-    d.node("stream", MX, Y[4], MW, SH, "Glasses stream 5 s of video")
-    d.node("crops", MX, Y[5], MW, SH, "Phone picks the best face crops")
-    d.node("rek", MX, Y[6], MW, SH, "Rekognition names the person", "AWS", kind="external")
-    d.node("question", 520, Y[7], 260, SH, "What did it find?", kind="muted")
+    d.node("setup", MX, 140, MW, SH, "Set up the glasses once", kind="muted")
+    d.node("people", MX, 236, MW, SH, "Add familiar people")
+    d.node("phoneadd", LX, 236, SW, SH, "On the phone", "three photos each")
+    d.node("portaladd", RX, 236, SW, SH, "Or in the provider portal")
+    d.node("wear", MX, 332, MW, SH, "Wear the glasses")
+    d.node("anytime", LX, 332, SW, SH, "Tap a person to hear their bio", "any time", kind="muted", title_size=15)
 
-    OY, OW = 930, 280
+    # -- how they ask: capture button (fast path only) or the "Violet" wake word
+    d.node("how", 510, 428, 280, SH, "How do they ask?", kind="muted")
+    d.node("button", BL, 540, BW, SH + 8, "Press the capture button", "fast path: name only", title_size=16)
+    d.node("wake", BR, 540, BW, SH + 8, "Say “Violet”", "a question may follow: “Violet, where does he study?”",
+           title_size=16)
+    d.node("chime", 510, 664, 280, SH, "A chime confirms", kind="muted")
+
+    d.node("stream", MX, 760, MW, SH, "Glasses stream up to 5 s of video", "stops once it's sure")
+    d.node("crops", MX, 856, MW, SH, "Phone picks the best face crops")
+    d.node("rek", MX, 952, MW, SH, "Rekognition names the person", "AWS", kind="external")
+    d.node("found", 520, 1048, 260, SH, "What did it find?", kind="muted")
+
+    OY, OW = 1164, 280
     xs = [45 + i * (OW + 30) for i in range(4)]
     d.node("o1", xs[0], OY, OW, SH + 8, "“This is Jordan, your daughter.”", "identified", title_size=14.5)
     d.node("o2", xs[1], OY, OW, SH + 8, "“This is not one of your family members.”", "not recognized", title_size=14.5)
     d.node("o3", xs[2], OY, OW, SH + 8, "“I couldn't see anyone's face.”", "no face", title_size=14.5)
     d.node("o4", xs[3], OY, OW, SH + 8, "“I couldn't tell who this is, so I won't guess.”", "unsure", title_size=14.5)
 
-    d.node("speak", MX, 1080, MW, SH, "Violet speaks through the glasses", "ElevenLabs voice, prefetched")
-    d.node("log", MX, 1176, MW, SH, "Recognition log synced to Atlas")
-    d.node("portal", RX, 1176, SW, SH, "Provider portal analytics")
+    d.node("speak", MX, 1300, MW, SH, "Violet speaks through the glasses", "ElevenLabs voice, prefetched")
+    d.node("phonespeaker", LX, 1300, SW, SH, "Or the phone speaker", "demo setting", kind="muted", title_size=15)
 
-    chain = ["setup", "people", "wear", "say", "stream", "crops", "rek", "question"]
+    # -- fast path ends here; the slow path answers a question asked after "Violet"
+    d.node("ask", MX, 1396, MW, SH, "Identified, with a question after “Violet”?", kind="muted", title_size=15)
+    d.node("fast", BL, 1508, BW, SH, "Done", "fast path")
+    d.node("grok", BR, 1508, BW, SH, "Grok answers the question", "slow path: from bio and notes",
+           kind="external", title_size=16)
+    d.node("reply", BR, 1620, BW, SH, "Violet speaks the reply", "voiced while the name plays", title_size=16)
+
+    d.node("log", MX, 1740, MW, SH, "Recognition log synced to Atlas")
+    d.node("portal", RX, 1740, SW, SH, "Provider portal analytics")
+
+    chain = ["setup", "people", "wear", "how"]
+    for a, b in zip(chain, chain[1:]):
+        d.edge(a, b, src_side="bottom", dst_side="top")
+    d.edge("phoneadd", "people")
+    d.edge("portaladd", "people", src_side="left", dst_side="right")
+    for branch in ("button", "wake"):
+        d.edge("how", branch, src_side="bottom", dst_side="top", elbow="v")
+        d.edge(branch, "chime", src_side="bottom", dst_side="top", elbow="v")
+
+    chain = ["chime", "stream", "crops", "rek", "found"]
     labels = {("crops", "rek"): "local FaceQuality model"}
     for a, b in zip(chain, chain[1:]):
         d.edge(a, b, labels.get((a, b), ""), src_side="bottom", dst_side="top", label_side="right")
-    d.edge("phoneadd", "people")
-    d.edge("portaladd", "people", src_side="left", dst_side="right")
     for o in ("o1", "o2", "o3", "o4"):
-        d.edge("question", o, src_side="bottom", dst_side="top", elbow="v")
+        d.edge("found", o, src_side="bottom", dst_side="top", elbow="v")
         d.edge(o, "speak", src_side="bottom", dst_side="top", elbow="v")
-    d.edge("speak", "log", src_side="bottom", dst_side="top")
+    d.edge("phonespeaker", "speak", dashed=True, color=MUTED)
+
+    d.edge("speak", "ask", src_side="bottom", dst_side="top")
+    d.edge("ask", "fast", "no", src_side="bottom", dst_side="top", elbow="v", label_at=0.85, label_side="left")
+    d.edge("ask", "grok", "yes", src_side="bottom", dst_side="top", elbow="v", label_at=0.85, label_side="right")
+    d.edge("grok", "reply", src_side="bottom", dst_side="top")
+    d.edge("fast", "log", src_side="bottom", dst_side="top", elbow="v")
+    d.edge("reply", "log", src_side="bottom", dst_side="top", elbow="v")
     d.edge("log", "portal", "within a minute")
     return d
 
