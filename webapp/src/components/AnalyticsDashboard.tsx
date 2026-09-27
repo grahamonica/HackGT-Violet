@@ -114,6 +114,7 @@ function DateRangeControl({ range, today, onRangeChange }: RangeProps) {
 
 function WeeklyChart({ points, loading, ...rangeProps }: RangeProps & { points: WeekPoint[]; loading: boolean }) {
   const [frame, { width, height }] = useChartSize({ width: 720, height: 250 });
+  const [focused, setFocused] = useState<"violet" | "visit" | "ratio" | null>(null);
   const margin = { top: 12, bottom: 32, ...CHART_X };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
@@ -126,6 +127,8 @@ function WeeklyChart({ points, loading, ...rangeProps }: RangeProps & { points: 
   const yRatio = (value: number) => margin.top + plotHeight - (value / ratioTop) * plotHeight;
   const line = (values: Array<number | null>, y: (value: number) => number) => values.map((value, index) => value == null ? null : `${x(index)},${y(value)}`).filter(Boolean).join(" ");
   const hasData = points.some((point) => point.violetUses || point.peopleSeen);
+  // Thin out date labels so they never overlap; anchor on the latest week so it's always labeled.
+  const labelStep = Math.max(1, Math.ceil(points.length / Math.max(1, Math.floor(plotWidth / 56))));
 
   return (
     <article className="clinical-section weekly-section">
@@ -133,9 +136,13 @@ function WeeklyChart({ points, loading, ...rangeProps }: RangeProps & { points: 
         <h2>Weekly trend</h2>
         <DateRangeControl {...rangeProps} />
       </div>
-      <div className="chart-legend weekly-legend"><span><i className="violet-key" />Violet uses</span><span><i className="visit-key" />People seen</span><span><i className="ratio-key" />Uses per visit</span></div>
+      <div className="chart-legend weekly-legend" data-focus={focused ?? undefined} onMouseLeave={() => setFocused(null)}>
+        {([["violet", "Violet uses"], ["visit", "People seen"], ["ratio", "Uses per visit"]] as const).map(([series, label]) => (
+          <span key={series} className={focused === series ? "is-focused" : undefined} onMouseEnter={() => setFocused(series)}><i className={`${series}-key`} />{label}</span>
+        ))}
+      </div>
       <div className="chart-frame" ref={frame}>
-      <svg className="weekly-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Weekly Violet uses, people seen, and Violet uses per visit">
+      <svg className="weekly-chart" data-focus={focused ?? undefined} viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Weekly Violet uses, people seen, and Violet uses per visit">
         {[0, 0.25, 0.5, 0.75, 1].map((portion) => {
           const lineY = margin.top + plotHeight * portion;
           return (
@@ -148,7 +155,7 @@ function WeeklyChart({ points, loading, ...rangeProps }: RangeProps & { points: 
         })}
         <text className="axis-title" x="4" y={height / 2} transform={`rotate(-90 4 ${height / 2})`} dominantBaseline="hanging" textAnchor="middle">Count</text>
         <text className="axis-title ratio-axis" x={width - 4} y={height / 2} transform={`rotate(90 ${width - 4} ${height / 2})`} dominantBaseline="hanging" textAnchor="middle">Uses / visit</text>
-        {points.map((point, index) => <text className="axis-label" key={point.start.toISOString()} x={x(index)} y={height - 10} textAnchor="middle">{point.label}</text>)}
+        {points.map((point, index) => (points.length - 1 - index) % labelStep === 0 && <text className="axis-label" key={point.start.toISOString()} x={x(index)} y={height - 10} textAnchor="middle">{point.label}</text>)}
         <polyline className="series-line violet-series" points={line(points.map((point) => point.violetUses), yCount)} />
         <polyline className="series-line visit-series" points={line(points.map((point) => point.peopleSeen), yCount)} />
         <polyline className="series-line ratio-series" points={line(points.map((point) => point.usesPerVisit), yRatio)} />

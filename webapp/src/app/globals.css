@@ -153,6 +153,13 @@ button.calendar-status:hover:not(:disabled) { color: var(--accent); }
 .violet-point { fill: var(--accent); }
 .visit-point { fill: var(--deep); }
 .ratio-point { fill: var(--ratio); }
+.series-line, .series-point, .weekly-legend span { transition: opacity 140ms ease; }
+.weekly-legend span { cursor: default; }
+.weekly-legend[data-focus] span:not(.is-focused) { opacity: 0.4; }
+.weekly-chart[data-focus] .series-line, .weekly-chart[data-focus] .series-point { opacity: 0.15; }
+.weekly-chart[data-focus="violet"] :is(.violet-series, .violet-point),
+.weekly-chart[data-focus="visit"] :is(.visit-series, .visit-point),
+.weekly-chart[data-focus="ratio"] :is(.ratio-series, .ratio-point) { opacity: 1; }
 .empty-chart-label { fill: var(--muted); font-family: var(--heading); font-size: var(--text-sm); font-weight: 700; }
 
 .signal-controls { display: flex; align-items: center; gap: 8px; }
