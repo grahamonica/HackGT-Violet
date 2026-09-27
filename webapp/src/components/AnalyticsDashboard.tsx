@@ -131,11 +131,9 @@ function WeeklyChart({ points, loading, ...rangeProps }: RangeProps & { points: 
     <article className="clinical-section weekly-section">
       <div className="section-header weekly-header">
         <h2>Weekly trend</h2>
-        <div className="weekly-controls">
-          <div className="chart-legend"><span><i className="violet-key" />Violet uses</span><span><i className="visit-key" />People seen</span><span><i className="ratio-key" />Uses per visit</span></div>
-          <DateRangeControl {...rangeProps} />
-        </div>
+        <DateRangeControl {...rangeProps} />
       </div>
+      <div className="chart-legend weekly-legend"><span><i className="violet-key" />Violet uses</span><span><i className="visit-key" />People seen</span><span><i className="ratio-key" />Uses per visit</span></div>
       <div className="chart-frame" ref={frame}>
       <svg className="weekly-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Weekly Violet uses, people seen, and Violet uses per visit">
         {[0, 0.25, 0.5, 0.75, 1].map((portion) => {
@@ -175,7 +173,8 @@ function HourlyChart({ points, loading }: { points: HourPoint[]; loading: boolea
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
   const baseline = margin.top + plotHeight;
-  const max = Math.max(1, ...points.flatMap((point) => [point.violetUses, point.visitors]));
+  // Round the top up to a multiple of 4 so every quarter gridline lands on a whole number.
+  const max = Math.ceil(Math.max(4, ...points.flatMap((point) => [point.violetUses, point.visitors])) / 4) * 4;
   const group = plotWidth / points.length;
   const barWidth = Math.max(4, group * 0.5);
   const barHeight = (value: number) => (value / max) * plotHeight;
@@ -183,7 +182,16 @@ function HourlyChart({ points, loading }: { points: HourPoint[]; loading: boolea
   return (
     <div className="chart-frame" ref={frame}>
     <svg className="hour-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Violet uses and visitors by waking hour" data-hover={hovered != null || undefined} onPointerLeave={() => setHovered(null)}>
-      <line className="chart-gridline" x1={margin.left} x2={width - margin.right} y1={baseline} y2={baseline} />
+      {[0, 0.25, 0.5, 0.75, 1].map((portion) => {
+        const lineY = margin.top + plotHeight * portion;
+        return (
+          <g key={portion}>
+            <line className="chart-gridline" x1={margin.left} x2={width - margin.right} y1={lineY} y2={lineY} />
+            <text className="axis-label" x={margin.left - 8} y={lineY + 4} textAnchor="end">{max * (1 - portion)}</text>
+          </g>
+        );
+      })}
+      <text className="axis-title" x="4" y={height / 2} transform={`rotate(-90 4 ${height / 2})`} dominantBaseline="hanging" textAnchor="middle">Count</text>
       {points.map((point, index) => {
         const center = margin.left + group * index + group / 2;
         const violetHeight = barHeight(point.violetUses);
@@ -210,7 +218,7 @@ function HourlyChart({ points, loading }: { points: HourPoint[]; loading: boolea
 }
 
 function HealthBar({ metric }: { metric: DashboardAnalytics["health"] }) {
-  const percent = metric.rate == null ? null : Math.round(Math.min(100, Math.max(0, metric.rate * 100)));
+  const percent = metric.rate == null ? null : Math.round(Math.min(100, Math.max(0, (1 - metric.rate) * 100)));
   const label = metric.status === "healthy" ? "Healthy" : metric.status === "watch" ? "Watch" : metric.status === "high" ? "High" : "No data";
   return (
     <div className="health-panel">
@@ -218,10 +226,10 @@ function HealthBar({ metric }: { metric: DashboardAnalytics["health"] }) {
         <strong>{percent == null ? "No data" : `${percent}%`}</strong>
         {percent != null && <span>{label}</span>}
       </div>
-      <div className="health-bar" role="img" aria-label={percent == null ? "Recognition health unavailable" : `${percent}% mismatch rate, ${label.toLowerCase()}`}>
-        <i className="health-good" />
-        <i className="health-watch" />
+      <div className="health-bar" role="img" aria-label={percent == null ? "Recognition health unavailable" : `${percent}% aligned, ${label.toLowerCase()}`}>
         <i className="health-high" />
+        <i className="health-watch" />
+        <i className="health-good" />
         {percent != null && <b className="health-marker" style={{ left: `${percent}%` }} />}
       </div>
       <div className="health-scale">
@@ -230,7 +238,7 @@ function HealthBar({ metric }: { metric: DashboardAnalytics["health"] }) {
         <span style={{ left: "70%" }}>70%</span>
         <span style={{ left: "100%" }}>100%</span>
       </div>
-      <div className="health-count">{metric.comparableUses ? `${metric.mismatches}/${metric.comparableUses} mismatched` : "0 comparable events"}</div>
+      <div className="health-count">{metric.comparableUses ? `${metric.comparableUses - metric.mismatches}/${metric.comparableUses} aligned` : "0 comparable events"}</div>
     </div>
   );
 }

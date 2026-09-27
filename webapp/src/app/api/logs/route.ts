@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { RecognitionLog, RecognitionLogDraft, SyncResponse } from "@/lib/types";
 import { serverEnv } from "@/lib/server/env";
-import { createRecognitionLog, fetchLogs } from "@/lib/server/mongo";
+import { countLogs, createRecognitionLog, fetchLogs } from "@/lib/server/mongo";
 
 export const dynamic = "force-dynamic";
 
@@ -9,10 +9,8 @@ export async function GET(request: Request) {
   if (serverEnv.mongoError) return NextResponse.json({ error: serverEnv.mongoError }, { status: 503 });
   const after = new URL(request.url).searchParams.get("after") ?? undefined;
   try {
-    const body: SyncResponse<RecognitionLog> = {
-      items: await fetchLogs(after),
-      serverTime: new Date().toISOString(),
-    };
+    const [items, total] = await Promise.all([fetchLogs(after), countLogs()]);
+    const body: SyncResponse<RecognitionLog> = { items, total, serverTime: new Date().toISOString() };
     return NextResponse.json(body);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected database error.";

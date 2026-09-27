@@ -73,6 +73,11 @@ export async function fetchRelationships(updatedAfter?: string): Promise<Person[
   return documents.map(person);
 }
 
+export async function countLogs(): Promise<number> {
+  const db = await database();
+  return db.collection(serverEnv.logsPath).countDocuments();
+}
+
 export async function fetchLogs(after?: string): Promise<RecognitionLog[]> {
   const db = await database();
   const documents = await db.collection(serverEnv.logsPath).find(changeFilter(after)).toArray();
@@ -166,6 +171,11 @@ function note(document: Document): ProviderNote {
     updatedAt: dateValue(document.updatedAt, new Date(createdAt)).toISOString(),
     ...(document.deletedAt ? { deleted: true } : {}),
   };
+}
+
+export async function countNotes(): Promise<number> {
+  const db = await database();
+  return db.collection(serverEnv.notesPath).countDocuments({ deletedAt: { $exists: false } });
 }
 
 export async function fetchNotes(updatedAfter?: string): Promise<ProviderNote[]> {

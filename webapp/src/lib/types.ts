@@ -34,6 +34,8 @@ export type CalendarEventDraft = Omit<CalendarEvent, "id">;
 export type SyncResponse<T> = {
   items: T[];
   serverTime: string;
+  // How many rows the server holds in all, so a client can tell when its cache has drifted.
+  total?: number;
 };
 
 export type PeopleSyncResponse = SyncResponse<Person> & { ids: string[] };

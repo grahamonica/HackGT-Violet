@@ -71,11 +71,19 @@ export function usePatientData() {
       errors.push(peopleResult.reason instanceof Error ? peopleResult.reason.message : "Could not sync familiar people.");
     }
     if (logsResult.status === "fulfilled") {
-      next = {
-        ...next,
-        logs: mergeById(next.logs, logsResult.value.items).sort((a, b) => a.timestamp.localeCompare(b.timestamp)),
-        logsCursor: logsResult.value.serverTime,
-      };
+      let logs = mergeById(next.logs, logsResult.value.items);
+      let logsCursor = logsResult.value.serverTime;
+      // Deleted or backdated logs never arrive as changes, so reload them all when the counts disagree.
+      if (logsResult.value.total !== undefined && logs.length !== logsResult.value.total) {
+        try {
+          const full = await getJSON<SyncResponse<RecognitionLog>>("/api/logs");
+          logs = full.items;
+          logsCursor = full.serverTime;
+        } catch (reason) {
+          errors.push(reason instanceof Error ? reason.message : "Could not sync recognition logs.");
+        }
+      }
+      next = { ...next, logs: logs.sort((a, b) => a.timestamp.localeCompare(b.timestamp)), logsCursor };
     } else {
       errors.push(logsResult.reason instanceof Error ? logsResult.reason.message : "Could not sync recognition logs.");
     }

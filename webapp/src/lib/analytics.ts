@@ -85,11 +85,13 @@ function windowFor(range: DateRange) {
   return { start: startOfDay(range.start), end: addDays(startOfDay(range.end), 1) };
 }
 
+// People seen counts only visits that have started: someone due later today has not been seen yet.
 export function weeklySeries(
   logs: RecognitionLog[],
   events: CalendarEvent[],
   people: Person[],
   range: DateRange,
+  now = new Date(),
 ): WeekPoint[] {
   const { start, end } = windowFor(range);
   const weekCount = Math.max(1, Math.ceil(Math.round((end.getTime() - start.getTime()) / 86_400_000) / 7));
@@ -98,7 +100,7 @@ export function weeklySeries(
     const weekEnd = index === weekCount - 1 ? end : addDays(weekStart, 7);
     const violetUses = logs.filter((log) => within(log.timestamp, weekStart, weekEnd)).length;
     const peopleSeen = events
-      .filter((event) => within(event.start, weekStart, weekEnd))
+      .filter((event) => within(event.start, weekStart, weekEnd) && new Date(event.start) <= now)
       .reduce((sum, event) => sum + peopleNamedInEvent(event, people).length, 0);
     return {
       start: weekStart,
@@ -116,6 +118,7 @@ export function hourlySeries(
   people: Person[],
   start: Date,
   end: Date,
+  now = new Date(),
 ): HourPoint[] {
   const points = Array.from({ length: 17 }, (_, index) => ({ hour: index + 6, violetUses: 0, visitors: 0 }));
   for (const log of logs) {
@@ -124,7 +127,7 @@ export function hourlySeries(
     if (hour >= 6 && hour < 23) points[hour - 6].violetUses += 1;
   }
   for (const event of events) {
-    if (event.allDay || !within(event.start, start, end)) continue;
+    if (event.allDay || !within(event.start, start, end) || new Date(event.start) > now) continue;
     const count = peopleNamedInEvent(event, people).length;
     if (!count) continue;
     // Count visitors in every hour the visit covers, like a popular-times chart.
@@ -186,8 +189,8 @@ export function dashboardAnalytics(
 ): DashboardAnalytics {
   const { start, end } = windowFor(range);
   return {
-    weeks: weeklySeries(logs, events, people, range),
-    hours: hourlySeries(logs, events, people, start, end),
+    weeks: weeklySeries(logs, events, people, range, now),
+    hours: hourlySeries(logs, events, people, start, end, now),
     health: healthMetric(logs, events, people, start, end),
     tenure: tenureSeries(logs, people, start, end, now),
     windowStart: start,

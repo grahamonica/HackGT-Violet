@@ -68,8 +68,14 @@ export function useProviderNotes() {
     inFlight.current = true;
     try {
       const cursor = ref.current.cursor;
-      const result = await request<SyncResponse<ProviderNote>>(`/api/notes${cursor ? `?updatedAfter=${encodeURIComponent(cursor)}` : ""}`);
-      commit({ notes: cursor ? merge(ref.current.notes, result.items) : merge([], result.items), cursor: result.serverTime });
+      let result = await request<SyncResponse<ProviderNote>>(`/api/notes${cursor ? `?updatedAfter=${encodeURIComponent(cursor)}` : ""}`);
+      let notes = cursor ? merge(ref.current.notes, result.items) : merge([], result.items);
+      // Backdated notes never arrive as changes, so reload them all when the counts disagree.
+      if (result.total !== undefined && notes.length !== result.total) {
+        result = await request<SyncResponse<ProviderNote>>("/api/notes");
+        notes = merge([], result.items);
+      }
+      commit({ notes, cursor: result.serverTime });
       setError(null);
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not sync notes.");

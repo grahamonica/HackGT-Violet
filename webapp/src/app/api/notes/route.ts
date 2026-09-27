@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { ProviderNote, ProviderNoteDraft, SyncResponse } from "@/lib/types";
 import { serverEnv } from "@/lib/server/env";
-import { createNote, deleteNote, fetchNotes, updateNote } from "@/lib/server/mongo";
+import { countNotes, createNote, deleteNote, fetchNotes, updateNote } from "@/lib/server/mongo";
 
 export const dynamic = "force-dynamic";
 
@@ -60,7 +60,8 @@ export async function GET(request: Request) {
   if (blocked) return blocked;
   const updatedAfter = new URL(request.url).searchParams.get("updatedAfter") ?? undefined;
   try {
-    const body: SyncResponse<ProviderNote> = { items: await fetchNotes(updatedAfter), serverTime: new Date().toISOString() };
+    const [items, total] = await Promise.all([fetchNotes(updatedAfter), countNotes()]);
+    const body: SyncResponse<ProviderNote> = { items, total, serverTime: new Date().toISOString() };
     return NextResponse.json(body);
   } catch (error) {
     return failure(error);
