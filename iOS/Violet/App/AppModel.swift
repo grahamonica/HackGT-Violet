@@ -292,7 +292,15 @@ final class AppModel {
     {
       latency?.mark("question heard")
       let request = FollowUpRequest(utterance: question, person: matchedPerson, today: .now)
-      followUp = Task { await self.askFollowUp(request, using: followUps) }
+      followUp = Task {
+        let result = await self.askFollowUp(request, using: followUps)
+        // Voice the reply while the identity line is still playing; `deliverFollowUp`
+        // then plays it straight after instead of waiting for ElevenLabs.
+        if case .answer(.reply(let reply)) = result {
+          self.speaker.preload(reply, timeout: FollowUpTiming.voiceTimeout)
+        }
+        return result
+      }
     } else {
       glasses.discardQuestion()
     }
@@ -550,7 +558,7 @@ private enum FollowUpResult: Sendable {
 
 /// Resumes a continuation with whichever result arrives first.
 @MainActor
-private final class FirstResult<Value> {
+private final class FirstResult<Value: Sendable> {
   var continuation: CheckedContinuation<Value, Never>?
 
   func resume(_ value: Value) {

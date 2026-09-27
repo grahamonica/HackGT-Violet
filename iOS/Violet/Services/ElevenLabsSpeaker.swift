@@ -69,6 +69,18 @@ final class ElevenLabsSpeaker: NSObject {
     }
   }
 
+  /// Starts generating `text` now, so a later `speak` of the same text finds it ready or
+  /// joins the request already in flight instead of starting over.
+  func preload(_ text: String, timeout: TimeInterval = 45) {
+    Task { [weak self] in
+      do {
+        _ = try await self?.audio(for: text, timeout: timeout)
+      } catch {
+        violetTrace("speech preload failed: \(error)")
+      }
+    }
+  }
+
   /// True when `text` is already on disk and plays without a network request.
   func isPrepared(_ text: String) -> Bool {
     FileManager.default.fileExists(atPath: cacheURL(for: text).path)
