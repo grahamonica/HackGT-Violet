@@ -152,15 +152,15 @@ final class ElevenLabsSpeaker: NSObject {
   }
 
   private func play(_ data: Data) throws -> AVAudioPlayer {
-    let audioSession = AVAudioSession.sharedInstance()
-    // .playback already routes to A2DP outputs such as the glasses; passing
-    // .allowBluetoothA2DP here is invalid for this category and throws -50.
-    try audioSession.setCategory(.playback, mode: .spokenAudio)
-    try audioSession.setActive(true)
+    let onPhone = AudioOutput.prepare()
     let newPlayer = try AVAudioPlayer(data: data)
     newPlayer.delegate = self
     newPlayer.prepareToPlay()
-    guard newPlayer.play() else { throw SpeechServiceError.invalidResponse }
+    if !newPlayer.play() {
+      guard onPhone else { throw SpeechServiceError.invalidResponse }
+      try AudioOutput.fallBackToGlasses()
+      guard newPlayer.play() else { throw SpeechServiceError.invalidResponse }
+    }
     player = newPlayer
     return newPlayer
   }

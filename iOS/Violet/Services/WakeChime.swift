@@ -2,7 +2,7 @@ import AVFoundation
 import Foundation
 
 /// The short chime played when Violet hears its name, so the wearer knows the
-/// glasses are looking. It plays on the same route as the spoken answers.
+/// glasses are looking. It plays on the same route as the spoken answers (see `AudioOutput`).
 @MainActor
 final class WakeChime {
   private let player: AVAudioPlayer?
@@ -16,14 +16,11 @@ final class WakeChime {
 
   func play() {
     guard let player else { return }
-    do {
-      let session = AVAudioSession.sharedInstance()
-      try session.setCategory(.playback, mode: .spokenAudio)
-      try session.setActive(true)
-    } catch {
-      violetTrace("chime audio session failed: \(error)")
-    }
+    let onPhone = AudioOutput.prepare()
     player.currentTime = 0
-    player.play()
+    if !player.play(), onPhone {
+      try? AudioOutput.fallBackToGlasses()
+      player.play()
+    }
   }
 }

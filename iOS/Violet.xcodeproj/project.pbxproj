@@ -37,6 +37,7 @@
 		B5FC3F51408DCF5E5CF29C3C /* WakeWordDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9B8B31EEB54CFC27DF62641 /* WakeWordDetector.swift */; };
 		B7D74592049A2F0EA72B62DF /* MWDATCore in Frameworks */ = {isa = PBXBuildFile; productRef = A0EAA09D58A0AF5B40B7FCB3 /* MWDATCore */; };
 		C673138A466EACEBAF564012 /* AddPersonSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A048C38A36074C6FEA592E /* AddPersonSheet.swift */; };
+		CA27DAF716C18AE0D5200074 /* AudioOutput.swift in Sources */ = {isa = PBXBuildFile; fileRef = D29C477E148A3F097714D57C /* AudioOutput.swift */; };
 		CB5FAC5DA74BAD11240EE307 /* RemoteAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = EED63F6C35A37A4C27F38ECC /* RemoteAPI.swift */; };
 		D1A56D5E733DA77606A821FE /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3BC6F278216236E351B7C91 /* HomeView.swift */; };
 		DFE6AF9A17073688BD411587 /* FrameSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 877104F3162E7609D7263562 /* FrameSelector.swift */; };
@@ -69,6 +70,7 @@
 		C98E057A440B3B3622CCF1A8 /* CameraCaptureView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = CameraCaptureView.swift; path = Features/AddPerson/CameraCaptureView.swift; sourceTree = "<group>"; };
 		CA46892617E3049CF8B100AD /* GlassesManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = GlassesManager.swift; path = Services/GlassesManager.swift; sourceTree = "<group>"; };
 		CED2411FD052F7EAD928B47D /* Assets.xcassets */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		D29C477E148A3F097714D57C /* AudioOutput.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AudioOutput.swift; path = Services/AudioOutput.swift; sourceTree = "<group>"; };
 		D6EE2B19745F5A4DD7E23191 /* WakeWordDetectorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = WakeWordDetectorTests.swift; sourceTree = "<group>"; };
 		EED63F6C35A37A4C27F38ECC /* RemoteAPI.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RemoteAPI.swift; path = Data/RemoteAPI.swift; sourceTree = "<group>"; };
 		F3BC6F278216236E351B7C91 /* HomeView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = HomeView.swift; path = Features/Home/HomeView.swift; sourceTree = "<group>"; };
@@ -163,6 +165,7 @@
 				B8A7BBB637482466B6A78A79 /* ReferentRecognizer.swift */,
 				4BC6AB89438E6F451B1BCF57 /* WakeChime.swift */,
 				070980DFDC6B1EC53F8B3757 /* WakeChime.mp3 */,
+				D29C477E148A3F097714D57C /* AudioOutput.swift */,
 			);
 			path = Violet;
 			sourceTree = "<group>";
@@ -337,6 +340,7 @@
 				B5FC3F51408DCF5E5CF29C3C /* WakeWordDetector.swift in Sources */,
 				56E0CFF36E0A36F1CD48AA69 /* ReferentRecognizer.swift in Sources */,
 				786BE3B2CC4EF8DBC84FB6E4 /* WakeChime.swift in Sources */,
+				CA27DAF716C18AE0D5200074 /* AudioOutput.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

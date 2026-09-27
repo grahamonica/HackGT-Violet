@@ -5,6 +5,7 @@ struct HomeView: View {
   @State private var showsAddPerson = false
   @State private var showsPeopleLimit = false
   @State private var isCheckingPeopleLimit = false
+  @AppStorage(AudioOutput.playOnPhoneKey) private var playAudioOnPhone = false
 
   private let columns = [
     GridItem(.adaptive(minimum: 138, maximum: 190), spacing: 24, alignment: .top)
@@ -38,6 +39,13 @@ struct HomeView: View {
         }
 
         glassesStatus
+
+        Toggle("Play audio on phone", isOn: $playAudioOnPhone)
+          .font(VioletDesign.body(17))
+          .foregroundStyle(VioletDesign.ink)
+          .tint(VioletDesign.accent)
+          .onChange(of: playAudioOnPhone) { AudioOutput.apply() }
+          .accessibilityHint("Plays the chime and spoken answers through the iPhone speaker instead of the glasses")
 
         if model.isLoading {
           ProgressView()
