@@ -11,6 +11,7 @@ Violet handles one request at a time: a trigger (“Violet”, the capture butto
 When the wearer says “Violet” followed by a question (“Violet, what's she been up to?”) and the person is identified, Violet answers the question after the identity line. The words after “Violet” are collected while the camera runs. A model on the phone (Apple Intelligence, through the Foundation Models framework) decides whether they were a real question about this person and, if so, writes a short reply from the person's bio and notes. The reply hints rather than telling everything, so the wearer can recall the rest. The question and notes stay on the phone; only the reply text goes to ElevenLabs to be voiced.
 
 - Only for the spoken wake word, never for the capture button or “Hey Meta”, and never when no one was identified.
+- The model answers in a fixed structure: not a question (Violet says nothing more), no information (Violet says the fixed line “I don't have anything about that yet.”), or an answer. A model error, including output that doesn't match the structure, also gets the fixed line; there are no retries.
 - The model gets five seconds; otherwise Violet says nothing more. A filler line plays only once a reply is certain and its voice is slow to generate.
 - Needs iOS 26 on an Apple Intelligence iPhone with Apple Intelligence turned on. On other phones the follow-up is skipped and everything else works as before.
 - Notes are an optional field next to the bio when adding someone. Older records without notes work unchanged.

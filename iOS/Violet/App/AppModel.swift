@@ -366,13 +366,19 @@ final class AppModel {
     case .answer(.notAFollowUp):
       latency?.note("follow-up", "not a follow-up")
       return
+    case .answer(.noInformation):
+      latency?.note("follow-up", "no information")
+      await sayNoInformation()
+      return
     case .timedOut:
       violetTrace("follow-up model timed out")
       latency?.note("follow-up", "model timed out")
       return
     case .failed(let error):
+      // Includes output that didn't match the schema; no retry, the fixed line instead.
       violetTrace("follow-up model failed: \(error)")
       latency?.note("follow-up", "model failed")
+      await sayNoInformation()
       return
     }
     latency?.mark("follow-up reply ready")
@@ -464,6 +470,19 @@ final class AppModel {
     }
   }
 
+  /// The fixed "don't know" line; pre-generated, so it plays without a filler.
+  private func sayNoInformation() async {
+    lastAnnouncement = Announcement.noInformation
+    do {
+      try await speaker.speak(Announcement.noInformation) { [latency = self.latency] in
+        latency?.mark("follow-up voice started")
+      }
+      latency?.mark("follow-up voice finished")
+    } catch {
+      violetTrace("follow-up speech failed: \(error)")
+    }
+  }
+
   /// Says the next filler line in turn, if its audio is ready.
   private func sayNextFiller() async {
     let line = Announcement.fillers[nextFiller % Announcement.fillers.count]
@@ -508,10 +527,12 @@ enum Announcement {
   static let notFamily = "This is not one of your family members."
   static let noFace = "I couldn't see anyone's face. Try looking right at the person and ask me again."
   static let unsure = "I couldn't tell who this is, so I won't guess."
+  /// Follow-up asked, but the bio and notes don't answer it (or the model failed).
+  static let noInformation = "I don't have anything about that yet."
   /// Said in turn when an answer takes longer than `fillerDelay`.
   static let fillers = ["One moment.", "Just a second.", "Let me take a look."]
   static let fillerDelay: Duration = .seconds(3)
-  static let fixed = [notFamily, noFace, unsure] + fillers
+  static let fixed = [notFamily, noFace, unsure, noInformation] + fillers
 
   static func identified(_ person: FamiliarPerson) -> String {
     "This is \(person.name), your \(person.relation)."

@@ -16,6 +16,8 @@ enum FollowUpAnswer: Sendable {
   /// The words weren't a question for Violet about this person (talking to someone
   /// else, background speech), so Violet says nothing more.
   case notAFollowUp
+  /// A real question the bio and notes don't cover; Violet says a fixed line.
+  case noInformation
   /// A short spoken reply, meant to be said right after the identity line.
   case reply(String)
 }
@@ -44,10 +46,14 @@ enum FollowUpPrompt {
     with dementia. They just looked at someone and said "Violet", and Violet has already told \
     them who it is (name and relationship). You now see the words they said after "Violet".
 
-    First decide whether those words are a question or request to Violet about this person. \
-    Chatter to someone else, background speech, or words that don't ask anything are not.
+    First choose the kind of response:
+    - notAQuestion: the words are not a question or request to Violet about this person \
+    (chatter to someone else, background speech, or words that don't ask anything).
+    - noInformation: it is such a question, but the facts given don't answer it. Leave the \
+    reply empty; Violet will say that it doesn't know.
+    - answer: it is such a question and the facts answer it.
 
-    If it is a follow-up, write a warm reply of one or two short sentences, at most \
+    Only for answer, write a warm reply of one or two short sentences, at most \
     \(wordLimit) words, to be spoken aloud:
     - Use only the facts given about this person. Never invent or guess anything.
     - Help them remember instead of telling everything: give part of the answer as a hint \
@@ -55,7 +61,6 @@ enum FollowUpPrompt {
     recall. Use your judgment: if leaving something out could confuse or worry them, just say it.
     - Don't repeat the person's name and relationship; that was just said.
     - If they ask who this is, add one thing about the person from the facts.
-    - If the facts don't cover the question, gently say you don't have notes about that.
     - Simple, everyday words. No lists, no emoji, no questions back to them.
     """
 
@@ -106,22 +111,40 @@ final class AppleFollowUpService: FollowUpAnswering {
       generating: FollowUpDecision.self,
       options: GenerationOptions(temperature: 0.3, maximumResponseTokens: 120)
     ).content
-    let reply = decision.reply.trimmingCharacters(in: .whitespacesAndNewlines)
-    guard decision.isFollowUp, !reply.isEmpty else { return .notAFollowUp }
-    return .reply(FollowUpText.trimmed(reply, maxWords: FollowUpPrompt.hardWordLimit))
+    switch decision.kind {
+    case .notAQuestion:
+      return .notAFollowUp
+    case .noInformation:
+      return .noInformation
+    case .answer:
+      // No validation loop: an empty answer counts as "don't know".
+      let reply = decision.reply.trimmingCharacters(in: .whitespacesAndNewlines)
+      guard !reply.isEmpty else { return .noInformation }
+      return .reply(FollowUpText.trimmed(reply, maxWords: FollowUpPrompt.hardWordLimit))
+    }
   }
 }
 
 /// The model's structured answer. Properties are generated in order, so the model
-/// decides `isFollowUp` before writing any reply.
+/// picks `kind` before writing any reply.
 @available(iOS 26.0, *)
 @Generable
 struct FollowUpDecision {
-  @Guide(description: "True only if the words are a question or request to Violet about this person.")
-  var isFollowUp: Bool
+  var kind: FollowUpKind
 
-  @Guide(description: "The spoken reply, at most 20 words. Empty when isFollowUp is false.")
+  @Guide(description: "The spoken reply, at most 20 words, only when kind is answer; otherwise empty.")
   var reply: String
+}
+
+@available(iOS 26.0, *)
+@Generable
+enum FollowUpKind {
+  /// Not a question or request to Violet about this person.
+  case notAQuestion
+  /// A question about this person that the given facts don't answer.
+  case noInformation
+  /// A question the given facts answer.
+  case answer
 }
 #endif
 
