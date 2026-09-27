@@ -115,7 +115,8 @@ function DateRangeControl({ range, today, onRangeChange }: RangeProps) {
 function WeeklyChart({ points, loading, ...rangeProps }: RangeProps & { points: WeekPoint[]; loading: boolean }) {
   const [frame, { width, height }] = useChartSize({ width: 720, height: 250 });
   const [focused, setFocused] = useState<"violet" | "visit" | "ratio" | null>(null);
-  const margin = { top: 12, bottom: 32, ...CHART_X };
+  const [hovered, setHovered] = useState<number | null>(null);
+  const margin = { top: 24, bottom: 32, ...CHART_X };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
   const countMax = Math.max(4, ...points.flatMap((point) => [point.violetUses, point.peopleSeen]));
@@ -129,6 +130,10 @@ function WeeklyChart({ points, loading, ...rangeProps }: RangeProps & { points: 
   const hasData = points.some((point) => point.violetUses || point.peopleSeen);
   // Thin out date labels so they never overlap; anchor on the latest week so it's always labeled.
   const labelStep = Math.max(1, Math.ceil(points.length / Math.max(1, Math.floor(plotWidth / 56))));
+  const step = plotWidth / Math.max(1, points.length - 1);
+  const active = hovered == null ? null : points[hovered];
+  // Keep the hover readout inside the chart near its left and right edges.
+  const anchorAt = (at: number) => (at - margin.left < 140 ? "start" : width - margin.right - at < 140 ? "end" : "middle");
 
   return (
     <article className="clinical-section weekly-section">
@@ -142,7 +147,7 @@ function WeeklyChart({ points, loading, ...rangeProps }: RangeProps & { points: 
         ))}
       </div>
       <div className="chart-frame" ref={frame}>
-      <svg className="weekly-chart" data-focus={focused ?? undefined} viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Weekly Violet uses, people seen, and Violet uses per visit">
+      <svg className="weekly-chart" data-focus={focused ?? undefined} viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Weekly Violet uses, people seen, and Violet uses per visit" onPointerLeave={() => setHovered(null)}>
         {[0, 0.25, 0.5, 0.75, 1].map((portion) => {
           const lineY = margin.top + plotHeight * portion;
           return (
@@ -155,17 +160,25 @@ function WeeklyChart({ points, loading, ...rangeProps }: RangeProps & { points: 
         })}
         <text className="axis-title" x="4" y={height / 2} transform={`rotate(-90 4 ${height / 2})`} dominantBaseline="hanging" textAnchor="middle">Count</text>
         <text className="axis-title ratio-axis" x={width - 4} y={height / 2} transform={`rotate(90 ${width - 4} ${height / 2})`} dominantBaseline="hanging" textAnchor="middle">Uses / visit</text>
-        {points.map((point, index) => (points.length - 1 - index) % labelStep === 0 && <text className="axis-label" key={point.start.toISOString()} x={x(index)} y={height - 10} textAnchor="middle">{point.label}</text>)}
+        {points.map((point, index) => ((points.length - 1 - index) % labelStep === 0 || hovered === index) && <text className={hovered === index ? "axis-label is-hovered" : "axis-label"} key={point.start.toISOString()} x={x(index)} y={height - 10} textAnchor="middle">{point.label}</text>)}
+        {hovered != null && <line className="weekly-guide" x1={x(hovered)} x2={x(hovered)} y1={margin.top} y2={margin.top + plotHeight} />}
         <polyline className="series-line violet-series" points={line(points.map((point) => point.violetUses), yCount)} />
         <polyline className="series-line visit-series" points={line(points.map((point) => point.peopleSeen), yCount)} />
         <polyline className="series-line ratio-series" points={line(points.map((point) => point.usesPerVisit), yRatio)} />
         {points.map((point, index) => (
           <g key={`points-${point.start.toISOString()}`}>
-            <circle className="series-point violet-point" cx={x(index)} cy={yCount(point.violetUses)} r="3"><title>{`${point.label}: ${point.violetUses} Violet uses`}</title></circle>
-            <circle className="series-point visit-point" cx={x(index)} cy={yCount(point.peopleSeen)} r="3"><title>{`${point.label}: ${point.peopleSeen} people seen`}</title></circle>
-            {point.usesPerVisit != null && <circle className="series-point ratio-point" cx={x(index)} cy={yRatio(point.usesPerVisit)} r="3"><title>{`${point.label}: ${point.usesPerVisit.toFixed(2)} uses per visit`}</title></circle>}
+            <circle className="series-point violet-point" cx={x(index)} cy={yCount(point.violetUses)} r={hovered === index ? 4.5 : 3} />
+            <circle className="series-point visit-point" cx={x(index)} cy={yCount(point.peopleSeen)} r={hovered === index ? 4.5 : 3} />
+            {point.usesPerVisit != null && <circle className="series-point ratio-point" cx={x(index)} cy={yRatio(point.usesPerVisit)} r={hovered === index ? 4.5 : 3} />}
           </g>
         ))}
+        {active && hovered != null && (
+          <text className="chart-value" x={x(hovered)} y={margin.top - 8} textAnchor={anchorAt(x(hovered))}>
+            <tspan className="violet-value">{active.violetUses} uses</tspan> · <tspan className="visit-value">{active.peopleSeen} seen</tspan>
+            {active.usesPerVisit != null && <> · <tspan className="ratio-value">{active.usesPerVisit.toFixed(2)} per visit</tspan></>}
+          </text>
+        )}
+        {points.map((point, index) => <rect key={`hit-${point.start.toISOString()}`} className="chart-hit" x={x(index) - step / 2} y={0} width={step} height={height} onPointerEnter={() => setHovered(index)} />)}
         {!loading && !hasData && <text className="empty-chart-label" x={width / 2} y={height / 2} textAnchor="middle">No data</text>}
       </svg>
       </div>
@@ -251,8 +264,9 @@ function HealthBar({ metric }: { metric: DashboardAnalytics["health"] }) {
 }
 
 function MemoryChart({ points, loading }: { points: TenurePoint[]; loading: boolean }) {
+  const [hovered, setHovered] = useState<number | null>(null);
   const [frame, { width, height }] = useChartSize({ width: 720, height: 220 });
-  const margin = { top: 12, bottom: 62, ...CHART_X };
+  const margin = { top: 24, bottom: 62, ...CHART_X };
   const plotWidth = width - margin.left - margin.right;
   const plotHeight = height - margin.top - margin.bottom;
   const max = Math.max(1, ...points.map((point) => point.violetUses));
@@ -260,15 +274,19 @@ function MemoryChart({ points, loading }: { points: TenurePoint[]; loading: bool
   const barWidth = Math.min(36, slot * 0.62);
   return (
     <div className="chart-frame" ref={frame}>
-    <svg className="memory-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Familiar people ranked by Violet uses with years known">
+    <svg className="memory-chart" viewBox={`0 0 ${width} ${height}`} role="img" aria-label="Violet uses for each familiar person, from fewest years known to most" data-hover={hovered != null || undefined} onPointerLeave={() => setHovered(null)}>
       <line className="chart-gridline" x1={margin.left} x2={width - margin.right} y1={margin.top + plotHeight} y2={margin.top + plotHeight} />
       {points.map((point, index) => {
         const center = margin.left + slot * index + slot / 2;
         const barHeight = (point.violetUses / max) * plotHeight;
+        const top = margin.top + plotHeight - barHeight;
+        const active = hovered === index;
         return (
-          <g key={point.id}>
-            <rect className="memory-bar" x={center - barWidth / 2} y={margin.top + plotHeight - barHeight} width={barWidth} height={barHeight}><title>{`${point.name}: ${point.violetUses} Violet uses, known ${point.yearsKnown} years`}</title></rect>
-            <text className="memory-name" x={center} y={margin.top + plotHeight + 13} textAnchor="end" transform={`rotate(-45 ${center} ${margin.top + plotHeight + 13})`}>{point.name}</text>
+          <g key={point.id} className={active ? "memory-group is-hovered" : "memory-group"} onPointerEnter={() => setHovered(index)}>
+            <rect className="chart-hit" x={margin.left + slot * index} y={0} width={slot} height={height} />
+            <rect className="memory-bar" x={center - barWidth / 2} y={top} width={barWidth} height={barHeight} />
+            {active && <text className="chart-value" x={center} y={top - 6} textAnchor="middle">{point.violetUses}</text>}
+            <text className={active ? "memory-name is-hovered" : "memory-name"} x={center} y={margin.top + plotHeight + 13} textAnchor="end" transform={`rotate(-45 ${center} ${margin.top + plotHeight + 13})`}>{point.name}</text>
             <text className="memory-years" x={center} y={height - 5} textAnchor="middle">{point.yearsKnown}y</text>
           </g>
         );

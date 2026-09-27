@@ -177,7 +177,7 @@ export function tenureSeries(logs: RecognitionLog[], people: Person[], start: Da
       yearsKnown: Math.max(0, now.getFullYear() - person.yearMet),
       violetUses: currentLogs.filter((log) => logMatchesPerson(log, person)).length,
     }))
-    .sort((a, b) => b.violetUses - a.violetUses || a.yearsKnown - b.yearsKnown || a.name.localeCompare(b.name));
+    .sort((a, b) => a.yearsKnown - b.yearsKnown || a.name.localeCompare(b.name));
 }
 
 export function dashboardAnalytics(
