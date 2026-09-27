@@ -25,6 +25,7 @@ struct AddPersonSheet: View {
   @State private var name = ""
   @State private var relation = ""
   @State private var bio = ""
+  @State private var notes = ""
   @State private var yearMet = ""
   @State private var frontPhoto: Data?
   @State private var leftPhoto: Data?
@@ -62,6 +63,20 @@ struct AddPersonSheet: View {
 
           fieldLabel("Short bio")
           TextEditor(text: $bio)
+            .font(VioletDesign.body(18))
+            .foregroundStyle(VioletDesign.ink)
+            .scrollContentBackground(.hidden)
+            .padding(8)
+            .frame(minHeight: 108)
+            .background(VioletDesign.softFill)
+            .clipShape(RoundedRectangle(cornerRadius: VioletDesign.cornerRadius))
+
+          fieldLabel("Notes")
+          Text("Optional. Recent news Violet can hint at, like a new job.")
+            .font(VioletDesign.body(14))
+            .foregroundStyle(VioletDesign.muted)
+            .padding(.bottom, -16)
+          TextEditor(text: $notes)
             .font(VioletDesign.body(18))
             .foregroundStyle(VioletDesign.ink)
             .scrollContentBackground(.hidden)
@@ -195,6 +210,7 @@ struct AddPersonSheet: View {
     let cleanName = name.trimmingCharacters(in: .whitespacesAndNewlines)
     let cleanRelation = relation.trimmingCharacters(in: .whitespacesAndNewlines)
     let cleanBio = bio.trimmingCharacters(in: .whitespacesAndNewlines)
+    let cleanNotes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !cleanName.isEmpty, !cleanRelation.isEmpty, !cleanBio.isEmpty,
       let year = Int(yearMet), (1900...Calendar.current.component(.year, from: .now)).contains(year),
       let frontPhoto, let leftPhoto, let rightPhoto
@@ -212,6 +228,7 @@ struct AddPersonSheet: View {
       rightPhoto: rightPhoto,
       relation: cleanRelation,
       bio: cleanBio,
+      notes: cleanNotes,
       yearMet: year
     )
     Task {

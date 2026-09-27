@@ -52,6 +52,9 @@ final class GlassesManager {
   /// True from an accepted trigger until the app calls `requestFinished()` after the
   /// answer has been spoken. Every trigger in between is ignored.
   @ObservationIgnored private var isRequestActive = false
+  /// What the wearer says after "Violet", collected from the wake word until the app
+  /// takes it with `finishQuestion`. Nil for button and "Hey Meta" requests.
+  @ObservationIgnored private var question: QuestionCollector?
   @ObservationIgnored private var session: DeviceSession?
   @ObservationIgnored private var speech: Speech?
   @ObservationIgnored private var inputs: Inputs?
@@ -169,7 +172,8 @@ final class GlassesManager {
     }
     let stalled = lastTranscriptAt.map { Date.now.timeIntervalSince($0) > 4 } ?? false
     let deaf = lastHeardAt.map { Date.now.timeIntervalSince($0) > 20 } ?? false
-    if speech.state == .started, camera == nil, stalled || deaf {
+    // Not while a question is being collected: a restart would lose its words.
+    if speech.state == .started, camera == nil, question == nil, stalled || deaf {
       // Reports "started" but has stopped delivering anything, or only empty results
       // for a while; either way a fresh start makes it hear again.
       violetTrace("\(reason): speech \(stalled ? "stalled" : "hearing nothing"); restarting it")
@@ -363,19 +367,22 @@ final class GlassesManager {
     lastTranscriptAt = .now
     if !transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { lastHeardAt = .now }
     violetTrace("transcript: \(transcript)")
+    question?.add(transcript)
     guard wakeWordDetector.consume(transcript) else { return }
-    triggerViolet(source: "wake word")
+    triggerViolet(source: "wake word", transcript: transcript)
   }
 
   /// The one entry point for a request: "Violet", "Hey Meta, start Violet", and the
   /// glasses capture button all come through here. One request at a time: a trigger
-  /// while Violet is capturing, recognizing or speaking is ignored.
-  private func triggerViolet(source: String) {
+  /// while Violet is capturing, recognizing or speaking is ignored. Only a spoken
+  /// "Violet" can carry a follow-up question, so only then are the next words collected.
+  private func triggerViolet(source: String, transcript: String? = nil) {
     guard !isRequestActive else {
       violetTrace("\(source) ignored: Violet is still answering")
       return
     }
     isRequestActive = true
+    question = transcript.map { QuestionCollector(startingWith: $0) }
     latency?.begin()
     latency?.note("trigger", source)
     wakeChime.play()
@@ -386,6 +393,30 @@ final class GlassesManager {
   /// Called by the app once the answer has finished playing; triggers work again.
   func requestFinished() {
     isRequestActive = false
+    question = nil
+  }
+
+  /// Stops collecting and returns the words said after "Violet" (nil if this request
+  /// didn't start with the wake word). If the wearer is still talking, waits for a short
+  /// pause, up to `maxWait`, so the end of the question isn't cut off. Call it before
+  /// Violet speaks, or the glasses would transcribe Violet's own voice.
+  func finishQuestion(maxWait: Duration = .seconds(1)) async -> String? {
+    guard question != nil else { return nil }
+    let clock = ContinuousClock()
+    let deadline = clock.now + maxWait
+    while clock.now < deadline, let last = question?.lastWordsAt, Date.now.timeIntervalSince(last) < 0.8 {
+      try? await Task.sleep(for: .milliseconds(100))
+    }
+    defer { question = nil }
+    return question?.question
+  }
+
+  /// True while this request is collecting words after "Violet" (wake-word requests only).
+  var isCollectingQuestion: Bool { question != nil }
+
+  /// Stops collecting without using the words (no one was identified).
+  func discardQuestion() {
+    question = nil
   }
 
   /// Listens for the glasses capture button for as long as the device session runs.
@@ -589,7 +620,10 @@ final class GlassesManager {
   private func cleanupSession() {
     // A capture cut off here never reaches the app, which would otherwise be the one
     // to end the request; end it so the next trigger works.
-    if isCapturing || pendingTrigger != nil { isRequestActive = false }
+    if isCapturing || pendingTrigger != nil {
+      isRequestActive = false
+      question = nil
+    }
     captureTask?.cancel()
     captureTask = nil
     teardownTask?.cancel()
