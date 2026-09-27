@@ -6,6 +6,7 @@ export type Person = {
   rightPhoto: string;
   relation: string;
   bio: string;
+  notes: string;
   yearMet: number;
   updatedAt: string;
 };

@@ -35,6 +35,7 @@ function validate(input: unknown): PersonDraft | string {
     name: value("name"),
     relation: value("relation"),
     bio: value("bio"),
+    notes: value("notes"),
     frontPhoto: value("frontPhoto"),
     leftPhoto: value("leftPhoto"),
     rightPhoto: value("rightPhoto"),

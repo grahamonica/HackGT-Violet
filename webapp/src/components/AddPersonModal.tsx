@@ -18,6 +18,7 @@ export function AddPersonModal({ person, onClose, onSubmit, onDelete }: Props) {
   const [relation, setRelation] = useState(person?.relation ?? "");
   const [yearMet, setYearMet] = useState(person ? String(person.yearMet) : "");
   const [bio, setBio] = useState(person?.bio ?? "");
+  const [notes, setNotes] = useState(person?.notes ?? "");
   const [photos, setPhotos] = useState<Record<Slot, string>>({
     frontPhoto: person?.frontPhoto ?? "",
     leftPhoto: person?.leftPhoto ?? "",
@@ -60,7 +61,7 @@ export function AddPersonModal({ person, onClose, onSubmit, onDelete }: Props) {
     setBusy(true);
     setError(null);
     try {
-      await onSubmit({ name: name.trim(), relation: relation.trim(), bio: bio.trim(), yearMet: year, ...photos });
+      await onSubmit({ name: name.trim(), relation: relation.trim(), bio: bio.trim(), notes: notes.trim(), yearMet: year, ...photos });
       onClose();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not save this person.");
@@ -112,6 +113,10 @@ export function AddPersonModal({ person, onClose, onSubmit, onDelete }: Props) {
           <label>
             <span>Short bio</span>
             <textarea value={bio} onChange={(event) => setBio(event.target.value)} placeholder="What should Violet read aloud to the patient?" />
+          </label>
+          <label>
+            <span>Notes</span>
+            <textarea value={notes} onChange={(event) => setNotes(event.target.value)} placeholder="Optional. Recent news Violet can hint at, like a new job." />
           </label>
           <fieldset>
             <legend>Recognition photos</legend>

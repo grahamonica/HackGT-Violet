@@ -37,6 +37,7 @@ function person(document: Document): Person {
     rightPhoto: text(document.right_photo ?? document.rightPhoto),
     relation: text(document.relation),
     bio: text(document.bio),
+    notes: text(document.notes),
     yearMet: Number(document.year_met ?? document.yearMet) || new Date().getFullYear(),
     updatedAt: dateValue(document.updated_at ?? document.updatedAt, new Date(0)).toISOString(),
   };
@@ -109,6 +110,7 @@ export async function createRelationship(draft: PersonDraft): Promise<Person> {
     rightPhoto: draft.rightPhoto,
     relation: draft.relation,
     bio: draft.bio,
+    notes: draft.notes,
     yearMet: draft.yearMet,
     createdAt: now,
     updatedAt: now,
@@ -131,6 +133,7 @@ export async function updateRelationship(id: string, draft: PersonDraft): Promis
         rightPhoto: draft.rightPhoto,
         relation: draft.relation,
         bio: draft.bio,
+        notes: draft.notes,
         yearMet: draft.yearMet,
         updatedAt: now,
       },
