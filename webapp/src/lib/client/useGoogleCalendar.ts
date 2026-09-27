@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CalendarEvent, CalendarEventDraft } from "@/lib/types";
-import { addDays, startOfWeek } from "@/lib/date";
+import { addDays, startOfDay } from "@/lib/date";
 import { readStored, writeStored } from "./storage";
 
 const CACHE_KEY = "google-calendar-v1";
@@ -76,7 +76,7 @@ async function googleJSON<T>(url: string, accessToken: string): Promise<T> {
   return body as T;
 }
 
-export function useGoogleCalendar(weeks: number) {
+export function useGoogleCalendar(from: Date, to: Date) {
   const [cache, setCache] = useState<Cache>(EMPTY);
   const [hydrated, setHydrated] = useState(false);
   const [connecting, setConnecting] = useState(false);
@@ -85,13 +85,16 @@ export function useGoogleCalendar(weeks: number) {
   const [error, setError] = useState<string | null>(null);
   const inFlight = useRef(false);
 
+  const fromTime = startOfDay(from).getTime();
+  const toTime = addDays(startOfDay(to), 1).getTime();
   const range = useMemo(() => {
-    const now = new Date();
+    // Always reach two weeks ahead so upcoming visits stay available to the calendar editor.
+    const ahead = addDays(new Date(), 15).getTime();
     return {
-      start: addDays(startOfWeek(now), -(weeks - 1) * 7).toISOString(),
-      end: addDays(now, 15).toISOString(),
+      start: new Date(fromTime).toISOString(),
+      end: new Date(Math.max(toTime, ahead)).toISOString(),
     };
-  }, [weeks]);
+  }, [fromTime, toTime]);
 
   const syncWithToken = useCallback(async (token: SessionToken) => {
     if (inFlight.current) return;

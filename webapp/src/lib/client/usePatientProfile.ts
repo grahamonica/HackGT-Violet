@@ -5,7 +5,7 @@ import type { PatientProfile } from "@/lib/types";
 import { readStored, writeStored } from "./storage";
 
 const CACHE_KEY = "patient-profile-v1";
-const EMPTY: PatientProfile = { name: "", gender: "Male", dateOfBirth: "1950-01-05", mocaScore: "", mocaDate: "", caregiverName: "", caregiverPhone: "" };
+const EMPTY: PatientProfile = { name: "", gender: "Male", dateOfBirth: "1950-01-05", caregiverName: "", caregiverPhone: "" };
 
 export function usePatientProfile() {
   const [profile, setProfile] = useState(EMPTY);
@@ -20,8 +20,6 @@ export function usePatientProfile() {
         name: partial.name ?? "",
         gender: partial.gender || EMPTY.gender,
         dateOfBirth: partial.dateOfBirth || EMPTY.dateOfBirth,
-        mocaScore: partial.mocaScore ?? "",
-        mocaDate: partial.mocaDate ?? "",
         caregiverName: partial.caregiverName ?? "",
         caregiverPhone: partial.caregiverPhone ?? "",
       };

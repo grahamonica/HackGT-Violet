@@ -189,8 +189,8 @@ export function ProviderNotes({ notes, syncError, onAdd, onUpdate, onRemove }: P
               <li key={note.id} className={open ? "note open" : "note"}>
                 <div className="note-header">
                   <button type="button" className="note-toggle" aria-expanded={open} onClick={() => toggle(note.id)}>
+                    <span>{format.numericDate(created)}{open && edited ? ", edited" : ""}</span>
                     <h4>{note.title}</h4>
-                    <span>{open ? `${format.monthDayYear(created)}, ${format.time(created)}${edited ? ", edited" : ""}` : format.monthDayYear(created)}</span>
                   </button>
                   <div className="note-menu" onClick={(event) => event.stopPropagation()}>
                     {menuId === note.id && (

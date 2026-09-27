@@ -1,6 +1,6 @@
 import type { CalendarEvent, Person, RecognitionLog } from "@/lib/types";
 import { UNKNOWN_PERSON } from "@/lib/types";
-import { addDays, format, startOfDay, startOfWeek } from "./date";
+import { addDays, format, startOfDay } from "./date";
 
 export type WeekPoint = {
   start: Date;
@@ -78,22 +78,21 @@ export function scheduledPeopleAt(events: CalendarEvent[], people: Person[], mom
     .flatMap((event) => peopleNamedInEvent(event, people));
 }
 
-function windowFor(weekCount: number, now: Date) {
-  const currentWeek = startOfWeek(now);
-  return {
-    start: addDays(currentWeek, -(weekCount - 1) * 7),
-    end: addDays(startOfDay(now), 1),
-  };
+// Both dates are calendar days; the end day is included in the window.
+export type DateRange = { start: Date; end: Date };
+
+function windowFor(range: DateRange) {
+  return { start: startOfDay(range.start), end: addDays(startOfDay(range.end), 1) };
 }
 
 export function weeklySeries(
   logs: RecognitionLog[],
   events: CalendarEvent[],
   people: Person[],
-  weekCount: number,
-  now = new Date(),
+  range: DateRange,
 ): WeekPoint[] {
-  const { start, end } = windowFor(weekCount, now);
+  const { start, end } = windowFor(range);
+  const weekCount = Math.max(1, Math.ceil(Math.round((end.getTime() - start.getTime()) / 86_400_000) / 7));
   return Array.from({ length: weekCount }, (_, index) => {
     const weekStart = addDays(start, index * 7);
     const weekEnd = index === weekCount - 1 ? end : addDays(weekStart, 7);
@@ -126,8 +125,16 @@ export function hourlySeries(
   }
   for (const event of events) {
     if (event.allDay || !within(event.start, start, end)) continue;
-    const hour = new Date(event.start).getHours();
-    if (hour >= 6 && hour < 23) points[hour - 6].visitors += peopleNamedInEvent(event, people).length;
+    const count = peopleNamedInEvent(event, people).length;
+    if (!count) continue;
+    // Count visitors in every hour the visit covers, like a popular-times chart.
+    const from = new Date(event.start);
+    const to = new Date(event.end);
+    const lastHour = to > from && to.getMinutes() === 0 && to.getSeconds() === 0 ? to.getHours() - 1 : to.getHours();
+    const sameDay = to.toDateString() === from.toDateString();
+    for (let hour = from.getHours(); hour <= (sameDay ? Math.max(from.getHours(), lastHour) : 22); hour += 1) {
+      if (hour >= 6 && hour < 23) points[hour - 6].visitors += count;
+    }
   }
   return points;
 }
@@ -174,12 +181,12 @@ export function dashboardAnalytics(
   logs: RecognitionLog[],
   events: CalendarEvent[],
   people: Person[],
-  weekCount: number,
+  range: DateRange,
   now = new Date(),
 ): DashboardAnalytics {
-  const { start, end } = windowFor(weekCount, now);
+  const { start, end } = windowFor(range);
   return {
-    weeks: weeklySeries(logs, events, people, weekCount, now),
+    weeks: weeklySeries(logs, events, people, range),
     hours: hourlySeries(logs, events, people, start, end),
     health: healthMetric(logs, events, people, start, end),
     tenure: tenureSeries(logs, people, start, end, now),

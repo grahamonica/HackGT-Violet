@@ -42,13 +42,9 @@ export type PatientProfile = {
   name: string;
   gender: string;
   dateOfBirth: string;
-  mocaScore: string;
-  mocaDate: string;
   caregiverName: string;
   caregiverPhone: string;
 };
-
-export const MOCA_MAX = 30;
 
 export type ProviderNote = {
   id: string;
