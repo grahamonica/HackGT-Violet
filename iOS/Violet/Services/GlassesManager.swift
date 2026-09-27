@@ -411,6 +411,9 @@ final class GlassesManager {
     return question?.question
   }
 
+  /// True while this request is collecting words after "Violet" (wake-word requests only).
+  var isCollectingQuestion: Bool { question != nil }
+
   /// Stops collecting without using the words (no one was identified).
   func discardQuestion() {
     question = nil

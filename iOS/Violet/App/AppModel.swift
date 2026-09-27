@@ -34,7 +34,7 @@ final class AppModel {
   /// Plays a short "one moment" line if the answer is slow; cancelled once it's ready.
   @ObservationIgnored private var fillerTask: Task<Void, Never>?
   @ObservationIgnored private var nextFiller = 0
-  /// The slow path's model; nil on iOS versions without on-device models.
+  /// The slow path's model; nil when the chosen provider has no API key.
   @ObservationIgnored private let followUps: (any FollowUpAnswering)?
   @ObservationIgnored private var replyVoiceStarted = false
 
@@ -50,14 +50,7 @@ final class AppModel {
     self.referent = referent
     self.enrollment = environment.rekognition.map { FaceEnrollment(config: $0) }
     self.glasses = GlassesManager(frameSelector: referent ?? FirstFrameSelector(), latency: latency)
-    self.followUps = Self.makeFollowUpService()
-  }
-
-  private static func makeFollowUpService() -> (any FollowUpAnswering)? {
-    #if canImport(FoundationModels)
-    if #available(iOS 26.0, *) { return AppleFollowUpService() }
-    #endif
-    return nil
+    self.followUps = FollowUpProvider.from(environment).map { ChatCompletionsFollowUpService(provider: $0) }
   }
 
   func start() async {
@@ -289,6 +282,11 @@ final class AppModel {
     // Slow path: only after a confident match, and only for words said after "Violet".
     // The model runs while the identity line plays.
     var followUp: Task<FollowUpResult, Never>?
+    if let matchedPerson, let followUps, followUps.isAvailable, glasses.isCollectingQuestion {
+      // A quick recognition would otherwise stop listening before the question is done.
+      let remaining = FollowUpTiming.minimumListening - Date().timeIntervalSince(timestamp)
+      if remaining > 0 { try? await Task.sleep(for: .seconds(remaining)) }
+    }
     if let matchedPerson, let followUps, followUps.isAvailable,
       let question = await glasses.finishQuestion(), FollowUpText.mightBeQuestion(question)
     {
@@ -349,7 +347,7 @@ final class AppModel {
         first.resume(.timedOut)
       }
     }
-    latency?.add("follow-up model (on device)", ContinuousClock.now - started)
+    latency?.add("follow-up model call", ContinuousClock.now - started)
     latency?.mark("follow-up model returned")
     return result
   }

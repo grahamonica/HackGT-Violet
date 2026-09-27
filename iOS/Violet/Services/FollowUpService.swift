@@ -1,9 +1,5 @@
 import Foundation
 
-#if canImport(FoundationModels)
-import FoundationModels
-#endif
-
 /// What the model gets for one follow-up: the words after "Violet" and what the app
 /// knows about the person who was just identified.
 struct FollowUpRequest: Sendable {
@@ -24,12 +20,13 @@ enum FollowUpAnswer: Sendable {
 
 /// The slow path's model. One call decides whether the utterance is a real follow-up
 /// and, if so, writes the reply, so a non-question costs a single call and no speech.
-/// Swap models by adding another conformance; `AppModel` only sees this protocol.
+/// `AppModel` only sees this protocol; `ChatCompletionsFollowUpService` serves any
+/// OpenAI-compatible API (Grok, Muse), picked with `FOLLOW_UP_PROVIDER`.
 @MainActor
 protocol FollowUpAnswering: Sendable {
-  /// False when the model can't run on this phone right now.
+  /// False when the model can't be used (e.g. no API key).
   var isAvailable: Bool { get }
-  /// Loads the model ahead of the question, e.g. when "Violet" is heard.
+  /// Gets ready for a question, e.g. when "Violet" is heard.
   func prepare()
   func answer(_ request: FollowUpRequest) async throws -> FollowUpAnswer
 }
@@ -61,6 +58,7 @@ enum FollowUpPrompt {
     recall. Use your judgment: if leaving something out could confuse or worry them, just say it.
     - Don't repeat the person's name and relationship; that was just said.
     - If they ask who this is, add one thing about the person from the facts.
+    - Speak plainly and kindly, like a caring nurse: no jokes, wit, slang, or playful asides.
     - Simple, everyday words. No lists, no emoji, no questions back to them.
     """
 
@@ -80,75 +78,153 @@ enum FollowUpPrompt {
     let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
     return trimmed.isEmpty ? "(none)" : String(trimmed.prefix(maxFieldLength))
   }
+
+  /// The JSON the model must return. `kind` comes first so it is decided before the reply.
+  static var schema: [String: Any] {
+    [
+      "type": "object",
+      "properties": [
+        "kind": ["type": "string", "enum": ["notAQuestion", "noInformation", "answer"]],
+        "reply": ["type": "string", "description": "The spoken reply when kind is answer; otherwise empty."],
+      ],
+      "required": ["kind", "reply"],
+      "additionalProperties": false,
+    ]
+  }
 }
 
-#if canImport(FoundationModels)
-/// The follow-up model on the phone itself (Apple Intelligence), so the question and the
-/// person's notes never leave the device for this step. Needs iOS 26 on an Apple
-/// Intelligence iPhone with Apple Intelligence turned on; otherwise `isAvailable` is false
-/// and Violet skips follow-ups.
-@available(iOS 26.0, *)
-@MainActor
-final class AppleFollowUpService: FollowUpAnswering {
-  /// A fresh session per request (a session keeps its conversation), created and
-  /// prewarmed by `prepare()` so the model is loaded before the question arrives.
-  private var session: LanguageModelSession?
+/// A chat-completions API with JSON-schema output, and the settings that keep it fast.
+struct FollowUpProvider: Sendable {
+  let name: String
+  let endpoint: URL
+  let model: String
+  let apiKey: String
+  /// Lowest reasoning the model allows ("none" for Grok; Muse always reasons, so "minimal").
+  let reasoningEffort: String
+  /// Output-token cap. Muse counts reasoning tokens against it, so it needs more room.
+  let maxTokens: Int
 
-  var isAvailable: Bool { SystemLanguageModel.default.isAvailable }
-
-  func prepare() {
-    guard isAvailable else { return }
-    let session = LanguageModelSession(instructions: FollowUpPrompt.instructions)
-    session.prewarm()
-    self.session = session
+  static func grok(apiKey: String, model: String?) -> FollowUpProvider {
+    FollowUpProvider(
+      name: "Grok", endpoint: URL(string: "https://api.x.ai/v1/chat/completions")!,
+      model: model ?? "grok-4.3", apiKey: apiKey, reasoningEffort: "none", maxTokens: 150)
   }
 
-  func answer(_ request: FollowUpRequest) async throws -> FollowUpAnswer {
-    let session = self.session ?? LanguageModelSession(instructions: FollowUpPrompt.instructions)
-    self.session = nil
-    let decision = try await session.respond(
-      to: FollowUpPrompt.prompt(for: request),
-      generating: FollowUpDecision.self,
-      options: GenerationOptions(temperature: 0.3, maximumResponseTokens: 120)
-    ).content
-    switch decision.kind {
-    case .notAQuestion:
-      return .notAFollowUp
-    case .noInformation:
-      return .noInformation
-    case .answer:
-      // No validation loop: an empty answer counts as "don't know".
-      let reply = decision.reply.trimmingCharacters(in: .whitespacesAndNewlines)
-      guard !reply.isEmpty else { return .noInformation }
-      return .reply(FollowUpText.trimmed(reply, maxWords: FollowUpPrompt.hardWordLimit))
+  static func muse(apiKey: String, model: String?) -> FollowUpProvider {
+    FollowUpProvider(
+      name: "Muse", endpoint: URL(string: "https://api.meta.ai/v1/chat/completions")!,
+      model: model ?? "muse-spark-1.3", apiKey: apiKey, reasoningEffort: "minimal", maxTokens: 2000)
+  }
+
+  /// `FOLLOW_UP_PROVIDER` is `grok` (default) or `muse`; `FOLLOW_UP_MODEL` optionally
+  /// overrides the model. Nil when the chosen provider's key is missing.
+  static func from(_ environment: AppEnvironment) -> FollowUpProvider? {
+    switch environment.followUpProvider.lowercased() {
+    case "muse", "meta":
+      guard !environment.metaAPIKey.isEmpty else { return nil }
+      return FollowUpProvider.muse(apiKey: environment.metaAPIKey, model: environment.followUpModel)
+    default:
+      guard !environment.xaiAPIKey.isEmpty else { return nil }
+      return FollowUpProvider.grok(apiKey: environment.xaiAPIKey, model: environment.followUpModel)
     }
   }
 }
 
-/// The model's structured answer. Properties are generated in order, so the model
-/// picks `kind` before writing any reply.
-@available(iOS 26.0, *)
-@Generable
-struct FollowUpDecision {
-  var kind: FollowUpKind
+enum FollowUpServiceError: LocalizedError {
+  case requestFailed(Int, String)
+  case unreadableResponse
 
-  @Guide(description: "The spoken reply, at most 20 words, only when kind is answer; otherwise empty.")
-  var reply: String
+  var errorDescription: String? {
+    switch self {
+    case .requestFailed(let status, let message): "Follow-up request failed (\(status)): \(message)"
+    case .unreadableResponse: "The follow-up response did not match the expected format."
+    }
+  }
 }
 
-@available(iOS 26.0, *)
-@Generable
-enum FollowUpKind {
-  /// Not a question or request to Violet about this person.
-  case notAQuestion
-  /// A question about this person that the given facts don't answer.
-  case noInformation
-  /// A question the given facts answer.
-  case answer
+/// `FollowUpAnswering` over an OpenAI-compatible chat-completions API. One request, no
+/// retries; anything unreadable throws, and the app then says its fixed "don't know" line.
+@MainActor
+final class ChatCompletionsFollowUpService: FollowUpAnswering {
+  let provider: FollowUpProvider
+  private let session: URLSession
+
+  init(provider: FollowUpProvider, session: URLSession = .shared) {
+    self.provider = provider
+    self.session = session
+  }
+
+  var isAvailable: Bool { !provider.apiKey.isEmpty }
+
+  /// Opens the connection (DNS and TLS) while the camera runs, so the real request
+  /// doesn't pay for it. The response doesn't matter.
+  func prepare() {
+    var request = URLRequest(url: provider.endpoint.deletingLastPathComponent().deletingLastPathComponent()
+      .appendingPathComponent("models"))
+    request.setValue("Bearer \(provider.apiKey)", forHTTPHeaderField: "Authorization")
+    request.timeoutInterval = 5
+    let session = session
+    Task.detached { _ = try? await session.data(for: request) }
+  }
+
+  func answer(_ request: FollowUpRequest) async throws -> FollowUpAnswer {
+    let body: [String: Any] = [
+      "model": provider.model,
+      "messages": [
+        ["role": "system", "content": FollowUpPrompt.instructions],
+        ["role": "user", "content": FollowUpPrompt.prompt(for: request)],
+      ],
+      "reasoning_effort": provider.reasoningEffort,
+      "max_tokens": provider.maxTokens,
+      "response_format": [
+        "type": "json_schema",
+        "json_schema": ["name": "violet_follow_up", "strict": true, "schema": FollowUpPrompt.schema],
+      ],
+    ]
+    var urlRequest = URLRequest(url: provider.endpoint)
+    urlRequest.httpMethod = "POST"
+    urlRequest.timeoutInterval = 6
+    urlRequest.setValue("Bearer \(provider.apiKey)", forHTTPHeaderField: "Authorization")
+    urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    urlRequest.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+    let (data, response) = try await session.data(for: urlRequest)
+    let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+    guard (200..<300).contains(status) else {
+      throw FollowUpServiceError.requestFailed(status, String(decoding: data.prefix(300), as: UTF8.self))
+    }
+    return try Self.parse(data)
+  }
+
+  /// Reads `choices[0].message.content` as `{"kind": ..., "reply": ...}`.
+  nonisolated static func parse(_ data: Data) throws -> FollowUpAnswer {
+    guard let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+      let message = (root["choices"] as? [[String: Any]])?.first?["message"] as? [String: Any],
+      let content = message["content"] as? String,
+      let decision = try? JSONSerialization.jsonObject(with: Data(content.utf8)) as? [String: Any],
+      let kind = decision["kind"] as? String
+    else { throw FollowUpServiceError.unreadableResponse }
+    switch kind {
+    case "notAQuestion":
+      return .notAFollowUp
+    case "noInformation":
+      return .noInformation
+    case "answer":
+      // No validation loop: an empty answer counts as "don't know".
+      let reply = (decision["reply"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+      guard !reply.isEmpty else { return .noInformation }
+      return .reply(FollowUpText.trimmed(reply, maxWords: FollowUpPrompt.hardWordLimit))
+    default:
+      throw FollowUpServiceError.unreadableResponse
+    }
+  }
 }
-#endif
 
 enum FollowUpTiming {
+  /// On a "Violet" request that could have a follow-up, the identity line starts no
+  /// earlier than this after the trigger, so a quick recognition doesn't cut the
+  /// question short. Slower answers aren't delayed further.
+  static let minimumListening: TimeInterval = 2
   /// The model gets this long from the question; after that the follow-up is skipped.
   static let modelTimeout: Duration = .seconds(5)
   /// Once a reply is certain, a filler plays if its voice hasn't started by then.

@@ -12,6 +12,11 @@ struct AppEnvironment: Sendable {
   let logsPath: String
   /// Nil unless all four `AWS_REKOGNITION_*` keys are set.
   let rekognition: RekognitionConfig?
+  /// Follow-up model: `grok` (default) or `muse`, with that provider's key.
+  let followUpProvider: String
+  let followUpModel: String?
+  let xaiAPIKey: String
+  let metaAPIKey: String
 
   static func load(bundle: Bundle = .main) -> AppEnvironment {
     let values: [String: String]
@@ -33,7 +38,11 @@ struct AppEnvironment: Sendable {
       mongoDatabase: values["MONGO_DB_NAME"].nonEmpty ?? "violet",
       relationshipsPath: values["MONGO_RELATIONSHIPS_PATH"].nonEmpty ?? "relationships",
       logsPath: values["MONGO_LOGS_PATH"].nonEmpty ?? "logs",
-      rekognition: RekognitionConfig(values: values)
+      rekognition: RekognitionConfig(values: values),
+      followUpProvider: values["FOLLOW_UP_PROVIDER"].nonEmpty ?? "grok",
+      followUpModel: values["FOLLOW_UP_MODEL"].nonEmpty,
+      xaiAPIKey: values["XAI_API_KEY", default: ""].trimmingCharacters(in: .whitespacesAndNewlines),
+      metaAPIKey: values["META_API_KEY", default: ""].trimmingCharacters(in: .whitespacesAndNewlines)
     )
   }
 

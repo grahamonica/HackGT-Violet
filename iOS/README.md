@@ -8,12 +8,13 @@ Violet handles one request at a time: a trigger (“Violet”, the capture butto
 
 ### Follow-up questions
 
-When the wearer says “Violet” followed by a question (“Violet, what's she been up to?”) and the person is identified, Violet answers the question after the identity line. The words after “Violet” are collected while the camera runs. A model on the phone (Apple Intelligence, through the Foundation Models framework) decides whether they were a real question about this person and, if so, writes a short reply from the person's bio and notes. The reply hints rather than telling everything, so the wearer can recall the rest. The question and notes stay on the phone; only the reply text goes to ElevenLabs to be voiced.
+When the wearer says “Violet” followed by a question (“Violet, what's she been up to?”) and the person is identified, Violet answers the question after the identity line. The words after “Violet” are collected while the camera runs. A language model (Grok by default, or Meta's Muse Spark) decides whether they were a real question about this person and, if so, writes a short reply from the person's bio and notes. The reply hints rather than telling everything, so the wearer can recall the rest.
 
 - Only for the spoken wake word, never for the capture button or “Hey Meta”, and never when no one was identified.
+- On those requests the identity line starts no earlier than two seconds after “Violet”, so a quick recognition doesn't cut the question short. Slower answers aren't delayed further.
 - The model answers in a fixed structure: not a question (Violet says nothing more), no information (Violet says the fixed line “I don't have anything about that yet.”), or an answer. A model error, including output that doesn't match the structure, also gets the fixed line; there are no retries.
 - The model gets five seconds; otherwise Violet says nothing more. A filler line plays only once a reply is certain and its voice is slow to generate.
-- Needs iOS 26 on an Apple Intelligence iPhone with Apple Intelligence turned on. On other phones the follow-up is skipped and everything else works as before.
+- Configured in the root `.env`: `FOLLOW_UP_PROVIDER=grok` (default, uses `XAI_API_KEY`, model `grok-4.3` with reasoning off) or `FOLLOW_UP_PROVIDER=muse` (uses `META_API_KEY`, model `muse-spark-1.3` at minimal reasoning, since Muse can't turn reasoning off). `FOLLOW_UP_MODEL` optionally overrides the model. Without the chosen provider's key, follow-ups are off and everything else works as before.
 - Notes are an optional field next to the bio when adding someone. Older records without notes work unchanged.
 
 ### Latency
@@ -51,6 +52,10 @@ MONGO_URI=mongodb+srv://...
 MONGO_DB_NAME=violet
 MONGO_RELATIONSHIPS_PATH=relationships
 MONGO_LOGS_PATH=logs
+FOLLOW_UP_PROVIDER=grok
+XAI_API_KEY=
+META_API_KEY=
+FOLLOW_UP_MODEL=
 ```
 
 The app connects to Atlas directly with `MONGO_URI` through [MongoKitten](https://github.com/orlandos-nl/MongoKitten), the same URI the provider portal uses. `MONGO_DB_NAME` and the two collection names are optional and match the portal's defaults. The older `MONGO_DB_ENDPOINT`/`MONGO_DB_API_KEY` Data API keys are no longer read. Atlas **Network Access** must allow the phone's IP address.
