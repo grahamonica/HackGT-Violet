@@ -43,9 +43,9 @@ final class ElevenLabsSpeaker: NSObject {
 
   /// Speaks `text` and returns once it has finished playing. If another sentence is
   /// playing, this one waits and plays right after it (its audio loads meanwhile).
-  /// `onStart` runs when the audio begins.
-  func speak(_ text: String, onStart: (() -> Void)? = nil) async throws {
-    let data = try await audio(for: text)
+  /// `onStart` runs when the audio begins. `timeout` limits generating audio that isn't cached.
+  func speak(_ text: String, timeout: TimeInterval = 45, onStart: (@MainActor () -> Void)? = nil) async throws {
+    let data = try await audio(for: text, timeout: timeout)
     await takeTurn()
     defer { releaseTurn() }
     let player = try play(data)
@@ -99,13 +99,13 @@ final class ElevenLabsSpeaker: NSObject {
     }
   }
 
-  private func audio(for text: String) async throws -> Data {
+  private func audio(for text: String, timeout: TimeInterval = 45) async throws -> Data {
     let file = cacheURL(for: text)
     if let cached = try? Data(contentsOf: file) { return cached }
     if let pending = inFlight[text] { return try await pending.value }
 
     violetTrace("generating voice: \(text.prefix(60))")
-    let task = Task { try await self.synthesize(text) }
+    let task = Task { try await self.synthesize(text, timeout: timeout) }
     inFlight[text] = task
     defer { inFlight[text] = nil }
     let data = try await task.value
@@ -120,7 +120,7 @@ final class ElevenLabsSpeaker: NSObject {
     return cacheDirectory.appendingPathComponent("\(digest).mp3")
   }
 
-  private func synthesize(_ text: String) async throws -> Data {
+  private func synthesize(_ text: String, timeout: TimeInterval) async throws -> Data {
     guard environment.elevenLabsIsConfigured else { throw SpeechServiceError.notConfigured }
     let escapedVoiceID = environment.elevenLabsVoiceID.addingPercentEncoding(
       withAllowedCharacters: .urlPathAllowed
@@ -135,7 +135,7 @@ final class ElevenLabsSpeaker: NSObject {
 
     var request = URLRequest(url: components.url!)
     request.httpMethod = "POST"
-    request.timeoutInterval = 45
+    request.timeoutInterval = timeout
     request.setValue(environment.elevenLabsKey, forHTTPHeaderField: "xi-api-key")
     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
     request.httpBody = try JSONSerialization.data(withJSONObject: [

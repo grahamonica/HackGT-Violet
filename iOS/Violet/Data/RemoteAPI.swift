@@ -61,6 +61,7 @@ actor RemoteAPI {
         "rightPhoto": person.rightPhoto.base64EncodedString(),
         "relation": person.relation,
         "bio": person.bio,
+        "notes": person.notes,
         "yearMet": person.yearMet,
         "createdAt": now,
         "updatedAt": now,
@@ -169,6 +170,8 @@ actor RemoteAPI {
       rightPhoto: right,
       relation: relation,
       bio: document["bio"] as? String ?? "",
+      // Missing on documents written before notes existed.
+      notes: document["notes"] as? String ?? "",
       yearMet: integer(document["yearMet"] ?? document["year_met"])
         ?? Calendar.current.component(.year, from: .now),
       updatedAt: (document["updatedAt"] ?? document["updated_at"]) as? Date ?? .distantPast,

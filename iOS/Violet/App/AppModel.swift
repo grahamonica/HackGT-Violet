@@ -34,6 +34,9 @@ final class AppModel {
   /// Plays a short "one moment" line if the answer is slow; cancelled once it's ready.
   @ObservationIgnored private var fillerTask: Task<Void, Never>?
   @ObservationIgnored private var nextFiller = 0
+  /// The slow path's model; nil on iOS versions without on-device models.
+  @ObservationIgnored private let followUps: (any FollowUpAnswering)?
+  @ObservationIgnored private var replyVoiceStarted = false
 
   init(environment: AppEnvironment = .load()) {
     self.environment = environment
@@ -47,6 +50,14 @@ final class AppModel {
     self.referent = referent
     self.enrollment = environment.rekognition.map { FaceEnrollment(config: $0) }
     self.glasses = GlassesManager(frameSelector: referent ?? FirstFrameSelector(), latency: latency)
+    self.followUps = Self.makeFollowUpService()
+  }
+
+  private static func makeFollowUpService() -> (any FollowUpAnswering)? {
+    #if canImport(FoundationModels)
+    if #available(iOS 26.0, *) { return AppleFollowUpService() }
+    #endif
+    return nil
   }
 
   func start() async {
@@ -60,7 +71,11 @@ final class AppModel {
     referent?.onResult = { [weak self] in
       Task { @MainActor in self?.glasses.finishCaptureEarly() }
     }
-    glasses.onRequestStarted = { [weak self] in self?.scheduleFiller() }
+    glasses.onRequestStarted = { [weak self] in
+      self?.scheduleFiller()
+      // Load the model while the camera runs, in case a question follows.
+      self?.followUps?.prepare()
+    }
     glasses.onVioletCapture = { [weak self] timestamp, image, frameCount in
       Task { @MainActor in
         await self?.processCapture(timestamp: timestamp, image: image, frameCount: frameCount)
@@ -271,6 +286,19 @@ final class AppModel {
     // Saved alongside the speech so a slow or unreachable server never delays the answer.
     Task { @MainActor [weak self] in await self?.record(log) }
 
+    // Slow path: only after a confident match, and only for words said after "Violet".
+    // The model runs while the identity line plays.
+    var followUp: Task<FollowUpResult, Never>?
+    if let matchedPerson, let followUps, followUps.isAvailable,
+      let question = await glasses.finishQuestion(), FollowUpText.mightBeQuestion(question)
+    {
+      latency?.mark("question heard")
+      let request = FollowUpRequest(utterance: question, person: matchedPerson, today: .now)
+      followUp = Task { await self.askFollowUp(request, using: followUps) }
+    } else {
+      glasses.discardQuestion()
+    }
+
     let speech: String
     if let matchedPerson {
       speech = Announcement.identified(matchedPerson)
@@ -295,6 +323,78 @@ final class AppModel {
     } catch {
       violetTrace("speech failed: \(error)")
       notice = error.localizedDescription
+    }
+    if let followUp { await deliverFollowUp(followUp) }
+  }
+
+  /// Runs the follow-up model, giving up after `FollowUpTiming.modelTimeout` even if
+  /// the model doesn't stop when cancelled.
+  private func askFollowUp(_ request: FollowUpRequest, using model: any FollowUpAnswering) async
+    -> FollowUpResult
+  {
+    let first = FirstResult<FollowUpResult>()
+    let started = ContinuousClock.now
+    let result = await withCheckedContinuation { (continuation: CheckedContinuation<FollowUpResult, Never>) in
+      first.continuation = continuation
+      let work = Task { @MainActor in
+        do {
+          first.resume(.answer(try await model.answer(request)))
+        } catch {
+          first.resume(.failed(error))
+        }
+      }
+      Task { @MainActor in
+        try? await Task.sleep(for: FollowUpTiming.modelTimeout)
+        work.cancel()
+        first.resume(.timedOut)
+      }
+    }
+    latency?.add("follow-up model (on device)", ContinuousClock.now - started)
+    latency?.mark("follow-up model returned")
+    return result
+  }
+
+  /// Speaks the follow-up once the identity line is done. A filler plays only when the
+  /// model has decided there is a reply and its voice is slow to generate, so a
+  /// non-question never gets a "one moment".
+  private func deliverFollowUp(_ pending: Task<FollowUpResult, Never>) async {
+    let reply: String
+    switch await pending.value {
+    case .answer(.reply(let text)):
+      reply = text
+      latency?.note("follow-up", "answered")
+    case .answer(.notAFollowUp):
+      latency?.note("follow-up", "not a follow-up")
+      return
+    case .timedOut:
+      violetTrace("follow-up model timed out")
+      latency?.note("follow-up", "model timed out")
+      return
+    case .failed(let error):
+      violetTrace("follow-up model failed: \(error)")
+      latency?.note("follow-up", "model failed")
+      return
+    }
+    latency?.mark("follow-up reply ready")
+    violetTrace("follow-up reply: \(reply)")
+    lastAnnouncement = reply
+
+    replyVoiceStarted = false
+    let filler = Task { @MainActor [weak self] in
+      try? await Task.sleep(for: FollowUpTiming.fillerDelay)
+      guard !Task.isCancelled, let self, !self.replyVoiceStarted else { return }
+      await self.sayNextFiller()
+    }
+    defer { filler.cancel() }
+    do {
+      try await speaker.speak(reply, timeout: FollowUpTiming.voiceTimeout) { [weak self] in
+        self?.replyVoiceStarted = true
+        self?.latency?.mark("follow-up voice started")
+      }
+      latency?.mark("follow-up voice finished")
+    } catch {
+      // Skipped quietly: the identity line was already said.
+      violetTrace("follow-up speech failed: \(error)")
     }
   }
 
@@ -360,12 +460,17 @@ final class AppModel {
     fillerTask = Task { @MainActor [weak self] in
       try? await Task.sleep(for: Announcement.fillerDelay)
       guard !Task.isCancelled, let self else { return }
-      let line = Announcement.fillers[self.nextFiller % Announcement.fillers.count]
-      self.nextFiller += 1
-      guard self.speaker.isPrepared(line) else { return }
-      try? await self.speaker.speak(line) { [latency = self.latency] in
-        latency?.mark("filler started")
-      }
+      await self.sayNextFiller()
+    }
+  }
+
+  /// Says the next filler line in turn, if its audio is ready.
+  private func sayNextFiller() async {
+    let line = Announcement.fillers[nextFiller % Announcement.fillers.count]
+    nextFiller += 1
+    guard speaker.isPrepared(line) else { return }
+    try? await speaker.speak(line) { [latency = self.latency] in
+      latency?.mark("filler started")
     }
   }
 
@@ -414,5 +519,23 @@ enum Announcement {
 
   static func bio(_ person: FamiliarPerson) -> String {
     "\(person.name). \(person.bio)"
+  }
+}
+
+/// How a follow-up model call ended.
+private enum FollowUpResult: Sendable {
+  case answer(FollowUpAnswer)
+  case timedOut
+  case failed(any Error)
+}
+
+/// Resumes a continuation with whichever result arrives first.
+@MainActor
+private final class FirstResult<Value> {
+  var continuation: CheckedContinuation<Value, Never>?
+
+  func resume(_ value: Value) {
+    continuation?.resume(returning: value)
+    continuation = nil
   }
 }

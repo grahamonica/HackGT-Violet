@@ -6,6 +6,15 @@ Frames go to [`Packages/VioletReferent`](Packages/VioletReferent/README.md): on-
 
 Violet handles one request at a time: a trigger (“Violet”, the capture button, or “Hey Meta, start Violet”) while it is capturing, recognizing, or speaking is ignored. If the answer takes more than three seconds, Violet says a short filler line (“One moment.”, “Just a second.”, “Let me take a look.”, in turn), and the answer plays right after it.
 
+### Follow-up questions
+
+When the wearer says “Violet” followed by a question (“Violet, what's she been up to?”) and the person is identified, Violet answers the question after the identity line. The words after “Violet” are collected while the camera runs. A model on the phone (Apple Intelligence, through the Foundation Models framework) decides whether they were a real question about this person and, if so, writes a short reply from the person's bio and notes. The reply hints rather than telling everything, so the wearer can recall the rest. The question and notes stay on the phone; only the reply text goes to ElevenLabs to be voiced.
+
+- Only for the spoken wake word, never for the capture button or “Hey Meta”, and never when no one was identified.
+- The model gets five seconds; otherwise Violet says nothing more. A filler line plays only once a reply is certain and its voice is slow to generate.
+- Needs iOS 26 on an Apple Intelligence iPhone with Apple Intelligence turned on. On other phones the follow-up is skipped and everything else works as before.
+- Notes are an optional field next to the bio when adding someone. Older records without notes work unchanged.
+
 ### Latency
 
 To see where the time goes, tick `-VioletLatency YES` under **Product › Scheme › Edit Scheme › Run › Arguments**. After each answer, the Xcode console prints one block: a timeline from the trigger (camera start, first frame, first face, first Rekognition reply, voice start and end) and per-stage timings (frame conversion, Apple Vision, Core ML quality model, Rekognition calls). Type `[Latency]` in the console's filter field to hide everything else. With the argument off, nothing is measured.
